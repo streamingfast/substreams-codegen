@@ -1,0 +1,89 @@
+specVersion: v0.1.0
+package:
+  name: {{ .ModuleName }}
+  version: v0.1.0
+
+imports:
+  sql: https://github.com/streamingfast/substreams-sink-sql/releases/download/protodefs-v{{ .SQLImportVersion }}/substreams-sink-sql-protodefs-v{{ .SQLImportVersion }}.spkg
+  graph: https://github.com/streamingfast/substreams-sink-subgraph/releases/download/v{{ .GraphImportVersion }}/substreams-sink-subgraph-protodefs-v{{ .GraphImportVersion }}.spkg
+  database_change: https://github.com/streamingfast/substreams-sink-database-changes/releases/download/v{{ .DatabaseChangeImportVersion }}/substreams-database-change-v{{ .DatabaseChangeImportVersion }}.spkg
+  entity: https://github.com/streamingfast/substreams-entity-change/releases/download/v{{ .EntityChangeImportVersion }}/substreams-entity-change-v{{ .EntityChangeImportVersion }}.spkg
+
+protobuf:
+  files:
+    - contract.proto
+  importPaths:
+    - ./proto
+
+binaries:
+  default:
+    type: wasm/rust-v1
+    file: ./target/wasm32-unknown-unknown/release/substreams.wasm
+
+modules:
+{{ range $index, $ddsContract := .DynamicContracts }}
+  - name: store_{{ $ddsContract.Identifier }}_created
+    kind: store
+    initialBlock: {{ with $ddsContract.ParentContract.InitialBlock }}{{ . }}{{ else }}0{{ end }}
+    updatePolicy: set
+    valueType: proto:dynamic_datasource
+    inputs:
+      - source: sf.ethereum.type.v2.Block
+{{- end}}
+
+{{- if .TrackAnyEvents }}
+  - name: map_events
+    kind: map
+    initialBlock: {{ .MustLowestStartBlock }}
+    inputs:
+      - source: sf.ethereum.type.v2.Block
+{{- range $index, $ddsContract := .DynamicContracts }}
+      {{- if $ddsContract.TrackEvents }}
+      - store: store_{{ $ddsContract.Identifier }}_created
+      {{- end }}
+{{- end }}
+    output:
+      type: proto:contract.v1.Events
+{{- end }}
+{{- if .TrackAnyCalls }}
+  - name: map_calls
+    kind: map
+    initialBlock: {{ .MustLowestStartBlock }}
+    inputs:
+      - source: sf.ethereum.type.v2.Block
+{{- range $index, $ddsContract := .DynamicContracts }}
+    {{- if $ddsContract.TrackCalls }}
+      - store: store_{{ $ddsContract.Identifier }}_created
+    {{- end }}
+{{- end }}
+    output:
+      type: proto:contract.v1.Calls
+{{- end }}{{/* if TrackAnyCalls */}}
+
+  - name: db_out
+    kind: map
+    initialBlock: {{ .MustLowestStartBlock }}
+    inputs:
+{{- if .TrackAnyEvents }}
+      - map: map_events
+{{- end }}
+{{- if .TrackAnyCalls }}
+      - map: map_calls
+{{- end }}
+    output:
+      type: proto:sf.substreams.sink.database.v1.DatabaseChanges
+
+  - name: graph_out
+    kind: map
+    initialBlock: {{ .MustLowestStartBlock }}
+    inputs:
+{{- if .TrackAnyEvents }}
+      - map: map_events
+{{- end }}
+{{- if .TrackAnyCalls }}
+      - map: map_calls
+{{- end }}
+    output:
+      type: proto:sf.substreams.entity.v1.EntityChanges
+
+network: {{ .ChainName }}

@@ -1,0 +1,121 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package contract.v1;
+
+{{- $eventsCounter := 0 }}
+{{- if $.TrackAnyEvents }}
+message Events {
+    {{- range $i, $contract := .Contracts }}
+      {{- if $contract.TrackEvents }}
+      {{- range $index, $event := $contract.EventModels }}
+        {{- $proto := $event.Proto }}
+        {{- $eventsCounter = add $eventsCounter 1 }}
+    repeated {{ toPascalCase $contract.Identifier }}_{{$proto.MessageName}} {{ toSnakeCase $contract.Identifier }}_{{$proto.OutputModuleFieldName}} = {{ $eventsCounter }};
+      {{- end}}
+      {{- end}}
+    {{- end}}
+    {{- range $i, $ddsContract := .DynamicContracts -}}
+      {{- if $ddsContract.TrackEvents }}
+      {{- range $index, $event := $ddsContract.EventModels -}}
+        {{- $proto := $event.Proto }}
+        {{- $eventsCounter = add $eventsCounter 1 }}
+    repeated {{ toPascalCase $ddsContract.Identifier }}_{{$proto.MessageName}} {{ toSnakeCase $ddsContract.Identifier }}_{{$proto.OutputModuleFieldName}} = {{ $eventsCounter }};
+      {{- end}}
+      {{- end}}
+    {{- end}}
+}
+{{- end -}}
+{{- if $.TrackAnyCalls }}
+{{- $callsCounter := 0 }}
+message Calls {
+    {{- range $i, $contract := .Contracts }}
+      {{- if $contract.TrackCalls }}
+      {{- range $index, $call := $contract.CallModels }}
+        {{- $proto := $call.Proto }}
+        {{- $callsCounter = add $callsCounter 1 }}
+    repeated {{ toPascalCase $contract.Identifier }}_{{$proto.MessageName}} {{ toSnakeCase $contract.Identifier }}_{{$proto.OutputModuleFieldName}} = {{ $callsCounter }};
+      {{- end}}
+      {{- end}}
+    {{- end}}
+    {{- range $_index, $ddsContract := .DynamicContracts -}}
+      {{- if $ddsContract.TrackCalls }}
+      {{- range $index, $call := $ddsContract.CallModels -}}
+        {{- $proto := $call.Proto }}
+        {{- $callsCounter = add $callsCounter 1 }}
+    repeated {{ toPascalCase $ddsContract.Identifier }}_{{$proto.MessageName}} {{ toSnakeCase $ddsContract.Identifier }}_{{$proto.OutputModuleFieldName}} = {{ $callsCounter }};
+      {{- end}}
+      {{- end}}
+    {{- end}}
+}
+{{- if and $.TrackAnyEvents $.TrackAnyCalls }}
+message EventsCalls {
+    Events events = 1;
+    Calls calls = 2;
+}
+{{- end }}
+{{- end }}
+{{- range $i, $contract := .Contracts}}
+  {{- if .TrackEvents }}
+  {{- range $index, $event := $contract.EventModels }}
+    {{- $proto := $event.Proto }}
+message {{ toPascalCase $contract.Identifier }}_{{ $proto.MessageName }} {
+    string evt_tx_hash = 1;
+    uint32 evt_index = 2;
+    google.protobuf.Timestamp evt_block_time = 3;
+    uint64 evt_block_number = 4;
+    {{- range $index, $protoField := $proto.Fields }}
+    {{ $protoField.Type }} {{ sanitizeProtoFieldName $protoField.Name }} = {{ add $index 5 }};
+    {{- end }}
+}
+    {{- end}}{{/* if TrackAnyEvents */}}
+  {{- end}}
+  {{ if .TrackCalls }}
+    {{- range $index, $call := $contract.CallModels }}
+      {{- $proto := $call.Proto }}
+message {{ toPascalCase $contract.Identifier }}_{{ $proto.MessageName }} {
+    string call_tx_hash = 1;
+    google.protobuf.Timestamp call_block_time = 2;
+    uint64 call_block_number = 3;
+    uint64 call_ordinal = 4;
+    bool call_success = 5;
+    {{- range $index, $protoField := $proto.Fields }}
+    {{ $protoField.Type }} {{ sanitizeProtoFieldName $protoField.Name }} = {{ add $index 6 }};
+    {{- end}}
+}
+    {{- end }}{{/* range CallModels */}}
+  {{- end }}{{/* if TrackAnyCalls */}}
+{{- end}}{{/* range Contracts */}}
+
+{{- range $i, $ddsContract := $.DynamicContracts }}
+
+  {{- range $index, $event := $ddsContract.EventModels }}
+    {{ $proto := $event.Proto }}
+message {{ toPascalCase $ddsContract.Identifier }}_{{ $proto.MessageName }} {
+    string evt_tx_hash = 1;
+    uint32 evt_index = 2;
+    google.protobuf.Timestamp evt_block_time = 3;
+    uint64 evt_block_number = 4;
+    string evt_address = 5;
+    {{- range $index, $protoField := $proto.Fields }}
+    {{ $protoField.Type }} {{ sanitizeProtoFieldName $protoField.Name }} = {{ add $index 6 }};
+    {{- end}}
+}
+  {{- end}}{{/* range EventModels */}}
+
+  {{- range $index, $call := $ddsContract.CallModels }}
+    {{ $proto := $call.Proto }}
+message {{ toPascalCase $ddsContract.Identifier }}_{{ $proto.MessageName }} {
+    string call_tx_hash = 1;
+    google.protobuf.Timestamp call_block_time = 2;
+    uint64 call_block_number = 3;
+    uint64 call_ordinal = 4;
+    bool call_success = 5;
+    string call_address = 6;
+    {{- range $index, $protoField := $proto.Fields }}
+    {{ $protoField.Type }} {{ sanitizeProtoFieldName $protoField.Name }} = {{ add $index 7 }};
+    {{- end}}
+}
+  {{- end}}{{/* range CallModels */}}
+{{- end}}{{/* range DynamicContracts */}}

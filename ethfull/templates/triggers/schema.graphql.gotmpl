@@ -1,0 +1,14 @@
+{{- if .TrackAnyEvents}}
+type Event @entity {
+  id: ID!
+  type: String!
+  jsonValue: String!
+}
+{{- end}}
+{{- if .TrackAnyCalls }}
+type Call @entity {
+  id: ID!
+  type: String!
+  jsonValue: String!
+}
+{{- end}}

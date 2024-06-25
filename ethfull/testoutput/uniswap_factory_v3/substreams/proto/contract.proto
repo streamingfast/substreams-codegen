@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package contract.v1;
+message Events {
+    repeated Unifactory_FeeAmountEnabled unifactory_fee_amount_enableds = 1;
+    repeated Unifactory_OwnerChanged unifactory_owner_changeds = 2;
+    repeated Unifactory_PoolCreated unifactory_pool_createds = 3;
+}
+message Unifactory_FeeAmountEnabled {
+    string evt_tx_hash = 1;
+    uint32 evt_index = 2;
+    google.protobuf.Timestamp evt_block_time = 3;
+    uint64 evt_block_number = 4;
+    uint64 fee = 5;
+    int64 tick_spacing = 6;
+}
+message Unifactory_OwnerChanged {
+    string evt_tx_hash = 1;
+    uint32 evt_index = 2;
+    google.protobuf.Timestamp evt_block_time = 3;
+    uint64 evt_block_number = 4;
+    bytes old_owner = 5;
+    bytes new_owner = 6;
+}
+message Unifactory_PoolCreated {
+    string evt_tx_hash = 1;
+    uint32 evt_index = 2;
+    google.protobuf.Timestamp evt_block_time = 3;
+    uint64 evt_block_number = 4;
+    bytes token0 = 5;
+    bytes token1 = 6;
+    uint64 fee = 7;
+    int64 tick_spacing = 8;
+    bytes pool = 9;
+}
+  

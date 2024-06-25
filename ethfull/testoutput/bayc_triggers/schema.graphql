@@ -1,0 +1,190 @@
+type bayc_approval @entity {
+    id: ID!
+    evt_tx_hash: String!
+    evt_index: BigInt!
+    evt_block_time: String!
+    evt_block_number: BigInt!
+    approved: String!
+    owner: String!
+    token_id: BigDecimal!
+}
+type bayc_approval_for_all @entity {
+    id: ID!
+    evt_tx_hash: String!
+    evt_index: BigInt!
+    evt_block_time: String!
+    evt_block_number: BigInt!
+    approved: Boolean!
+    operator: String!
+    owner: String!
+}
+type bayc_ownership_transferred @entity {
+    id: ID!
+    evt_tx_hash: String!
+    evt_index: BigInt!
+    evt_block_time: String!
+    evt_block_number: BigInt!
+    new_owner: String!
+    previous_owner: String!
+}
+type bayc_transfer @entity {
+    id: ID!
+    evt_tx_hash: String!
+    evt_index: BigInt!
+    evt_block_time: String!
+    evt_block_number: BigInt!
+    from: String!
+    to: String!
+    token_id: BigDecimal!
+}
+
+type bayc_call_approve @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+    to: String!
+    token_id: BigDecimal!
+}
+type bayc_call_emergency_set_starting_index_block @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+}
+type bayc_call_flip_sale_state @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+}
+type bayc_call_mint_ape @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+    number_of_tokens: BigDecimal!
+}
+type bayc_call_renounce_ownership @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+}
+type bayc_call_reserve_apes @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+}
+type bayc_call_safe_transfer_from1 @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+    from: String!
+    to: String!
+    token_id: BigDecimal!
+}
+type bayc_call_safe_transfer_from2 @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+    from: String!
+    to: String!
+    token_id: BigDecimal!
+    u_data: String!
+}
+type bayc_call_set_approval_for_all @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+    approved: Boolean!
+    operator: String!
+}
+type bayc_call_set_base_uri @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+    base_uri: String!
+}
+type bayc_call_set_provenance_hash @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+    provenance_hash: String!
+}
+type bayc_call_set_reveal_timestamp @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+    reveal_time_stamp: BigDecimal!
+}
+type bayc_call_set_starting_index @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+}
+type bayc_call_transfer_from @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+    from: String!
+    to: String!
+    token_id: BigDecimal!
+}
+type bayc_call_transfer_ownership @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+    new_owner: String!
+}
+type bayc_call_withdraw @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+}
+
+
+

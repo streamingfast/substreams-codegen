@@ -1,0 +1,6 @@
+{{- range $i, $contract := .Contracts }}
+pub mod {{ $contract.Identifier }}_contract;
+{{- end }}
+{{- range $ddsContract := .DynamicContracts }}
+pub mod {{ $ddsContract.Identifier }}_contract;
+{{- end }}

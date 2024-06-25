@@ -1,0 +1,29 @@
+specVersion: v0.1.0
+package:
+  name: {{ .Name }}
+  version: v0.1.0
+
+network: injective-mainnet
+
+imports:
+  injective: https://spkg.io/streamingfast/injective-common-v0.2.2.spkg
+
+modules:
+  - name: {{ .ModuleName }}
+{{- if .IsEvents }}
+    use: injective:filtered_events{{ if .HasAttributeValues }}_by_attribute_value{{ end }}
+{{- else if .IsEventGroups }}
+    use: injective:filtered_event_groups{{ if .HasAttributeValues }}_by_attribute_value{{ end }}
+{{- else }}
+    use: injective:filtered_trx_by_events{{ if .HasAttributeValues }}_attribute_value{{ end }}
+{{- end }}
+    initialBlock: {{ .InitialBlock }}
+{{- if .HasAttributeValues }}
+    blockFilter:
+      module: injective:index_events
+      query:
+        string: {{ .GetEventsIndexQuery }}
+{{- end }}
+
+params:
+  {{ .ModuleName }}: {{ .GetEventsQuery }}

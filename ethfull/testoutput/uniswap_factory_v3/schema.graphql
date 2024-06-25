@@ -1,0 +1,33 @@
+type unifactory_fee_amount_enabled @entity {
+    id: ID!
+    evt_tx_hash: String!
+    evt_index: BigInt!
+    evt_block_time: String!
+    evt_block_number: BigInt!
+    fee: BigInt!
+    tick_spacing: BigInt!
+}
+type unifactory_owner_changed @entity {
+    id: ID!
+    evt_tx_hash: String!
+    evt_index: BigInt!
+    evt_block_time: String!
+    evt_block_number: BigInt!
+    new_owner: String!
+    old_owner: String!
+}
+type unifactory_pool_created @entity {
+    id: ID!
+    evt_tx_hash: String!
+    evt_index: BigInt!
+    evt_block_time: String!
+    evt_block_number: BigInt!
+    fee: BigInt!
+    pool: String!
+    tick_spacing: BigInt!
+    token0: String!
+    token1: String!
+}
+
+
+

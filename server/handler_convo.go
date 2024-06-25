@@ -1,0 +1,202 @@
+package server
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"reflect"
+	"sync"
+
+	connect "connectrpc.com/connect"
+	codegen "github.com/streamingfast/substreams-codegen"
+	"github.com/streamingfast/substreams-codegen/loop"
+	pbconvo "github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1"
+	"github.com/tidwall/sjson"
+	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+
+	_ "github.com/streamingfast/substreams-codegen/ethfull"
+	_ "github.com/streamingfast/substreams-codegen/injective-events"
+)
+
+func (s *server) Discover(ctx context.Context, req *connect.Request[pbconvo.DiscoveryRequest]) (*connect.Response[pbconvo.DiscoveryResponse], error) {
+	var generators []*pbconvo.DiscoveryResponse_Generator
+	for _, conv := range codegen.ListConversationHandlers() {
+		generators = append(generators, &pbconvo.DiscoveryResponse_Generator{
+			Id:          conv.ID,
+			Title:       conv.Title,
+			Description: conv.Description,
+		})
+		// TODO: add generators from an extra config file or flags, from different endpoints
+	}
+	return connect.NewResponse(&pbconvo.DiscoveryResponse{
+		Generators: generators,
+	}), nil
+}
+
+func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconvo.UserInput, pbconvo.SystemOutput]) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			s.logger.Error("internal error", zap.Any("panic", r))
+			err = fmt.Errorf("internal error: %v", r)
+		}
+	}()
+
+	s.logger.Info("new conversation")
+	closeOnce := sync.Once{}
+	sendFunc := func(msg *pbconvo.SystemOutput, err error) {
+		if msg == nil {
+			closeOnce.Do(func() {
+				if closer, ok := stream.Conn().(interface{ Close(error) error }); ok {
+					closer.Close(err)
+				}
+			})
+		}
+		stream.Send(msg)
+	}
+
+	req, err := stream.Receive()
+	if err != nil {
+		return err
+	}
+
+	start, ok := req.Entry.(*pbconvo.UserInput_Start_)
+	if !ok {
+		return fmt.Errorf("begin with UserInput_Start message")
+	}
+
+	convo := codegen.Registry[start.Start.GeneratorId]
+	if convo == nil {
+		return fmt.Errorf("no conversation handler found for topic ID %q", start.Start.GeneratorId)
+	}
+
+	msgWrapFactory := codegen.NewMsgWrapFactory(sendFunc)
+	conversation := convo.Factory(msgWrapFactory)
+
+	readNextCmd := func() loop.Msg {
+		select {
+		case <-ctx.Done():
+			return loop.NewQuitMsg(ctx.Err())
+		default:
+		}
+
+		req, err := stream.Receive()
+		if err != nil {
+			return loop.NewQuitMsg(err)
+		}
+
+		reflectType := msgWrapFactory.LastInput()
+		if reflectType == nil {
+			// TODO: make this a "BadRequest" or InvalidRequest error, shown to the user
+			return loop.NewQuitMsg(fmt.Errorf("message type %q was not registered or does not exist", req.FromActionId))
+		}
+		newMsg := reflect.New(reflectType)
+		newProtoMsg := newMsg.Interface().(protoreflect.ProtoMessage)
+
+		switch entry := req.Entry.(type) {
+		case *pbconvo.UserInput_Confirmation_:
+			cnt, err := proto.Marshal(entry.Confirmation)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("marshal type %T: %w", entry.Confirmation, err))
+			}
+			err = proto.Unmarshal(cnt, newProtoMsg)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("unmarshal into type %T from %T: %w", newProtoMsg, entry.Confirmation, err))
+			}
+			return codegen.IncomingMessage{Msg: newMsg.Elem().Interface()}
+
+		case *pbconvo.UserInput_Selection_:
+			cnt, err := proto.Marshal(entry.Selection)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("marshal type %T: %w", entry.Selection, err))
+			}
+			err = proto.Unmarshal(cnt, newProtoMsg)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("unmarshal into type %T from %T: %w", newProtoMsg, entry.Selection, err))
+			}
+			return codegen.IncomingMessage{Msg: newMsg.Elem().Interface()}
+
+		case *pbconvo.UserInput_TextInput_:
+			cnt, err := proto.Marshal(entry.TextInput)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("marshal type %T: %w", entry.TextInput, err))
+			}
+			err = proto.Unmarshal(cnt, newProtoMsg)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("unmarshal into type %T from %T: %w", newProtoMsg, entry.TextInput, err))
+			}
+			return codegen.IncomingMessage{Msg: newMsg.Elem().Interface()}
+
+		case *pbconvo.UserInput_DownloadedFiles_:
+			cnt, err := proto.Marshal(entry.DownloadedFiles)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("marshal type %T: %w", entry.DownloadedFiles, err))
+			}
+			err = proto.Unmarshal(cnt, newProtoMsg)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("unmarshal into type %T from %T: %w", newProtoMsg, entry.DownloadedFiles, err))
+			}
+			return codegen.IncomingMessage{Msg: newMsg.Elem().Interface()}
+
+		case *pbconvo.UserInput_File:
+			return loop.NewQuitMsg(fmt.Errorf("file upload not supported here"))
+
+		default:
+			return loop.NewQuitMsg(fmt.Errorf("unknown entry type %T", entry))
+		}
+	}
+
+	initCmd := loop.Batch(
+		func() loop.Msg {
+			return codegen.MsgStart{UserInput_Start: *start.Start}
+		},
+		readNextCmd,
+	)
+
+	msgWrapFactory.SetupLoop(func(msg loop.Msg) loop.Cmd {
+		asJSON, _ := json.Marshal(msg)
+		asJSON, _ = sjson.DeleteBytes(asJSON, "state")
+		s.logger.Debug("main Loop", zap.Any("loop_msg_type", msg), zap.String("content", string(asJSON)))
+		switch msg := msg.(type) {
+		case *pbconvo.SystemOutput:
+			sendFunc(msg, nil)
+			return nil
+		case codegen.IncomingMessage:
+			return loop.Batch(func() loop.Msg { return msg.Msg }, readNextCmd)
+		}
+
+		s.logger.Debug("updating")
+		cmd := conversation.Update(msg)
+		return cmd
+	})
+
+	g, ctx := errgroup.WithContext(ctx)
+
+	s.logger.Info("launching thread")
+	g.Go(func() error {
+		defer func() {
+			if r := recover(); r != nil {
+				s.logger.Error("internal error", zap.Any("panic", r))
+				err = fmt.Errorf("internal error: %v", r)
+			}
+		}()
+		err := msgWrapFactory.Run(ctx, initCmd)
+		if err != nil {
+			return err
+		}
+		return io.EOF
+	})
+
+	if err := g.Wait(); err != nil {
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
+		return fmt.Errorf("conversation error: %w", err)
+	}
+
+	return nil
+}

@@ -1,0 +1,22 @@
+version: v1
+plugins:
+  - plugin: buf.build/protocolbuffers/go
+    out: pb
+    opt:
+      - paths=source_relative
+      - Msf/codegen/conversation/v1/conversation.proto=github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1;pbconvo
+      - Msf/codegen/remotebuild/v1/remotebuild.proto=github.com/streamingfast/substreams-codegen/pb/sf/codegen/remotebuild/v1;pbbuild
+
+  - plugin: buf.build/connectrpc/go
+    out: pb
+    opt:
+      - paths=source_relative
+      - Msf/codegen/conversation/v1/conversation.proto=github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1;pbconvo
+      - Msf/codegen/remotebuild/v1/remotebuild.proto=github.com/streamingfast/substreams-codegen/pb/sf/codegen/remotebuild/v1;pbbuild
+
+  - plugin: buf.build/grpc/go
+    out: pb
+    opt:
+      - paths=source_relative
+      - Msf/codegen/conversation/v1/conversation.proto=github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1;pbconvo
+      - Msf/codegen/remotebuild/v1/remotebuild.proto=github.com/streamingfast/substreams-codegen/pb/sf/codegen/remotebuild/v1;pbbuild

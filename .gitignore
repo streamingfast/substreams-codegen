@@ -1,0 +1,7 @@
+/out/
+/build
+.DS_Store
+.env*.local
+.env
+.envrc
+/sink-data

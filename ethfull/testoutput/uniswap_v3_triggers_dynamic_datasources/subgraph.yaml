@@ -1,0 +1,19 @@
+specVersion: 1.0.0
+description: uniswap_v3 Substreams-powered-Subgraph
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: substreams
+    name: filtered_events
+    network: mainnet
+    source:
+      package:
+        moduleName: zipped_events_calls
+        file: uniswap-v3-v0.1.0.spkg
+    mapping:
+      apiVersion: 0.0.7
+      kind: substreams/graph-entities
+      file: ./src/mappings.ts
+      handler: handleEventsAndCalls

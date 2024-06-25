@@ -1,0 +1,144 @@
+type factory_fee_amount_enabled @entity {
+    id: ID!
+    evt_tx_hash: String!
+    evt_index: BigInt!
+    evt_block_time: String!
+    evt_block_number: BigInt!
+    fee: BigInt!
+    tick_spacing: BigInt!
+}
+type factory_owner_changed @entity {
+    id: ID!
+    evt_tx_hash: String!
+    evt_index: BigInt!
+    evt_block_time: String!
+    evt_block_number: BigInt!
+    new_owner: String!
+    old_owner: String!
+}
+type factory_pool_created @entity {
+    id: ID!
+    evt_tx_hash: String!
+    evt_index: BigInt!
+    evt_block_time: String!
+    evt_block_number: BigInt!
+    fee: BigInt!
+    pool: String!
+    tick_spacing: BigInt!
+    token0: String!
+    token1: String!
+}
+
+type pool_call_burn @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+    call_address: String!
+    amount: BigDecimal!
+    output_amount0: BigDecimal!
+    output_amount1: BigDecimal!
+    tick_lower: BigInt!
+    tick_upper: BigInt!
+}type pool_call_collect @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+    call_address: String!
+    amount0_requested: BigDecimal!
+    amount1_requested: BigDecimal!
+    output_amount0: BigDecimal!
+    output_amount1: BigDecimal!
+    recipient: String!
+    tick_lower: BigInt!
+    tick_upper: BigInt!
+}type pool_call_collect_protocol @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+    call_address: String!
+    amount0_requested: BigDecimal!
+    amount1_requested: BigDecimal!
+    output_amount0: BigDecimal!
+    output_amount1: BigDecimal!
+    recipient: String!
+}type pool_call_flash @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+    call_address: String!
+    amount0: BigDecimal!
+    amount1: BigDecimal!
+    data: String!
+    recipient: String!
+}type pool_call_increase_observation_cardinality_next @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+    call_address: String!
+    observation_cardinality_next: BigInt!
+}type pool_call_initialize @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+    call_address: String!
+    sqrt_price_x96: BigDecimal!
+}type pool_call_mint @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+    call_address: String!
+    amount: BigDecimal!
+    data: String!
+    output_amount0: BigDecimal!
+    output_amount1: BigDecimal!
+    recipient: String!
+    tick_lower: BigInt!
+    tick_upper: BigInt!
+}type pool_call_set_fee_protocol @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+    call_address: String!
+    fee_protocol0: BigInt!
+    fee_protocol1: BigInt!
+}type pool_call_swap @entity {
+    id: ID!
+    call_tx_hash: String!
+    call_block_time: String!
+    call_block_number: BigInt!
+    call_ordinal: BigInt!
+    call_success: Boolean!
+    call_address: String!
+    amount_specified: BigDecimal!
+    data: String!
+    output_amount0: BigDecimal!
+    output_amount1: BigDecimal!
+    recipient: String!
+    sqrt_price_limit_x96: BigDecimal!
+    zero_for_one: Boolean!
+}
+

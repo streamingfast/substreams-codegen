@@ -1,0 +1,19 @@
+specVersion: 1.0.0
+description: {{ .Name }} Substreams-powered-Subgraph
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: substreams
+    name: filtered_events
+    network: {{ .ChainName }}
+    source:
+      package:
+        moduleName: {{ if and $.TrackAnyEvents $.TrackAnyCalls }}zipped_events_calls{{ else if $.TrackAnyEvents }}map_events{{ else if $.TrackAnyCalls }}map_calls{{ end }}
+        file: {{ $.KebabName }}-v0.1.0.spkg
+    mapping:
+      apiVersion: 0.0.7
+      kind: substreams/graph-entities
+      file: ./src/mappings.ts
+      handler: {{ if and $.TrackAnyEvents $.TrackAnyCalls }}handleEventsAndCalls{{ else if $.TrackAnyEvents }}handleEvents{{ else if $.TrackAnyCalls }}handleCalls{{ end }}

@@ -1,0 +1,7 @@
+target/
+*.spkg
+Cargo.lock
+buf.gen.yaml
+*/src/abi/unifactory_contract.rs
+*/src/pb/contract.v1.rs
+**/dev-environment/data

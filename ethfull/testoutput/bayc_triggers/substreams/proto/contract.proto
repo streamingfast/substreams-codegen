@@ -1,0 +1,200 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package contract.v1;
+message Events {
+    repeated Bayc_Approval bayc_approvals = 1;
+    repeated Bayc_ApprovalForAll bayc_approval_for_alls = 2;
+    repeated Bayc_OwnershipTransferred bayc_ownership_transferreds = 3;
+    repeated Bayc_Transfer bayc_transfers = 4;
+}
+message Calls {
+    repeated Bayc_ApproveCall bayc_call_approves = 1;
+    repeated Bayc_EmergencySetStartingIndexBlockCall bayc_call_emergency_set_starting_index_blocks = 2;
+    repeated Bayc_FlipSaleStateCall bayc_call_flip_sale_states = 3;
+    repeated Bayc_MintApeCall bayc_call_mint_apes = 4;
+    repeated Bayc_RenounceOwnershipCall bayc_call_renounce_ownerships = 5;
+    repeated Bayc_ReserveApesCall bayc_call_reserve_apes = 6;
+    repeated Bayc_SafeTransferFrom1Call bayc_call_safe_transfer_from_1s = 7;
+    repeated Bayc_SafeTransferFrom2Call bayc_call_safe_transfer_from_2s = 8;
+    repeated Bayc_SetApprovalForAllCall bayc_call_set_approval_for_alls = 9;
+    repeated Bayc_SetBaseUriCall bayc_call_set_base_uris = 10;
+    repeated Bayc_SetProvenanceHashCall bayc_call_set_provenance_hashes = 11;
+    repeated Bayc_SetRevealTimestampCall bayc_call_set_reveal_timestamps = 12;
+    repeated Bayc_SetStartingIndexCall bayc_call_set_starting_indices = 13;
+    repeated Bayc_TransferFromCall bayc_call_transfer_froms = 14;
+    repeated Bayc_TransferOwnershipCall bayc_call_transfer_ownerships = 15;
+    repeated Bayc_WithdrawCall bayc_call_withdraws = 16;
+}
+message EventsCalls {
+    Events events = 1;
+    Calls calls = 2;
+}
+message Bayc_Approval {
+    string evt_tx_hash = 1;
+    uint32 evt_index = 2;
+    google.protobuf.Timestamp evt_block_time = 3;
+    uint64 evt_block_number = 4;
+    bytes owner = 5;
+    bytes approved = 6;
+    string token_id = 7;
+}
+message Bayc_ApprovalForAll {
+    string evt_tx_hash = 1;
+    uint32 evt_index = 2;
+    google.protobuf.Timestamp evt_block_time = 3;
+    uint64 evt_block_number = 4;
+    bytes owner = 5;
+    bytes operator = 6;
+    bool approved = 7;
+}
+message Bayc_OwnershipTransferred {
+    string evt_tx_hash = 1;
+    uint32 evt_index = 2;
+    google.protobuf.Timestamp evt_block_time = 3;
+    uint64 evt_block_number = 4;
+    bytes previous_owner = 5;
+    bytes new_owner = 6;
+}
+message Bayc_Transfer {
+    string evt_tx_hash = 1;
+    uint32 evt_index = 2;
+    google.protobuf.Timestamp evt_block_time = 3;
+    uint64 evt_block_number = 4;
+    bytes from = 5;
+    bytes to = 6;
+    string token_id = 7;
+}
+  
+message Bayc_ApproveCall {
+    string call_tx_hash = 1;
+    google.protobuf.Timestamp call_block_time = 2;
+    uint64 call_block_number = 3;
+    uint64 call_ordinal = 4;
+    bool call_success = 5;
+    bytes to = 6;
+    string token_id = 7;
+}
+message Bayc_EmergencySetStartingIndexBlockCall {
+    string call_tx_hash = 1;
+    google.protobuf.Timestamp call_block_time = 2;
+    uint64 call_block_number = 3;
+    uint64 call_ordinal = 4;
+    bool call_success = 5;
+}
+message Bayc_FlipSaleStateCall {
+    string call_tx_hash = 1;
+    google.protobuf.Timestamp call_block_time = 2;
+    uint64 call_block_number = 3;
+    uint64 call_ordinal = 4;
+    bool call_success = 5;
+}
+message Bayc_MintApeCall {
+    string call_tx_hash = 1;
+    google.protobuf.Timestamp call_block_time = 2;
+    uint64 call_block_number = 3;
+    uint64 call_ordinal = 4;
+    bool call_success = 5;
+    string number_of_tokens = 6;
+}
+message Bayc_RenounceOwnershipCall {
+    string call_tx_hash = 1;
+    google.protobuf.Timestamp call_block_time = 2;
+    uint64 call_block_number = 3;
+    uint64 call_ordinal = 4;
+    bool call_success = 5;
+}
+message Bayc_ReserveApesCall {
+    string call_tx_hash = 1;
+    google.protobuf.Timestamp call_block_time = 2;
+    uint64 call_block_number = 3;
+    uint64 call_ordinal = 4;
+    bool call_success = 5;
+}
+message Bayc_SafeTransferFrom1Call {
+    string call_tx_hash = 1;
+    google.protobuf.Timestamp call_block_time = 2;
+    uint64 call_block_number = 3;
+    uint64 call_ordinal = 4;
+    bool call_success = 5;
+    bytes from = 6;
+    bytes to = 7;
+    string token_id = 8;
+}
+message Bayc_SafeTransferFrom2Call {
+    string call_tx_hash = 1;
+    google.protobuf.Timestamp call_block_time = 2;
+    uint64 call_block_number = 3;
+    uint64 call_ordinal = 4;
+    bool call_success = 5;
+    bytes from = 6;
+    bytes to = 7;
+    string token_id = 8;
+    bytes u_data = 9;
+}
+message Bayc_SetApprovalForAllCall {
+    string call_tx_hash = 1;
+    google.protobuf.Timestamp call_block_time = 2;
+    uint64 call_block_number = 3;
+    uint64 call_ordinal = 4;
+    bool call_success = 5;
+    bytes operator = 6;
+    bool approved = 7;
+}
+message Bayc_SetBaseUriCall {
+    string call_tx_hash = 1;
+    google.protobuf.Timestamp call_block_time = 2;
+    uint64 call_block_number = 3;
+    uint64 call_ordinal = 4;
+    bool call_success = 5;
+    string base_uri = 6;
+}
+message Bayc_SetProvenanceHashCall {
+    string call_tx_hash = 1;
+    google.protobuf.Timestamp call_block_time = 2;
+    uint64 call_block_number = 3;
+    uint64 call_ordinal = 4;
+    bool call_success = 5;
+    string provenance_hash = 6;
+}
+message Bayc_SetRevealTimestampCall {
+    string call_tx_hash = 1;
+    google.protobuf.Timestamp call_block_time = 2;
+    uint64 call_block_number = 3;
+    uint64 call_ordinal = 4;
+    bool call_success = 5;
+    string reveal_time_stamp = 6;
+}
+message Bayc_SetStartingIndexCall {
+    string call_tx_hash = 1;
+    google.protobuf.Timestamp call_block_time = 2;
+    uint64 call_block_number = 3;
+    uint64 call_ordinal = 4;
+    bool call_success = 5;
+}
+message Bayc_TransferFromCall {
+    string call_tx_hash = 1;
+    google.protobuf.Timestamp call_block_time = 2;
+    uint64 call_block_number = 3;
+    uint64 call_ordinal = 4;
+    bool call_success = 5;
+    bytes from = 6;
+    bytes to = 7;
+    string token_id = 8;
+}
+message Bayc_TransferOwnershipCall {
+    string call_tx_hash = 1;
+    google.protobuf.Timestamp call_block_time = 2;
+    uint64 call_block_number = 3;
+    uint64 call_ordinal = 4;
+    bool call_success = 5;
+    bytes new_owner = 6;
+}
+message Bayc_WithdrawCall {
+    string call_tx_hash = 1;
+    google.protobuf.Timestamp call_block_time = 2;
+    uint64 call_block_number = 3;
+    uint64 call_ordinal = 4;
+    bool call_success = 5;
+}
