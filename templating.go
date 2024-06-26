@@ -55,7 +55,10 @@ func ParseFS(myFuncs template.FuncMap, fsys fs.FS, pattern string) (*template.Te
 
 func SanitizeProtoFieldName(name string) string {
 	if strings.HasPrefix(name, "_") {
-		return "u" + name
+		name = "u" + name
+	}
+	if strings.HasSuffix(name, "_") {
+		name = name + "u"
 	}
 	return name
 }
