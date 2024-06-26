@@ -53,9 +53,9 @@ func cmdBuild(p *Project) loop.Cmd {
 		}
 	}
 }
-func cmdBuildFailed(err error) loop.Cmd {
+func cmdBuildFailed(logs []string, err error) loop.Cmd {
 	return func() loop.Msg {
-		return codegen.ReturnBuild{Err: err}
+		return codegen.ReturnBuild{Err: err, Logs: strings.Join(logs, "\n")}
 	}
 }
 
@@ -147,21 +147,28 @@ func (p *Project) build(remoteBuildContentChan chan<- *codegen.RemoteBuildState)
 		return
 	}
 
+	var aggregatedLogs []string
 	for {
 		resp, err := res.Recv()
+
+		if resp != nil && resp.Logs != "" {
+			aggregatedLogs = append(aggregatedLogs, resp.Logs)
+		}
+
 		if err != nil {
 			remoteBuildContentChan <- &codegen.RemoteBuildState{
+				Logs:  aggregatedLogs,
 				Error: err.Error(),
 			}
 			return
 		}
-
 		if resp == nil {
 			break
 		}
 
 		if resp.Error != "" {
 			remoteBuildContentChan <- &codegen.RemoteBuildState{
+				Logs:  aggregatedLogs,
 				Error: resp.Error,
 			}
 			return
@@ -170,13 +177,13 @@ func (p *Project) build(remoteBuildContentChan chan<- *codegen.RemoteBuildState)
 		if len(resp.Artifacts) != 0 {
 			remoteBuildContentChan <- &codegen.RemoteBuildState{
 				Error:     resp.Error,
-				Logs:      []string{resp.Logs},
+				Logs:      aggregatedLogs,
 				Artifacts: resp.Artifacts,
 			}
 			return
 		}
 
-		// send the request as we go
+		// send the request as we go -- not used on the client yet
 		remoteBuildContentChan <- &codegen.RemoteBuildState{
 			Logs: []string{resp.Logs},
 		}

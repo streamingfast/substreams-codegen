@@ -994,7 +994,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 			// dont fail the command line yet, go to the return build step
 			return loop.Seq(
 				c.msg().StopLoading().Cmd(),
-				cmdBuildFailed(errors.New("build response is nil")),
+				cmdBuildFailed(nil, errors.New("build response is nil")),
 			)
 		}
 
@@ -1003,7 +1003,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 			return loop.Seq(
 				// This is not an error, send a loading false to remove the loading spinner
 				c.msg().Loading(false, "").Cmd(),
-				cmdBuildFailed(errors.New(resp.Error)),
+				cmdBuildFailed(resp.Logs, errors.New(resp.Error)),
 			)
 		}
 
@@ -1047,9 +1047,12 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 	case codegen.ReturnBuild:
 		if msg.Err != nil {
 			return loop.Seq(
-				c.msg().Messagef("Remote build failed with error: %s", msg.Err).Cmd(),
-				c.msg().Message("This module is a Rust-based module, and you can compile it with \"make all\" in the root directory.").Cmd(),
-				loop.Quit(nil),
+				c.msg().Messagef("Remote build failed with error: %q. See full logs in `{project-path}/logs.txt`", msg.Err).Cmd(),
+				c.msg().Messagef("You will need to unzip the 'substreams-src.zip' file and run `make package` to try and generate the .spkg file.").Cmd(),
+				c.action(codegen.PackageDownloaded{}).
+					DownloadFiles().
+					AddFile("logs.txt", []byte(msg.Logs), `text/x-logs`, "").
+					Cmd(),
 			)
 		}
 		if c.state.confirmDoCompile {
