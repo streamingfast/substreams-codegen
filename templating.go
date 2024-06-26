@@ -58,7 +58,7 @@ func SanitizeProtoFieldName(name string) string {
 		name = "u" + name
 	}
 	if strings.HasSuffix(name, "_") {
-		name = name + "u"
+		name = strings.TrimSuffix(name, "_")
 	}
 	return name
 }
