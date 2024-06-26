@@ -227,7 +227,7 @@ func (p *Project) Render(outType outputType) (substreamsFiles map[string][]byte,
 		case "sql":
 			templateFiles["sql/run-local.sh.gotmpl"] = "run-local.sh"
 			templateFiles["sql/schema.sql.gotmpl"] = "BOTH/schema.sql"
-			templateFiles["sql/substreams.sql.yaml.gotmpl"] = "BOTH/substreams.sql.yaml"
+			templateFiles["sql/substreams.sql.yaml.gotmpl"] = "substreams/substreams.sql.yaml"
 		default:
 			return nil, nil, fmt.Errorf("unknown sql output flavor %q", p.SqlOutputFlavor)
 		}
