@@ -585,7 +585,7 @@ func getProtoFieldType(solidityType eth.SolidityType) string {
 		}
 		return "repeated " + fieldType
 
-	case eth.StructType:
+	case eth.StructType, eth.FixedSizeArrayType:
 		return SKIP_FIELD
 
 	default:

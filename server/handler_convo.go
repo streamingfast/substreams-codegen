@@ -41,7 +41,7 @@ func (s *server) Discover(ctx context.Context, req *connect.Request[pbconvo.Disc
 func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconvo.UserInput, pbconvo.SystemOutput]) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			s.logger.Error("internal error", zap.Any("panic", r))
+			s.logger.Error("internal error first defer", zap.Any("panic", r))
 			err = fmt.Errorf("internal error: %v", r)
 		}
 	}()
@@ -178,24 +178,36 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 
 	s.logger.Info("launching thread")
 	g.Go(func() error {
-		defer func() {
+		defer func() error {
 			if r := recover(); r != nil {
-				s.logger.Error("internal error", zap.Any("panic", r))
+				s.logger.Error("internal error second defer", zap.Any("panic", r))
 				err = fmt.Errorf("internal error: %v", r)
+				return err
 			}
+
+			return nil
 		}()
-		err := msgWrapFactory.Run(ctx, initCmd)
+
+		err = msgWrapFactory.Run(ctx, initCmd)
 		if err != nil {
 			return err
 		}
 		return io.EOF
 	})
 
+	if err != nil && errors.Is(err, io.EOF) {
+		return fmt.Errorf("cound not generate substreams: %w", err)
+	}
+
 	if err := g.Wait(); err != nil {
 		if errors.Is(err, io.EOF) {
 			return nil
 		}
 		return fmt.Errorf("conversation error: %w", err)
+	}
+
+	if err != nil {
+		return err
 	}
 
 	return nil

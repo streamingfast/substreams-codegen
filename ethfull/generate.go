@@ -381,7 +381,7 @@ func generateFieldClickhouseTypes(fieldType eth.SolidityType) string {
 		}
 		return fmt.Sprintf("Decimal256(%d)", precision)
 
-	case eth.StructType:
+	case eth.StructType, eth.FixedSizeArrayType:
 		return SKIP_FIELD
 
 	case eth.ArrayType:
@@ -423,7 +423,7 @@ func generateFieldSqlTypes(fieldType eth.SolidityType) string {
 	case eth.SignedFixedPointType, eth.UnsignedFixedPointType:
 		return "DECIMAL"
 
-	case eth.StructType:
+	case eth.StructType, eth.FixedSizeArrayType:
 		return SKIP_FIELD
 
 	case eth.ArrayType:
@@ -479,7 +479,7 @@ func generateFieldTableChangeCode(fieldType eth.SolidityType, fieldAccess string
 
 		return "set_psql_array", fmt.Sprintf("%s.%s.map(|x| %s).collect::<Vec<_>>()", fieldAccess, iter, inner)
 
-	case eth.StructType:
+	case eth.StructType, eth.FixedSizeArrayType:
 		return SKIP_FIELD, SKIP_FIELD
 
 	default:
@@ -529,7 +529,7 @@ func generateFieldTransformCode(fieldType eth.SolidityType, fieldAccess string, 
 
 		return fmt.Sprintf("%s.%s.map(|x| %s).collect::<Vec<_>>()", fieldAccess, iter, inner)
 
-	case eth.StructType:
+	case eth.StructType, eth.FixedSizeArrayType:
 		return SKIP_FIELD
 
 	default:
@@ -566,7 +566,7 @@ func generateFieldGraphQLTypes(fieldType eth.SolidityType) string {
 	case eth.ArrayType:
 		return "[" + generateFieldGraphQLTypes(v.ElementType) + "]!"
 
-	case eth.StructType:
+	case eth.StructType, eth.FixedSizeArrayType:
 		return SKIP_FIELD
 
 	default:
