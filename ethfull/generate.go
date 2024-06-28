@@ -423,9 +423,16 @@ func generateFieldSqlTypes(fieldType eth.SolidityType) string {
 	case eth.SignedFixedPointType, eth.UnsignedFixedPointType:
 		return "DECIMAL"
 
-	case eth.StructType, eth.FixedSizeArrayType:
+	case eth.StructType:
 		return SKIP_FIELD
 
+	case eth.FixedSizeArrayType:
+		elemType := generateFieldSqlTypes(v.ElementType)
+		if elemType == "" || elemType == SKIP_FIELD {
+			return SKIP_FIELD
+		}
+
+		return elemType + "[]"
 	case eth.ArrayType:
 		elemType := generateFieldSqlTypes(v.ElementType)
 		if elemType == "" || elemType == SKIP_FIELD {
@@ -465,6 +472,19 @@ func generateFieldTableChangeCode(fieldType eth.SolidityType, fieldAccess string
 	case eth.SignedFixedPointType, eth.UnsignedFixedPointType:
 		return "set", fmt.Sprintf("BigDecimal::from_str(&%s).unwrap()", fieldAccess)
 
+	case eth.FixedSizeArrayType:
+		// FIXME: Implement multiple contract support, check what is the actual semantics there
+		_, inner := generateFieldTableChangeCode(v.ElementType, "x", byRef)
+		if inner == SKIP_FIELD {
+			return SKIP_FIELD, SKIP_FIELD
+		}
+
+		iter := "into_iter()"
+		if byRef {
+			iter = "iter()"
+		}
+
+		return "set_psql_array", fmt.Sprintf("%s.%s.map(|x| %s).collect::<Vec<_>>()", fieldAccess, iter, inner)
 	case eth.ArrayType:
 		// FIXME: Implement multiple contract support, check what is the actual semantics there
 		_, inner := generateFieldTableChangeCode(v.ElementType, "x", byRef)
@@ -479,7 +499,7 @@ func generateFieldTableChangeCode(fieldType eth.SolidityType, fieldAccess string
 
 		return "set_psql_array", fmt.Sprintf("%s.%s.map(|x| %s).collect::<Vec<_>>()", fieldAccess, iter, inner)
 
-	case eth.StructType, eth.FixedSizeArrayType:
+	case eth.StructType:
 		return SKIP_FIELD, SKIP_FIELD
 
 	default:
@@ -516,6 +536,20 @@ func generateFieldTransformCode(fieldType eth.SolidityType, fieldAccess string, 
 	case eth.SignedFixedPointType, eth.UnsignedFixedPointType:
 		return fmt.Sprintf("%s.to_string()", fieldAccess)
 
+	case eth.FixedSizeArrayType:
+		inner := generateFieldTransformCode(v.ElementType, "x", byRef)
+		if inner == SKIP_FIELD {
+			fmt.Println("skip case eth.FixedSizeArrayType:")
+			return SKIP_FIELD
+		}
+
+		iter := "into_iter()"
+		if byRef {
+			iter = "iter()"
+		}
+
+		return fmt.Sprintf("%s.%s.map(|x| %s).collect::<Vec<_>>()", fieldAccess, iter, inner)
+
 	case eth.ArrayType:
 		inner := generateFieldTransformCode(v.ElementType, "x", byRef)
 		if inner == SKIP_FIELD {
@@ -529,7 +563,7 @@ func generateFieldTransformCode(fieldType eth.SolidityType, fieldAccess string, 
 
 		return fmt.Sprintf("%s.%s.map(|x| %s).collect::<Vec<_>>()", fieldAccess, iter, inner)
 
-	case eth.StructType, eth.FixedSizeArrayType:
+	case eth.StructType:
 		return SKIP_FIELD
 
 	default:
@@ -566,7 +600,10 @@ func generateFieldGraphQLTypes(fieldType eth.SolidityType) string {
 	case eth.ArrayType:
 		return "[" + generateFieldGraphQLTypes(v.ElementType) + "]!"
 
-	case eth.StructType, eth.FixedSizeArrayType:
+	case eth.FixedSizeArrayType:
+		return "[" + generateFieldGraphQLTypes(v.ElementType) + "]!"
+
+	case eth.StructType:
 		return SKIP_FIELD
 
 	default:

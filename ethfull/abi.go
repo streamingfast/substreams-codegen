@@ -531,6 +531,7 @@ func (e *protoCallModel) populateFields(call *eth.MethodDef) error {
 
 		e.Fields = append(e.Fields, protoField{Name: fieldName, Type: fieldType})
 	}
+
 	for _, parameter := range call.ReturnParameters {
 		fieldName := xstrings.ToSnakeCase("output_" + parameter.Name)
 		fieldName = codegen.SanitizeProtoFieldName(fieldName)
@@ -577,6 +578,14 @@ func getProtoFieldType(solidityType eth.SolidityType) string {
 	case eth.SignedFixedPointType, eth.UnsignedFixedPointType:
 		return "string"
 
+	case eth.FixedSizeArrayType:
+		// Flaky, I think we should support a single level of "array"
+		fieldType := getProtoFieldType(v.ElementType)
+		if fieldType == SKIP_FIELD {
+			return SKIP_FIELD
+		}
+		return "repeated " + fieldType
+
 	case eth.ArrayType:
 		// Flaky, I think we should support a single level of "array"
 		fieldType := getProtoFieldType(v.ElementType)
@@ -585,7 +594,7 @@ func getProtoFieldType(solidityType eth.SolidityType) string {
 		}
 		return "repeated " + fieldType
 
-	case eth.StructType, eth.FixedSizeArrayType:
+	case eth.StructType:
 		return SKIP_FIELD
 
 	default:
