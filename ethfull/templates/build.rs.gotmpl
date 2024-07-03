@@ -34,11 +34,9 @@ fn main() -> Result<(), anyhow::Error> {
         let re = Regex::new(r"_+").unwrap();
 
         let re_sanitized_abi_file = re.replace_all(&sanitized_abi_file, |caps: &regex::Captures| {
-            if caps[0].len() > 1 {
-                "_u".to_string()
-            } else {
-                caps[0].to_string()
-            }
+                let count = caps[0].len();
+                let replacement = format!("{}_", "_u".repeat(count - 1));
+                replacement
         });
 
         Abigen::from_bytes("Contract", re_sanitized_abi_file.as_bytes())?

@@ -3,7 +3,6 @@ package ethfull
 import (
 	"encoding/hex"
 	"fmt"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -121,18 +120,6 @@ func (a *ABI) BuildEventModels() (out []codegenEvent, err error) {
 	}
 
 	return
-}
-
-func sanitizeABIStructName(rustABIStructName string) string {
-	reg := regexp.MustCompile("(_+)")
-	rustABIStructName = reg.ReplaceAllStringFunc(rustABIStructName, func(s string) string {
-		if len(s) > 1 {
-			return "_u"
-		}
-		return s
-	})
-
-	return rustABIStructName
 }
 
 func (a *ABI) BuildCallModels() (out []codegenCall, err error) {
