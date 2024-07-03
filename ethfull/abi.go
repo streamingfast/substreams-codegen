@@ -3,6 +3,7 @@ package ethfull
 import (
 	"encoding/hex"
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -82,6 +83,9 @@ func (a *ABI) BuildEventModels() (out []codegenEvent, err error) {
 			}
 			event.Signature()
 
+			// Sanitize abi struct name base on rust proto-gen sanitizer
+			rustABIStructName = sanitizeABIStructName(rustABIStructName)
+
 			protoFieldName := xstrings.ToSnakeCase(pluralizerSingleton.Plural(rustABIStructName))
 			// prost will do a to_lower_camel_case() on any struct name
 			rustGeneratedStructName := xstrings.ToCamelCase(xstrings.ToSnakeCase(rustABIStructName))
@@ -119,6 +123,18 @@ func (a *ABI) BuildEventModels() (out []codegenEvent, err error) {
 	return
 }
 
+func sanitizeABIStructName(rustABIStructName string) string {
+	reg := regexp.MustCompile("(_+)")
+	rustABIStructName = reg.ReplaceAllStringFunc(rustABIStructName, func(s string) string {
+		if len(s) > 1 {
+			return "_u"
+		}
+		return s
+	})
+
+	return rustABIStructName
+}
+
 func (a *ABI) BuildCallModels() (out []codegenCall, err error) {
 	abi := a.abi
 	names := maps.Keys(abi.FunctionsByNameMap)
@@ -148,6 +164,9 @@ func (a *ABI) BuildCallModels() (out []codegenCall, err error) {
 					param.Name = fmt.Sprintf("param%d", i)
 				}
 			}
+
+			// Sanitize abi struct name base on rust proto-gen sanitizer
+			rustABIStructName = sanitizeABIStructName(rustABIStructName)
 
 			protoFieldName := "call_" + xstrings.ToSnakeCase(pluralizerSingleton.Plural(rustABIStructName))
 			// prost will do a to_lower_camel_case() on any struct name
