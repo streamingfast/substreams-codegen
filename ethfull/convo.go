@@ -62,7 +62,7 @@ Supported networks: `+strings.Join(supportedChains, ", "),
 
 func NewWithSQL(factory *codegen.MsgWrapFactory) codegen.Conversation {
 	h := &Convo{
-		state:            &Project{},
+		state:            &Project{currentContractIdx: -1},
 		factory:          factory,
 		outputType:       outputTypeSQL,
 		remoteBuildState: &codegen.RemoteBuildState{},
@@ -72,7 +72,7 @@ func NewWithSQL(factory *codegen.MsgWrapFactory) codegen.Conversation {
 
 func NewWithSubgraph(factory *codegen.MsgWrapFactory) codegen.Conversation {
 	h := &Convo{
-		state:            &Project{},
+		state:            &Project{currentContractIdx: -1},
 		factory:          factory,
 		outputType:       outputTypeSubgraph,
 		remoteBuildState: &codegen.RemoteBuildState{},
@@ -94,7 +94,7 @@ func cmd(msg any) loop.Cmd {
 // This function does NOT mutate anything. Only reads.
 
 func (c *Convo) contextContract() *Contract {
-	if c.state.currentContractIdx > len(c.state.Contracts)-1 {
+	if c.state.currentContractIdx == -1 || c.state.currentContractIdx > len(c.state.Contracts)-1 {
 		return nil
 	}
 	return c.state.Contracts[c.state.currentContractIdx]
@@ -208,6 +208,9 @@ func (p *Project) NextStep() (out loop.Cmd) {
 			if dynContract.abi == nil {
 				if dynContract.RawABI == nil {
 					if dynContract.referenceContractAddress == "" {
+						if p.ChainConfig().ApiEndpoint == "" {
+							return notifyContext(cmd(AskDynamicContractABI{}))
+						}
 						return notifyContext(cmd(AskDynamicContractAddress{}))
 					}
 					return notifyContext(cmd(FetchDynamicContractABI{}))
@@ -389,6 +392,15 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.action(InputContractABI{}).TextInput("Please paste the contract ABI", "Submit").
 			Cmd()
 
+	case AskDynamicContractABI:
+		contract := c.contextContract()
+		if contract == nil {
+			return QuitInvalidContext
+		}
+
+		return c.action(InputDynamicContractABI{}).TextInput(fmt.Sprintf("Please paste the ABI for contracts that will be created by the event %q", contract.FactoryCreationEventName()), "Submit").
+			Cmd()
+
 	case InputContractABI:
 		// FIXME: dedupe all these QuitInvalidContext!
 		contract := c.contextContract()
@@ -480,6 +492,10 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			return QuitInvalidContext
 		}
 		contract := c.state.dynamicContractOf(factory.Name)
+		config := c.state.ChainConfig()
+		if config.ApiEndpoint == "" {
+			return cmd(AskDynamicContractABI{})
+		}
 		return func() loop.Msg {
 			abi, err := contract.FetchABI(c.state.ChainConfig())
 			return ReturnFetchDynamicContractABI{abi: abi, err: err}

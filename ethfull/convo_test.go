@@ -219,6 +219,7 @@ func TestContractNameAlreadyExists(t *testing.T) {
 	f := &codegen.MsgWrapFactory{}
 	conv := NewWithSQL(f).(*Convo)
 	p := conv.state
+	p.currentContractIdx = 0
 	p.Contracts = append(p.Contracts, &Contract{
 		BaseContract: BaseContract{
 			Name: "test",
@@ -239,6 +240,7 @@ func TestDynamicContractNameAlreadyExists(t *testing.T) {
 	f := &codegen.MsgWrapFactory{}
 	conv := NewWithSQL(f).(*Convo)
 	p := conv.state
+	p.currentContractIdx = 0
 	p.Contracts = append(p.Contracts, &Contract{
 		BaseContract: BaseContract{
 			Name: "test",
@@ -259,6 +261,7 @@ func TestContractAddressAlreadyExists(t *testing.T) {
 	f := &codegen.MsgWrapFactory{}
 	conv := NewWithSQL(f).(*Convo)
 	p := conv.state
+	p.currentContractIdx = 0
 	p.Contracts = append(p.Contracts, &Contract{
 		Address: "0x1f98431c8ad98523631ae4a59f267346ea31f984",
 	})
@@ -277,6 +280,7 @@ func TestDynamicContractAddressAlreadyExists(t *testing.T) {
 	f := &codegen.MsgWrapFactory{}
 	conv := NewWithSQL(f).(*Convo)
 	p := conv.state
+	p.currentContractIdx = 0
 	p.Contracts = append(p.Contracts, &Contract{
 		Address: "0x1f98431c8ad98523631ae4a59f267346ea31f984",
 	})

@@ -88,7 +88,7 @@ func getContractABI(ctx context.Context, address string, endpoint string) (*eth.
 
 	res, err := httpClient.Do(req)
 	if err != nil {
-		return nil, "", nil, fmt.Errorf("getting contract abi from etherscan: %w", err)
+		return nil, "", nil, fmt.Errorf("getting contract abi: %w", err)
 	}
 	defer res.Body.Close()
 
