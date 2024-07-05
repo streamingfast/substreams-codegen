@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+const EVENTS_DATA_TYPE = "events"
+const EVENT_GROUPS_DATA_TYPE = "event_groups"
+const TRXS_DATA_TYPE = "transactions"
+
 type eventDesc struct {
 	EventType  string            `json:"eventType"`
 	Attributes map[string]string `json:"attributes"`
@@ -85,11 +89,15 @@ func (p *Project) GetEventsIndexQuery() string {
 }
 
 func (p *Project) IsEvents() bool {
-	return p.DataType == "events"
+	return p.DataType == EVENTS_DATA_TYPE
 }
 
 func (p *Project) IsEventGroups() bool {
-	return p.DataType == "event_groups"
+	return p.DataType == EVENT_GROUPS_DATA_TYPE
+}
+
+func (p *Project) IsTransactions() bool {
+	return p.DataType == TRXS_DATA_TYPE
 }
 
 func (p *Project) HasAttributeValues() bool {

@@ -70,9 +70,9 @@ func (p *Project) Render(outType outputType) (substreamsFiles map[string][]byte,
 			templateFiles["triggers/package.json.gotmpl"] = "package.json"
 			templateFiles["triggers/tsconfig.json"] = "tsconfig.json"
 			templateFiles["triggers/subgraph.yaml.gotmpl"] = "subgraph.yaml"
-			templateFiles["triggers/schema.graphql"] = "schema.graphql"
+			templateFiles["triggers/schema.graphql.gotmpl"] = "schema.graphql"
 			templateFiles["triggers/src/mappings.ts"] = "src/mappings.ts"
-			templateFiles["triggers/run-local.sh"] = "run-local.sh"
+			templateFiles["triggers/run-local.sh.gotmpl"] = "run-local.sh"
 		default:
 			return nil, nil, fmt.Errorf("unknown subgraph output flavor %q", p.SubgraphOutputFlavor)
 		}
@@ -92,6 +92,13 @@ func (p *Project) Render(outType outputType) (substreamsFiles map[string][]byte,
 			}
 			content = buffer.Bytes()
 		} else {
+			if strings.Contains(templateFile, "triggers/src/mappings.ts") {
+				if p.IsTransactions() {
+					templateFile = "triggers/src/mappings_transactions.ts"
+				} else {
+					templateFile = "triggers/src/mappings_events.ts"
+				}
+			}
 			content, err = templatesFS.ReadFile("templates/" + templateFile)
 			if err != nil {
 				return nil, nil, fmt.Errorf("reading %q: %w", templateFile, err)

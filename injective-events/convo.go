@@ -266,10 +266,10 @@ func (c *InjectiveConvo) Update(msg loop.Msg) loop.Cmd {
 			"Specific events",
 			"All events in transactions where at least one event matches your query",
 		}
-		values := []string{"events", "event_groups"}
+		values := []string{EVENTS_DATA_TYPE, EVENT_GROUPS_DATA_TYPE}
 		if c.outputType == outputTypeSubgraph {
 			labels = append(labels, "Full transactions where at least one event matches your query")
-			values = append(values, "transactions")
+			values = append(values, TRXS_DATA_TYPE)
 		}
 		return c.action(InputDataType{}).
 			ListSelect(fmt.Sprintf("This codegen will build a substreams that filters data based on events.\n" +

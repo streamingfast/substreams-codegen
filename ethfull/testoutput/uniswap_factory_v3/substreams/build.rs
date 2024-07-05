@@ -20,7 +20,16 @@ fn main() -> Result<(), anyhow::Error> {
         let regex = Regex::new(r#"("\w+"\s?:\s?")_(\w+")"#).unwrap();
         let sanitized_abi_file = regex.replace_all(contents.as_str(), "${1}u_${2}");
 
-        Abigen::from_bytes("Contract", sanitized_abi_file.as_bytes())?
+        // sanitize fields and attributes with multiple consecutive underscores
+        let re = Regex::new(r"_+").unwrap();
+
+        let re_sanitized_abi_file = re.replace_all(&sanitized_abi_file, |caps: &regex::Captures| {
+                let count = caps[0].len();
+                let replacement = format!("{}_", "_u".repeat(count - 1));
+                replacement
+        });
+
+        Abigen::from_bytes("Contract", re_sanitized_abi_file.as_bytes())?
             .generate()?
             .write_to_file(file_output_names[i])?;
 

@@ -1,0 +1,24 @@
+{{- if .IsTransactions }}
+type Transaction @entity {
+  id: ID! # trxHash-idx
+  resultCode: Int!
+  resultData: String!
+  resultLog: String!
+  resultInfo: String!
+  resultGasWanted: BigInt!
+  resultGasUsed: BigInt!
+  signatures: [String!]
+}
+{{ else }}
+type Event @entity {
+  id: ID! # trxHash-idx
+  type: String!
+  attrs: [Attr!]!
+}
+
+type Attr @entity {
+  id: String! # trxHash-idx-idx
+  key: String!
+  value: String!
+}
+{{- end }}

@@ -4,6 +4,22 @@ set -e
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+{{ if .IsTransactions }}
+example_query="
+{
+  transactions(first: 10) {
+    id
+    resultCode
+    resultData
+    resultLog
+    resultInfo
+    resultGasWanted
+    resultGasUsed
+    signatures
+  }
+}
+"
+{{ else }}
 example_query="
 {
   events(first: 100) {
@@ -15,6 +31,7 @@ example_query="
   }
 }
 "
+{{- end }}
 
 if [[ -z $SUBSTREAMS_API_TOKEN ]]; then
   echo "Please set SUBSTREAMS_API_TOKEN in your environment"
