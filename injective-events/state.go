@@ -2,6 +2,7 @@ package injective_events
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 )
@@ -59,6 +60,9 @@ func (e eventDesc) GetEventQuery() string {
 	if len(attributes) == 0 {
 		return fmt.Sprintf("type:%s", e.EventType)
 	}
+
+	sort.Strings(attributes)
+
 	return fmt.Sprintf("(type:%s && (%s))", e.EventType, strings.Join(attributes, " && "))
 }
 func (e eventDesc) GetEventIndexQuery() string {
