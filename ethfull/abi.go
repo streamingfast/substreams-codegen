@@ -3,12 +3,13 @@ package ethfull
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/golang-cz/textcase"
+	"github.com/huandu/xstrings"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/gertd/go-pluralize"
-	"github.com/huandu/xstrings"
 	"github.com/iancoleman/strcase"
 	"github.com/streamingfast/eth-go"
 	codegen "github.com/streamingfast/substreams-codegen"
@@ -87,7 +88,7 @@ func (a *ABI) BuildEventModels() (out []codegenEvent, err error) {
 
 			protoFieldName := xstrings.ToSnakeCase(pluralizerSingleton.Plural(rustABIStructName))
 			// prost will do a to_lower_camel_case() on any struct name
-			rustGeneratedStructName := xstrings.ToCamelCase(xstrings.ToSnakeCase(rustABIStructName))
+			rustGeneratedStructName := textcase.PascalCase(xstrings.ToSnakeCase(rustABIStructName))
 
 			eventID := hex.EncodeToString(event.LogID())
 
@@ -156,9 +157,10 @@ func (a *ABI) BuildCallModels() (out []codegenCall, err error) {
 			rustABIStructName = sanitizeABIStructName(rustABIStructName)
 
 			protoFieldName := "call_" + xstrings.ToSnakeCase(pluralizerSingleton.Plural(rustABIStructName))
+
 			// prost will do a to_lower_camel_case() on any struct name
-			rustGeneratedStructName := xstrings.ToCamelCase(xstrings.ToSnakeCase(rustABIStructName))
-			protoMessageName := xstrings.ToCamelCase(xstrings.ToSnakeCase(rustABIStructName) + "Call")
+			rustGeneratedStructName := textcase.PascalCase(xstrings.ToSnakeCase(rustABIStructName))
+			protoMessageName := textcase.PascalCase(xstrings.ToSnakeCase(rustABIStructName) + "Call")
 
 			codegenCall := codegenCall{
 				Rust: &rustCallModel{
@@ -253,8 +255,8 @@ func (e *rustEventModel) populateFields(log *eth.LogEventDef) error {
 	zlog.Info("Generating ABI Events", zap.String("name", log.Name), zap.String("param_names", strings.Join(paramNames, ",")))
 
 	for _, parameter := range log.Parameters {
-		name := xstrings.ToSnakeCase(parameter.Name)
-		name = codegen.SanitizeProtoFieldName(name)
+		name := codegen.SanitizeProtoFieldName(parameter.Name)
+		name = xstrings.ToSnakeCase(name)
 
 		toProtoCode := generateFieldTransformCode(parameter.Type, "event."+name, false)
 		if toProtoCode == SKIP_FIELD {
@@ -387,8 +389,8 @@ func methodToABIConversionMaps(
 		abiConversionMap = make(map[string]string)
 	}
 	for _, parameter := range parameters {
-		name := xstrings.ToSnakeCase(parameter.Name)
-		name = codegen.SanitizeProtoFieldName(name)
+		name := codegen.SanitizeProtoFieldName(parameter.Name)
+		name = xstrings.ToSnakeCase(name)
 
 		toProtoCode := generateFieldTransformCode(parameter.Type, "decoded_call."+name, false)
 		if toProtoCode != SKIP_FIELD {
@@ -499,8 +501,9 @@ func (e *protoEventModel) populateFields(log *eth.LogEventDef) error {
 
 	e.Fields = make([]protoField, 0, len(log.Parameters))
 	for _, parameter := range log.Parameters {
-		fieldName := xstrings.ToSnakeCase(parameter.Name)
-		fieldName = codegen.SanitizeProtoFieldName(fieldName)
+		fieldName := codegen.SanitizeProtoFieldName(parameter.Name)
+		fieldName = xstrings.ToSnakeCase(fieldName)
+
 		fieldType := getProtoFieldType(parameter.Type)
 		if fieldType == SKIP_FIELD {
 			continue
@@ -524,8 +527,8 @@ func (e *protoCallModel) populateFields(call *eth.MethodDef) error {
 	e.Fields = make([]protoField, 0, len(call.Parameters)+len(call.ReturnParameters))
 
 	for _, parameter := range call.Parameters {
-		fieldName := xstrings.ToSnakeCase(parameter.Name)
-		fieldName = codegen.SanitizeProtoFieldName(fieldName)
+		fieldName := codegen.SanitizeProtoFieldName(parameter.Name)
+		fieldName = xstrings.ToSnakeCase(fieldName)
 		fieldType := getProtoFieldType(parameter.Type)
 		if fieldType == SKIP_FIELD {
 			continue

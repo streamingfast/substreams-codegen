@@ -5,13 +5,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/codemodus/kace"
+	"github.com/golang-cz/textcase"
+	"github.com/huandu/xstrings"
 	"math"
 	"regexp"
 	"strings"
 	"time"
 
-	"github.com/huandu/xstrings"
-	"github.com/iancoleman/strcase"
 	"github.com/streamingfast/eth-go"
 )
 
@@ -59,7 +60,7 @@ func contractNames(contracts []*Contract) (out []string) {
 func (p *Project) ChainConfig() *ChainConfig { return ChainConfigByID[p.ChainName] }
 func (p *Project) ChainEndpoint() string     { return ChainConfigByID[p.ChainName].FirehoseEndpoint }
 
-func (p *Project) SubgraphProjectName() string         { return xstrings.ToKebabCase(p.Name) }
+func (p *Project) SubgraphProjectName() string         { return textcase.KebabCase(p.Name) }
 func (p *Project) SQLImportVersion() string            { return "1.0.7" }
 func (p *Project) GraphImportVersion() string          { return "0.1.0" }
 func (p *Project) DatabaseChangeImportVersion() string { return "1.2.1" }
@@ -199,9 +200,13 @@ type BaseContract struct {
 	abi *ABI
 }
 
-func (c *BaseContract) Identifier() string        { return c.Name }
-func (c *BaseContract) IdentityCamelCase() string { return strcase.ToLowerCamel(c.Name) }
-func (c *BaseContract) IdentifierUpper() string   { return strings.ToUpper(c.Name) }
+func (c *BaseContract) Identifier() string { return c.Name }
+func (c *BaseContract) IdentifierSnakeCase() string {
+	return xstrings.ToSnakeCase(c.Name)
+}
+func (c *BaseContract) IdentifierPascalCase() string { return textcase.PascalCase(c.Name) }
+func (c *BaseContract) IdentityCamelCase() string    { return textcase.CamelCase(c.Name) }
+func (c *BaseContract) IdentifierUpper() string      { return strings.ToUpper(c.Name) }
 
 func (c *BaseContract) EventFields(event string) ([]*eth.LogParameter, error) {
 	hash, err := hex.DecodeString(event)
@@ -288,8 +293,9 @@ func (d DynamicContract) FactoryInitialBlock() uint64 {
 	return *d.parentContract.InitialBlock
 }
 
-func (d DynamicContract) ParentContract() *Contract { return d.parentContract }
-func (d DynamicContract) Identifier() string        { return d.Name }
+func (d DynamicContract) ParentContract() *Contract   { return d.parentContract }
+func (d DynamicContract) Identifier() string          { return d.Name }
+func (d DynamicContract) IdentifierSnakeCase() string { return kace.Snake(d.Name) }
 func (d DynamicContract) FetchABI(chainConfig *ChainConfig) (abi string, err error) {
 	a, err := getContractABIFollowingProxy(context.Background(), d.referenceContractAddress, chainConfig)
 	if err != nil {

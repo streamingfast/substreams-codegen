@@ -15,6 +15,5 @@ func sanitizeABIStructName(rustABIStructName string) string {
 
 		return replacement
 	})
-
 	return result
 }

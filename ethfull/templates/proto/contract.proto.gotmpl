@@ -12,7 +12,7 @@ message Events {
       {{- range $index, $event := $contract.EventModels }}
         {{- $proto := $event.Proto }}
         {{- $eventsCounter = add $eventsCounter 1 }}
-    repeated {{ toPascalCase $contract.Identifier }}_{{$proto.MessageName}} {{ toSnakeCase $contract.Identifier }}_{{$proto.OutputModuleFieldName}} = {{ $eventsCounter }};
+    repeated {{ $contract.IdentifierPascalCase }}_{{$proto.MessageName}} {{ $contract.IdentifierSnakeCase }}_{{$proto.OutputModuleFieldName}} = {{ $eventsCounter }};
       {{- end}}
       {{- end}}
     {{- end}}
@@ -21,7 +21,7 @@ message Events {
       {{- range $index, $event := $ddsContract.EventModels -}}
         {{- $proto := $event.Proto }}
         {{- $eventsCounter = add $eventsCounter 1 }}
-    repeated {{ toPascalCase $ddsContract.Identifier }}_{{$proto.MessageName}} {{ toSnakeCase $ddsContract.Identifier }}_{{$proto.OutputModuleFieldName}} = {{ $eventsCounter }};
+    repeated {{ $ddsContract.IdentifierPascalCase }}_{{$proto.MessageName}} {{ $ddsContract.IdentifierSnakeCase }}_{{$proto.OutputModuleFieldName}} = {{ $eventsCounter }};
       {{- end}}
       {{- end}}
     {{- end}}
@@ -35,7 +35,7 @@ message Calls {
       {{- range $index, $call := $contract.CallModels }}
         {{- $proto := $call.Proto }}
         {{- $callsCounter = add $callsCounter 1 }}
-    repeated {{ toPascalCase $contract.Identifier }}_{{$proto.MessageName}} {{ toSnakeCase $contract.Identifier }}_{{$proto.OutputModuleFieldName}} = {{ $callsCounter }};
+    repeated {{ $contract.IdentifierPascalCase }}_{{$proto.MessageName}} {{ $contract.IdentifierSnakeCase }}_{{$proto.OutputModuleFieldName}} = {{ $callsCounter }};
       {{- end}}
       {{- end}}
     {{- end}}
@@ -44,7 +44,7 @@ message Calls {
       {{- range $index, $call := $ddsContract.CallModels -}}
         {{- $proto := $call.Proto }}
         {{- $callsCounter = add $callsCounter 1 }}
-    repeated {{ toPascalCase $ddsContract.Identifier }}_{{$proto.MessageName}} {{ toSnakeCase $ddsContract.Identifier }}_{{$proto.OutputModuleFieldName}} = {{ $callsCounter }};
+    repeated {{ $ddsContract.IdentifierPascalCase }}_{{$proto.MessageName}} {{ $ddsContract.IdentifierSnakeCase }}_{{$proto.OutputModuleFieldName}} = {{ $callsCounter }};
       {{- end}}
       {{- end}}
     {{- end}}
@@ -60,7 +60,7 @@ message EventsCalls {
   {{- if .TrackEvents }}
   {{- range $index, $event := $contract.EventModels }}
     {{- $proto := $event.Proto }}
-message {{ toPascalCase $contract.Identifier }}_{{ $proto.MessageName }} {
+message {{ $contract.IdentifierPascalCase }}_{{ $proto.MessageName }} {
     string evt_tx_hash = 1;
     uint32 evt_index = 2;
     google.protobuf.Timestamp evt_block_time = 3;
@@ -74,7 +74,7 @@ message {{ toPascalCase $contract.Identifier }}_{{ $proto.MessageName }} {
   {{ if .TrackCalls }}
     {{- range $index, $call := $contract.CallModels }}
       {{- $proto := $call.Proto }}
-message {{ toPascalCase $contract.Identifier }}_{{ $proto.MessageName }} {
+message {{ $contract.IdentifierPascalCase }}_{{ $proto.MessageName }} {
     string call_tx_hash = 1;
     google.protobuf.Timestamp call_block_time = 2;
     uint64 call_block_number = 3;
@@ -92,7 +92,7 @@ message {{ toPascalCase $contract.Identifier }}_{{ $proto.MessageName }} {
 
   {{- range $index, $event := $ddsContract.EventModels }}
     {{ $proto := $event.Proto }}
-message {{ toPascalCase $ddsContract.Identifier }}_{{ $proto.MessageName }} {
+message {{ $ddsContract.IdentifierPascalCase }}_{{ $proto.MessageName }} {
     string evt_tx_hash = 1;
     uint32 evt_index = 2;
     google.protobuf.Timestamp evt_block_time = 3;
@@ -106,7 +106,7 @@ message {{ toPascalCase $ddsContract.Identifier }}_{{ $proto.MessageName }} {
 
   {{- range $index, $call := $ddsContract.CallModels }}
     {{ $proto := $call.Proto }}
-message {{ toPascalCase $ddsContract.Identifier }}_{{ $proto.MessageName }} {
+message {{ $ddsContract.IdentifierPascalCase }}_{{ $proto.MessageName }} {
     string call_tx_hash = 1;
     google.protobuf.Timestamp call_block_time = 2;
     uint64 call_block_number = 3;

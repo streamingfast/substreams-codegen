@@ -2,13 +2,15 @@ package codegen
 
 import (
 	"fmt"
+	"github.com/huandu/xstrings"
+	"github.com/iancoleman/strcase"
 	"io/fs"
+	"regexp"
 	"strings"
 	"text/template"
 
 	"github.com/bmatcuk/doublestar/v4"
-	"github.com/codemodus/kace"
-	"github.com/iancoleman/strcase"
+	"github.com/golang-cz/textcase"
 )
 
 var templateFuncs = template.FuncMap{
@@ -16,13 +18,10 @@ var templateFuncs = template.FuncMap{
 		return left + right
 	},
 	"toUpper":                strings.ToUpper,
-	"toKebabCase":            kace.Kebab,
-	"toKebabUpperCase":       kace.KebabUpper,
-	"toSnakeCase":            kace.Snake,
-	"toSnakeUpperCase":       kace.SnakeUpper,
-	"toCamelCase":            kace.Camel,
+	"toKebabCase":            textcase.KebabCase,
+	"toSnakeCase":            xstrings.ToSnakeCase,
 	"toLowerCamelCase":       strcase.ToLowerCamel,
-	"toPascalCase":           kace.Pascal,
+	"toPascalCase":           textcase.PascalCase,
 	"sanitizeProtoFieldName": SanitizeProtoFieldName,
 }
 
@@ -54,9 +53,18 @@ func ParseFS(myFuncs template.FuncMap, fsys fs.FS, pattern string) (*template.Te
 }
 
 func SanitizeProtoFieldName(name string) string {
+	regex := regexp.MustCompile("(\\d+)(_*)")
+	name = regex.ReplaceAllStringFunc(name, func(match string) string {
+		if strings.HasSuffix(match, "_") {
+			return match
+		}
+		return match + "_"
+	})
+
 	if strings.HasPrefix(name, "_") {
 		name = "u" + name
 	}
+
 	if strings.HasSuffix(name, "_") {
 		name = strings.TrimSuffix(name, "_")
 	}

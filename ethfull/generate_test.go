@@ -1,10 +1,13 @@
 package ethfull
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/saracen/fastzip"
@@ -70,6 +73,11 @@ func Test_Generate(t *testing.T) {
 			generatorFile: "./testdata/uniswap_track_calls_clickhouse.json",
 			outputType:    outputTypeSQL,
 		},
+		{
+			name:          "Complex abi with digits and specific character",
+			generatorFile: "./testdata/complex_abi.json",
+			outputType:    outputTypeSubgraph,
+		},
 	}
 
 	for _, c := range cases {
@@ -123,6 +131,78 @@ func Test_Generate(t *testing.T) {
 			require.NoError(t, err)
 			require.NoError(t, extractor.Extract(context.Background()))
 
+		})
+	}
+}
+
+func TestGoldenImage(t *testing.T) {
+	cases := []struct {
+		name           string
+		generatorFile  string
+		expectedOutput string
+	}{
+		{
+			name:           "complex_abi",
+			generatorFile:  "./testdata/complex_abi.json",
+			expectedOutput: "./testoutput/complex_abi",
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			p := testProjectFromState(t, c.generatorFile)
+
+			for _, contract := range p.Contracts {
+				res := cmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
+				require.NoError(t, res.err)
+				contract.abi = res.abi
+			}
+
+			for _, dynamicContract := range p.DynamicContracts {
+				res := cmdDecodeDynamicABI(dynamicContract)().(ReturnRunDecodeDynamicContractABI)
+				require.NoError(t, res.err)
+				dynamicContract.abi = res.abi
+
+				for _, contract := range p.Contracts {
+					if contract.Name == dynamicContract.ParentContractName {
+						dynamicContract.parentContract = contract
+					}
+				}
+			}
+
+			p.outputType = outputTypeSubgraph
+
+			srcZip, projZip, err := p.generate(outputTypeSubgraph)
+			require.NoError(t, err)
+			assert.NotEmpty(t, srcZip)
+			assert.NotEmpty(t, projZip)
+
+			//Unzip srcZip and compare with expectedOutput
+			reader := bytes.NewReader(srcZip)
+			zipReader, err := zip.NewReader(reader, int64(len(srcZip)))
+			require.NoError(t, err)
+
+			for _, f := range zipReader.File {
+				//Should not modify the abi.json at all
+				if strings.HasSuffix(f.Name, "abi.json") {
+					continue
+				}
+
+				goldenFileName := c.expectedOutput + "/" + strings.TrimPrefix(f.Name, "substreams/")
+				goldenContent, err := os.ReadFile(goldenFileName)
+				require.NoError(t, err)
+
+				fileReader, err := f.Open()
+				require.NoError(t, err)
+
+				unzipFileContent, err := io.ReadAll(fileReader)
+
+				//Remove /n from both files
+				goldenContent = bytes.ReplaceAll(goldenContent, []byte("\n"), []byte(""))
+				unzipFileContent = bytes.ReplaceAll(unzipFileContent, []byte("\n"), []byte(""))
+
+				require.Equal(t, goldenContent, unzipFileContent)
+			}
 		})
 	}
 }

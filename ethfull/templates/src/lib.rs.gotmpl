@@ -36,14 +36,14 @@ const {{ $contract.IdentifierUpper }}_TRACKED_CONTRACT: [u8; 20] = hex!("{{ $con
 fn map_{{ $contract.Identifier }}_events(blk: &eth::Block, events: &mut contract::Events) {
     {{- range $event := $contract.EventModels }}
     {{- $rust := $event.Rust }}
-    events.{{ $contract.Identifier }}_{{ $rust.ProtoOutputModuleFieldName }}.append(&mut blk
+    events.{{ $contract.IdentifierSnakeCase }}_{{ $rust.ProtoOutputModuleFieldName }}.append(&mut blk
         .receipts()
         .flat_map(|view| {
             view.receipt.logs.iter()
                 .filter(|log| log.address == {{ $contract.IdentifierUpper }}_TRACKED_CONTRACT)
                 .filter_map(|log| {
                     if let Some(event) = abi::{{ $contract.Identifier }}_contract::events::{{$rust.ABIStructName}}::match_and_decode(log) {
-                        return Some(contract::{{ toPascalCase $contract.Identifier }}{{$rust.ProtoMessageName}} {
+                        return Some(contract::{{ $contract.IdentifierPascalCase }}{{$rust.ProtoMessageName}} {
                             evt_tx_hash: Hex(&view.transaction.hash).to_string(),
                             evt_index: log.block_index,
                             evt_block_time: Some(blk.timestamp().to_owned()),
@@ -65,7 +65,7 @@ fn map_{{ $contract.Identifier }}_events(blk: &eth::Block, events: &mut contract
 fn map_{{ $contract.Identifier }}_calls(blk: &eth::Block, calls: &mut contract::Calls) {
     {{- range $call := $contract.CallModels }}
     {{- $rust := $call.Rust }}
-    calls.{{ $contract.Identifier }}_{{ $rust.ProtoOutputModuleFieldName }}.append(&mut blk
+    calls.{{ $contract.IdentifierSnakeCase }}_{{ $rust.ProtoOutputModuleFieldName }}.append(&mut blk
         .transactions()
         .flat_map(|tx| {
             tx.calls.iter()
@@ -79,7 +79,7 @@ fn map_{{ $contract.Identifier }}_calls(blk: &eth::Block, calls: &mut contract::
                                 Err(_) => Default::default(),
                             };
                             {{ end }}
-                            Some(contract::{{ toPascalCase $contract.Identifier }}{{$rust.ProtoMessageName}} {
+                            Some(contract::{{ $contract.IdentifierPascalCase }}{{$rust.ProtoMessageName}} {
                                 call_tx_hash: Hex(&tx.hash).to_string(),
                                 call_block_time: Some(blk.timestamp().to_owned()),
                                 call_block_number: blk.number,
@@ -131,14 +131,14 @@ fn map_{{ $ddsContract.Identifier }}_events(
     {{- range $index, $event := $ddsContract.EventModels }}
     {{- $rust := $event.Rust }}
 
-    events.{{ $ddsContract.Identifier }}_{{ $rust.ProtoOutputModuleFieldName }}.append(&mut blk
+    events.{{ $ddsContract.IdentifierSnakeCase }}_{{ $rust.ProtoOutputModuleFieldName }}.append(&mut blk
         .receipts()
         .flat_map(|view| {
             view.receipt.logs.iter()
                 .filter(|log| is_declared_dds_address(&log.address, log.ordinal, dds_store))
                 .filter_map(|log| {
                     if let Some(event) = abi::{{ $ddsContract.Identifier }}_contract::events::{{$rust.ABIStructName}}::match_and_decode(log) {
-                        return Some(contract::{{ toPascalCase $ddsContract.Identifier }}{{$rust.ProtoMessageName}} {
+                        return Some(contract::{{ $ddsContract.IdentifierPascalCase }}{{$rust.ProtoMessageName}} {
                             evt_tx_hash: Hex(&view.transaction.hash).to_string(),
                             evt_index: log.block_index,
                             evt_block_time: Some(blk.timestamp().to_owned()),
@@ -165,7 +165,7 @@ fn map_{{ $ddsContract.Identifier }}_calls(
 ) {
     {{- range $i, $call := $ddsContract.CallModels }}
     {{- $rust := $call.Rust }}
-    calls.{{ $ddsContract.Identifier }}_{{ $rust.ProtoOutputModuleFieldName }}.append(&mut blk
+    calls.{{ $ddsContract.IdentifierSnakeCase }}_{{ $rust.ProtoOutputModuleFieldName }}.append(&mut blk
         .transactions()
         .flat_map(|tx| {
             tx.calls.iter()
@@ -179,7 +179,7 @@ fn map_{{ $ddsContract.Identifier }}_calls(
                                 Err(_) => Default::default(),
                             };
                             {{ end }}
-                            Some(contract::{{ toPascalCase $ddsContract.Identifier }}{{$rust.ProtoMessageName}} {
+                            Some(contract::{{ $ddsContract.IdentifierPascalCase }}{{$rust.ProtoMessageName}} {
                                 call_tx_hash: Hex(&tx.hash).to_string(),
                                 call_block_time: Some(blk.timestamp().to_owned()),
                                 call_block_number: blk.number,
@@ -204,11 +204,11 @@ fn map_{{ $ddsContract.Identifier }}_calls(
 {{- if .IsOutputSQL }}
 {{- range $i, $contract := .Contracts }}
 {{- if $contract.TrackEvents }}
-fn db_{{ toSnakeCase $contract.Identifier }}_out(events: &contract::Events, tables: &mut DatabaseChangeTables) {
+fn db_{{ $contract.Identifier }}_out(events: &contract::Events, tables: &mut DatabaseChangeTables) {
     // Loop over all the abis events to create table changes
     {{- range $index, $event := $contract.EventModels }}
     {{- $rust := $event.Rust }}
-    events.{{ $contract.Identifier }}_{{ $rust.ProtoOutputModuleFieldName }}.iter().for_each(|evt| {
+    events.{{ $contract.IdentifierSnakeCase }}_{{ $rust.ProtoOutputModuleFieldName }}.iter().for_each(|evt| {
         tables
             .create_row("{{ $contract.Identifier }}_{{ $rust.TableChangeEntityName }}", [("evt_tx_hash", evt.evt_tx_hash.to_string()),("evt_index", evt.evt_index.to_string())])
             .set("evt_block_time", evt.evt_block_time.as_ref().unwrap())
@@ -227,7 +227,7 @@ fn db_{{ $contract.Identifier }}_calls_out(calls: &contract::Calls, tables: &mut
     // Loop over all the abis calls to create table changes
     {{- range $index, $call := $contract.CallModels }}
     {{- $rust := $call.Rust }}
-    calls.{{ $contract.Identifier }}_{{ $rust.ProtoOutputModuleFieldName }}.iter().for_each(|call| {
+    calls.{{ $contract.IdentifierSnakeCase }}_{{ $rust.ProtoOutputModuleFieldName }}.iter().for_each(|call| {
         tables
             .create_row("{{ $contract.Identifier }}_{{ $rust.TableChangeEntityName }}", [("call_tx_hash", call.call_tx_hash.to_string()),("call_ordinal", call.call_ordinal.to_string())])
             .set("call_block_time", call.call_block_time.as_ref().unwrap())
@@ -250,7 +250,7 @@ fn db_{{ $ddsContract.Identifier }}_out(events: &contract::Events, tables: &mut 
     // Loop over all the abis events to create table changes
     {{- range $index, $event := $ddsContract.EventModels }}
     {{- $rust := $event.Rust }}
-    events.{{ $ddsContract.Identifier }}_{{ $rust.ProtoOutputModuleFieldName }}.iter().for_each(|evt| {
+    events.{{ $ddsContract.IdentifierSnakeCase }}_{{ $rust.ProtoOutputModuleFieldName }}.iter().for_each(|evt| {
         tables
             .create_row("{{ $ddsContract.Identifier }}_{{ $rust.TableChangeEntityName }}", [("evt_tx_hash", evt.evt_tx_hash.to_string()),("evt_index", evt.evt_index.to_string())])
             .set("evt_block_time", evt.evt_block_time.as_ref().unwrap())
@@ -270,7 +270,7 @@ fn db_{{ $ddsContract.Identifier }}_calls_out(calls: &contract::Calls, tables: &
     // Loop over all the abis calls to create table changes
     {{- range $index, $call := $ddsContract.CallModels }}
     {{- $rust := $call.Rust }}
-    calls.{{ $ddsContract.Identifier }}_{{ $rust.ProtoOutputModuleFieldName }}.iter().for_each(|call| {
+    calls.{{ $ddsContract.IdentifierSnakeCase }}_{{ $rust.ProtoOutputModuleFieldName }}.iter().for_each(|call| {
         tables
             .create_row("{{ $ddsContract.Identifier }}_{{ $rust.TableChangeEntityName }}", [("call_tx_hash", call.call_tx_hash.to_string()),("call_ordinal", call.call_ordinal.to_string())])
             .set("call_block_time", call.call_block_time.as_ref().unwrap())
@@ -296,7 +296,7 @@ fn graph_{{ $contract.Identifier }}_out(events: &contract::Events, tables: &mut 
     // Loop over all the abis events to create table changes
     {{- range $index, $event := $contract.EventModels }}
     {{- $rust := $event.Rust }}
-    events.{{ $contract.Identifier }}_{{ $rust.ProtoOutputModuleFieldName }}.iter().for_each(|evt| {
+    events.{{ $contract.IdentifierSnakeCase }}_{{ $rust.ProtoOutputModuleFieldName }}.iter().for_each(|evt| {
         tables
             .create_row("{{ $contract.Identifier }}_{{ $rust.TableChangeEntityName }}", format!("{}-{}", evt.evt_tx_hash, evt.evt_index))
             .set("evt_tx_hash", &evt.evt_tx_hash)
@@ -317,7 +317,7 @@ fn graph_{{ $contract.Identifier }}_calls_out(calls: &contract::Calls, tables: &
     // Loop over all the abis calls to create table changes
     {{- range $index, $call := $contract.CallModels }}
     {{- $rust := $call.Rust }}
-    calls.{{ $contract.Identifier }}_{{ $rust.ProtoOutputModuleFieldName }}.iter().for_each(|call| {
+    calls.{{ $contract.IdentifierSnakeCase }}_{{ $rust.ProtoOutputModuleFieldName }}.iter().for_each(|call| {
         tables
             .create_row("{{ $contract.Identifier }}_{{ $rust.TableChangeEntityName }}", format!("{}-{}", call.call_tx_hash, call.call_ordinal))
             .set("call_tx_hash", &call.call_tx_hash)
@@ -341,7 +341,7 @@ fn graph_{{ $ddsContract.Identifier }}_out(events: &contract::Events, tables: &m
     // Loop over all the abis events to create table changes
     {{- range $index, $event := $ddsContract.EventModels }}
     {{- $rust := $event.Rust }}
-    events.{{ $ddsContract.Identifier }}_{{ $rust.ProtoOutputModuleFieldName }}.iter().for_each(|evt| {
+    events.{{ $ddsContract.IdentifierSnakeCase }}_{{ $rust.ProtoOutputModuleFieldName }}.iter().for_each(|evt| {
         tables
             .create_row("{{ $ddsContract.Identifier }}_{{ $rust.TableChangeEntityName }}", format!("{}-{}", evt.evt_tx_hash, evt.evt_index))
             .set("evt_tx_hash", &evt.evt_tx_hash)
@@ -363,7 +363,7 @@ fn graph_{{ $ddsContract.Identifier }}_calls_out(calls: &contract::Calls, tables
     // Loop over all the abis calls to create table changes
     {{- range $index, $call := $ddsContract.CallModels }}
     {{- $rust := $call.Rust }}
-    calls.{{ $ddsContract.Identifier }}_{{ $rust.ProtoOutputModuleFieldName }}.iter().for_each(|call| {
+    calls.{{ $ddsContract.IdentifierSnakeCase }}_{{ $rust.ProtoOutputModuleFieldName }}.iter().for_each(|call| {
         tables
             .create_row("{{ $ddsContract.Identifier }}_{{ $rust.TableChangeEntityName }}", format!("{}-{}", call.call_tx_hash, call.call_ordinal))
             .set("call_tx_hash", &call.call_tx_hash)

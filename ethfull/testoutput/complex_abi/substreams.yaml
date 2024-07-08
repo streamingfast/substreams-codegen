@@ -1,0 +1,58 @@
+specVersion: v0.1.0
+package:
+  name: test
+  version: v0.1.0
+
+imports:
+  graph: https://github.com/streamingfast/substreams-sink-subgraph/releases/download/v0.1.0/substreams-sink-subgraph-protodefs-v0.1.0.spkg
+  entity: https://github.com/streamingfast/substreams-entity-change/releases/download/v1.1.0/substreams-entity-change-v1.1.0.spkg
+
+protobuf:
+  files:
+    - contract.proto
+  importPaths:
+    - ./proto
+
+binaries:
+  default:
+    type: wasm/rust-v1
+    file: ./target/wasm32-unknown-unknown/release/substreams.wasm
+
+modules:
+
+  - name: store_test_created
+    kind: store
+    initialBlock: 213919
+    updatePolicy: set
+    valueType: proto:dynamic_datasource
+    inputs:
+      - source: sf.ethereum.type.v2.Block
+
+  - name: map_events
+    kind: map
+    initialBlock: 213919
+    inputs:
+      - source: sf.ethereum.type.v2.Block
+      - store: store_test_created
+    output:
+      type: proto:contract.v1.Events
+
+  - name: map_calls
+    kind: map
+    initialBlock: 213919
+    inputs:
+      - source: sf.ethereum.type.v2.Block
+      - store: store_test_created
+    output:
+      type: proto:contract.v1.Calls
+
+  - name: graph_out
+    kind: map
+    initialBlock: 213919
+    inputs:
+      - map: map_events
+      - map: map_calls
+    output:
+      type: proto:sf.substreams.entity.v1.EntityChanges
+
+network: mainnet
