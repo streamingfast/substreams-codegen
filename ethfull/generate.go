@@ -254,6 +254,7 @@ func (p *Project) Render(outType outputType) (substreamsFiles map[string][]byte,
 			templateFiles["triggers/package.json.gotmpl"] = "package.json"
 			templateFiles["triggers/src/mappings.ts.gotmpl"] = "src/mappings.ts"
 			templateFiles["triggers/buf.gen.yaml"] = "buf.gen.yaml"
+			templateFiles["triggers/README.md"] = "README.md"
 			templateFiles["triggers/run-local.sh.gotmpl"] = "run-local.sh"
 			templateFiles["triggers/dev-environment/config.toml.gotmpl"] = "dev-environment/config.toml"
 			templateFiles["triggers/dev-environment/docker-compose.yml"] = "dev-environment/docker-compose.yml"
