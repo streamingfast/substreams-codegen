@@ -16,8 +16,8 @@ message Calls {
     repeated Bayc_MintApeCall bayc_call_mint_apes = 4;
     repeated Bayc_RenounceOwnershipCall bayc_call_renounce_ownerships = 5;
     repeated Bayc_ReserveApesCall bayc_call_reserve_apes = 6;
-    repeated Bayc_SafeTransferFrom1Call bayc_call_safe_transfer_from_1s = 7;
-    repeated Bayc_SafeTransferFrom2Call bayc_call_safe_transfer_from_2s = 8;
+    repeated Bayc_SafeTransferFrom1call bayc_call_safe_transfer_from_1s = 7;
+    repeated Bayc_SafeTransferFrom2call bayc_call_safe_transfer_from_2s = 8;
     repeated Bayc_SetApprovalForAllCall bayc_call_set_approval_for_alls = 9;
     repeated Bayc_SetBaseUriCall bayc_call_set_base_uris = 10;
     repeated Bayc_SetProvenanceHashCall bayc_call_set_provenance_hashes = 11;
@@ -112,7 +112,7 @@ message Bayc_ReserveApesCall {
     uint64 call_ordinal = 4;
     bool call_success = 5;
 }
-message Bayc_SafeTransferFrom1Call {
+message Bayc_SafeTransferFrom1call {
     string call_tx_hash = 1;
     google.protobuf.Timestamp call_block_time = 2;
     uint64 call_block_number = 3;
@@ -122,7 +122,7 @@ message Bayc_SafeTransferFrom1Call {
     bytes to = 7;
     string token_id = 8;
 }
-message Bayc_SafeTransferFrom2Call {
+message Bayc_SafeTransferFrom2call {
     string call_tx_hash = 1;
     google.protobuf.Timestamp call_block_time = 2;
     uint64 call_block_number = 3;

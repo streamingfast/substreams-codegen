@@ -242,7 +242,7 @@ fn map_bayc_calls(blk: &eth::Block, calls: &mut contract::Calls) {
                 .filter_map(|call| {
                     match abi::bayc_contract::functions::SafeTransferFrom1::decode(call) {
                         Ok(decoded_call) => {
-                            Some(contract::BaycSafeTransferFrom1Call {
+                            Some(contract::BaycSafeTransferFrom1call {
                                 call_tx_hash: Hex(&tx.hash).to_string(),
                                 call_block_time: Some(blk.timestamp().to_owned()),
                                 call_block_number: blk.number,
@@ -266,7 +266,7 @@ fn map_bayc_calls(blk: &eth::Block, calls: &mut contract::Calls) {
                 .filter_map(|call| {
                     match abi::bayc_contract::functions::SafeTransferFrom2::decode(call) {
                         Ok(decoded_call) => {
-                            Some(contract::BaycSafeTransferFrom2Call {
+                            Some(contract::BaycSafeTransferFrom2call {
                                 call_tx_hash: Hex(&tx.hash).to_string(),
                                 call_block_time: Some(blk.timestamp().to_owned()),
                                 call_block_number: blk.number,

@@ -28,16 +28,17 @@ modules:
     inputs:
       - source: sf.ethereum.type.v2.Block
 {{- end}}
+
 {{- if .TrackAnyEvents }}
   - name: map_events
     kind: map
     initialBlock: {{ .MustLowestStartBlock }}
     inputs:
       - source: sf.ethereum.type.v2.Block
-{{- range $ddsContract := .DynamicContracts }}
-      {{- if $ddsContract.TrackEvents -}}
+{{- range $index, $ddsContract := .DynamicContracts }}
+      {{- if $ddsContract.TrackEvents }}
       - store: store_{{ $ddsContract.Identifier }}_created
-      {{- end -}}
+      {{- end }}
 {{- end }}
     output:
       type: proto:contract.v1.Events

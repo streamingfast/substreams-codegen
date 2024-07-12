@@ -48,6 +48,18 @@ Run the following command in the `root` of the repository:
 npm install
 ```
 
+## Generate proto assembly script bindings
+
+```bash
+npm run generate
+```
+
+### Generate subgraph mapping types
+
+```bash
+npm run codegen
+```
+
 # Deploy a subgraph
 
 ## On a local dev environment
