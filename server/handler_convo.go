@@ -220,11 +220,14 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 		if err != nil {
 			evts.logEvent(fmt.Sprintf("ERROR %q AFTER %d seconds", err.Error(), int(time.Since(begin).Seconds())))
 			s.sessionLogger.SaveSession(start.Start.GeneratorId, evts.loggedEvents, lastState)
+			s.logger.Warn("failed to save session", zap.Error(err))
 			return err
 		}
 		evts.logEvent(fmt.Sprintf("COMPLETED IN %d seconds", int(time.Since(begin).Seconds())))
 
-		s.sessionLogger.SaveSession(start.Start.GeneratorId, evts.loggedEvents, lastState)
+		if err := s.sessionLogger.SaveSession(start.Start.GeneratorId, evts.loggedEvents, lastState); err != nil {
+			s.logger.Warn("failed to save session", zap.Error(err))
+		}
 		return io.EOF
 	})
 
