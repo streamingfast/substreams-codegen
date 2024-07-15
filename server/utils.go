@@ -31,14 +31,14 @@ func (s *server) writeError(w http.ResponseWriter, statusCode int, err error) {
 }
 
 type SessionLogger interface {
-	SaveSession(codegen string, events []string) error
+	SaveSession(codegen string, events []string, lastState string) error
 }
 
 type StoreSessionLogger struct {
 	store dstore.Store
 }
 
-func (s StoreSessionLogger) SaveSession(codegen string, events []string) error {
+func (s StoreSessionLogger) SaveSession(codegen string, events []string, lastState string) error {
 	filename := fmt.Sprintf("session-%s-%d.log", codegen, time.Now().Unix())
 
 	var buf bytes.Buffer
@@ -52,6 +52,8 @@ func (s StoreSessionLogger) SaveSession(codegen string, events []string) error {
 				return
 			}
 		}
+		fmt.Fprintln(w, "\nJSON state:")
+		fmt.Fprintln(w, lastState)
 		w.Flush()
 	}()
 	return s.store.WriteObject(context.TODO(), filename, r)
@@ -59,7 +61,8 @@ func (s StoreSessionLogger) SaveSession(codegen string, events []string) error {
 
 type PrintSessionLogger struct{}
 
-func (p PrintSessionLogger) SaveSession(codegen string, events []string) error {
+func (p PrintSessionLogger) SaveSession(codegen string, events []string, lastState string) error {
+	_ = lastState
 	fmt.Println("Session log for codegen", codegen)
 	for _, event := range events {
 		println(event)

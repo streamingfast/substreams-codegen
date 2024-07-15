@@ -176,6 +176,7 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 	)
 
 	var lastMessageIsIncoming bool
+	var lastState string
 	msgWrapFactory.SetupLoop(func(msg loop.Msg) loop.Cmd {
 		asJSON, _ := json.Marshal(msg)
 		asJSON, _ = sjson.DeleteBytes(asJSON, "state")
@@ -188,6 +189,7 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 				lastMessageIsIncoming = false
 			}
 			evts.logEvent(ev)
+			lastState = msg.State
 			sendFunc(msg, nil)
 			return nil
 		case codegen.IncomingMessage:
@@ -217,11 +219,12 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 		err = msgWrapFactory.Run(ctx, initCmd)
 		if err != nil {
 			evts.logEvent(fmt.Sprintf("ERROR %q AFTER %d seconds", err.Error(), int(time.Since(begin).Seconds())))
-			s.sessionLogger.SaveSession(start.Start.GeneratorId, evts.loggedEvents)
+			s.sessionLogger.SaveSession(start.Start.GeneratorId, evts.loggedEvents, lastState)
 			return err
 		}
 		evts.logEvent(fmt.Sprintf("COMPLETED IN %d seconds", int(time.Since(begin).Seconds())))
-		s.sessionLogger.SaveSession(start.Start.GeneratorId, evts.loggedEvents)
+
+		s.sessionLogger.SaveSession(start.Start.GeneratorId, evts.loggedEvents, lastState)
 		return io.EOF
 	})
 
