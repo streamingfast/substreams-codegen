@@ -21,6 +21,17 @@ type IncomingMessage struct {
 	Msg any
 }
 
+func (m *IncomingMessage) Humanize(seconds int) string {
+	if h, ok := m.Msg.(pbconvo.Humanizable); ok {
+		return h.Humanize(seconds)
+	}
+	if m.Msg == nil {
+		return ("---")
+	}
+
+	return fmt.Sprintf("%d | %T %v -- %d", seconds, m.Msg, m.Msg)
+}
+
 type MsgWrapFactory struct {
 	sendFunc   SendFunc
 	inputTypes map[string]reflect.Type

@@ -9,6 +9,7 @@ import (
 	"connectrpc.com/connect"
 	dgrpcserver "github.com/streamingfast/dgrpc/server"
 	connectweb "github.com/streamingfast/dgrpc/server/connectrpc"
+	"github.com/streamingfast/dstore"
 	"github.com/streamingfast/shutter"
 	"github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1/pbconvoconnect"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -22,20 +23,28 @@ type server struct {
 	httpListenAddr     string
 	connectWebServer   *connectweb.ConnectWebServer
 	corsHostRegexAllow *regexp.Regexp
+	sessionLogger      SessionLogger
 	logger             *zap.Logger
 }
 
 func New(
 	httpListenAddr string,
 	corsHostRegexAllow *regexp.Regexp,
+	sessionStore dstore.Store,
 	logger *zap.Logger,
 ) *server {
-	return &server{
+	out := &server{
 		Shutter:            shutter.New(),
 		httpListenAddr:     httpListenAddr,
 		corsHostRegexAllow: corsHostRegexAllow,
 		logger:             logger,
 	}
+	if sessionStore != nil {
+		out.sessionLogger = StoreSessionLogger{store: sessionStore}
+	} else {
+		out.sessionLogger = PrintSessionLogger{}
+	}
+	return out
 }
 
 func (s *server) Run() {

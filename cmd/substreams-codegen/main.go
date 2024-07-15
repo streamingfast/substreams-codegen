@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/pflag"
 	. "github.com/streamingfast/cli"
 	"github.com/streamingfast/cli/sflags"
+	"github.com/streamingfast/dstore"
 	"github.com/streamingfast/logging"
 	"github.com/streamingfast/substreams-codegen/server"
 	"go.uber.org/zap"
@@ -42,6 +43,7 @@ func main() {
 				flags.String("metrics-listen-addr", "localhost:9102", "[OPERATOR] If non-empty, the process will listen on this address for Prometheus metrics request(s)")
 				flags.String("pprof-listen-addr", "localhost:6060", "[OPERATOR] If non-empty, the process will listen on this address for pprof analysis (see https://golang.org/pkg/net/http/pprof/)")
 				flags.String("log-format", "text", "Format for logging to stdout. Either 'text' or 'stackdriver'. When 'text', if the standard output is detected to be interactive, colored text is output, otherwise non-colored text.")
+				flags.String("session-store-url", "", "Optional store to save session information (ex: file://./sessions or gs://bucket/sessions)")
 				flags.String("http-listen-addr", ":9000", "http listen address")
 				flags.String("cors-host-regex-allow", "^localhost", "Regex to allow CORS origin requests from, defaults to localhost only")
 			},
@@ -62,10 +64,17 @@ func apiE(cmd *cobra.Command, args []string) error {
 
 	httpListenAddr := sflags.MustGetString(cmd, "http-listen-addr")
 	corsHostRegexAllow := sflags.MustGetString(cmd, "cors-host-regex-allow")
+	sessionStoreURL := sflags.MustGetString(cmd, "session-store-url")
+
+	sessionStore, err := dstore.NewStore(sessionStoreURL, "", "", false)
+	if err != nil {
+		return fmt.Errorf("failed to create session store: %w", err)
+	}
 
 	zlog.Info("starting substreams-codegen api",
 		zap.String("http_listen_addr", httpListenAddr),
 		zap.String("cors_host_regex_allow", corsHostRegexAllow),
+		zap.String("session_store_url", sessionStoreURL),
 	)
 
 	var cors *regexp.Regexp
@@ -80,6 +89,7 @@ func apiE(cmd *cobra.Command, args []string) error {
 	server := server.New(
 		httpListenAddr,
 		cors,
+		sessionStore,
 		zlog)
 
 	app.SuperviseAndStart(server)

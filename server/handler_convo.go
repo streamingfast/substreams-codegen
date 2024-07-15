@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"reflect"
 	"sync"
+	"time"
 
 	connect "connectrpc.com/connect"
 	codegen "github.com/streamingfast/substreams-codegen"
@@ -36,6 +38,17 @@ func (s *server) Discover(ctx context.Context, req *connect.Request[pbconvo.Disc
 	return connect.NewResponse(&pbconvo.DiscoveryResponse{
 		Generators: generators,
 	}), nil
+}
+
+type eventLogger struct {
+	loggedEvents []string
+}
+
+func (e *eventLogger) logEvent(event string) {
+	if os.Getenv("SUBSTREAMS_DEV_DEBUG_EVENTS") == "true" {
+		fmt.Println(event)
+	}
+	e.loggedEvents = append(e.loggedEvents, event)
 }
 
 func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconvo.UserInput, pbconvo.SystemOutput]) (err error) {
@@ -73,6 +86,11 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 	if convo == nil {
 		return fmt.Errorf("no conversation handler found for topic ID %q", start.Start.GeneratorId)
 	}
+
+	evts := &eventLogger{}
+	begin := time.Now()
+	s.logger.Info("launching thread")
+	evts.logEvent(fmt.Sprintf("   0┃ [Start, hydrate: %t] %s", start.Start.Hydrate != nil, start.Start.GeneratorId))
 
 	msgWrapFactory := codegen.NewMsgWrapFactory(sendFunc)
 	conversation := convo.Factory(msgWrapFactory)
@@ -157,15 +175,24 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 		readNextCmd,
 	)
 
+	var lastMessageIsIncoming bool
 	msgWrapFactory.SetupLoop(func(msg loop.Msg) loop.Cmd {
 		asJSON, _ := json.Marshal(msg)
 		asJSON, _ = sjson.DeleteBytes(asJSON, "state")
 		s.logger.Debug("main Loop", zap.Any("loop_msg_type", msg), zap.String("content", string(asJSON)))
 		switch msg := msg.(type) {
 		case *pbconvo.SystemOutput:
+			ev := msg.Humanize(int(time.Since(begin).Seconds()))
+			if lastMessageIsIncoming {
+				ev = "\n" + ev
+				lastMessageIsIncoming = false
+			}
+			evts.logEvent(ev)
 			sendFunc(msg, nil)
 			return nil
 		case codegen.IncomingMessage:
+			lastMessageIsIncoming = true
+			evts.logEvent("\n" + msg.Humanize(int(time.Since(begin).Seconds())))
 			return loop.Batch(func() loop.Msg { return msg.Msg }, readNextCmd)
 		}
 
@@ -176,7 +203,6 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 
 	g, ctx := errgroup.WithContext(ctx)
 
-	s.logger.Info("launching thread")
 	g.Go(func() error {
 		defer func() error {
 			if r := recover(); r != nil {
@@ -190,8 +216,12 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 
 		err = msgWrapFactory.Run(ctx, initCmd)
 		if err != nil {
+			evts.logEvent(fmt.Sprintf("ERROR %q AFTER %d seconds", err.Error(), int(time.Since(begin).Seconds())))
+			s.sessionLogger.SaveSession(start.Start.GeneratorId, evts.loggedEvents)
 			return err
 		}
+		evts.logEvent(fmt.Sprintf("COMPLETED IN %d seconds", int(time.Since(begin).Seconds())))
+		s.sessionLogger.SaveSession(start.Start.GeneratorId, evts.loggedEvents)
 		return io.EOF
 	})
 
