@@ -673,10 +673,6 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 			return QuitInvalidContext
 		}
 
-		if msg.Err != nil {
-			return cmd(AskContractInitialBlock{})
-		}
-
 		return c.action(InputContractInitialBlock{}).TextInput("Please enter the contract initial block number", "Submit").
 			DefaultValue(fmt.Sprintf("%d", msg.InitialBlock)).
 			Validation(`^\d+$`, "Please enter a valid block number").

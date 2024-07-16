@@ -14,6 +14,7 @@ import (
 
 	"github.com/streamingfast/dhttp"
 	"github.com/streamingfast/eth-go"
+	"github.com/tidwall/gjson"
 )
 
 var etherscanAPIKey = os.Getenv("SUBDEV_ETHERSCAN_API_KEY")
@@ -29,6 +30,13 @@ func getContractABIFollowingProxy(ctx context.Context, contractAddress string, c
 		return cachedABI, nil
 	}
 
+	if chain.ApiEndpointDirect {
+		abi, abiContent, err := getContractABIDirect(ctx, contractAddress, chain.ApiEndpoint)
+		if err != nil {
+			return nil, err
+		}
+		return &ABI{abi, abiContent}, nil
+	}
 	abi, abiContent, wait, err := getContractABI(ctx, contractAddress, chain.ApiEndpoint)
 	if err != nil {
 		return nil, err
@@ -78,6 +86,39 @@ func getContractABIFollowingProxy(ctx context.Context, contractAddress string, c
 	}
 
 	return &ABI{abi, abiContent}, nil
+}
+
+func getContractABIDirect(ctx context.Context, address string, endpoint string) (*eth.ABI, string, error) {
+	url := fmt.Sprintf("%s/%s", endpoint, address)
+	fmt.Println("getting from url", url)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, "", fmt.Errorf("new request: %w", err)
+	}
+
+	res, err := httpClient.Do(req)
+	if err != nil {
+		return nil, "", fmt.Errorf("getting contract abi: %w", err)
+	}
+	defer res.Body.Close()
+
+	type Response struct {
+		Abi []byte `json:"abi"`
+	}
+
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	abiContent := gjson.GetBytes(data, "abi").String()
+
+	ethABI, err := eth.ParseABIFromBytes([]byte(abiContent))
+	if err != nil {
+		return nil, "", fmt.Errorf("parsing abi %q: %w", abiContent, err)
+	}
+	return ethABI, abiContent, err
+
 }
 
 func getContractABI(ctx context.Context, address string, endpoint string) (*eth.ABI, string, *time.Timer, error) {
@@ -197,12 +238,12 @@ func getContractInitialBlock(ctx context.Context, chain *ChainConfig, contractAd
 
 	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/api?module=account&action=txlist&address=%s&page=1&offset=1&sort=asc&apikey=%s", chain.ApiEndpoint, contractAddress, etherscanAPIKey), nil)
 	if err != nil {
-		return 0, fmt.Errorf("new request: %w", err)
+		return chain.FirstStreamableBlock, fmt.Errorf("new request: %w", err)
 	}
 
 	res, err := httpClient.Do(req)
 	if err != nil {
-		return 0, fmt.Errorf("failed request to etherscan: %w", err)
+		return chain.FirstStreamableBlock, fmt.Errorf("failed request to etherscan: %w", err)
 	}
 	defer res.Body.Close()
 
@@ -216,16 +257,16 @@ func getContractInitialBlock(ctx context.Context, chain *ChainConfig, contractAd
 
 	var response Response
 	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
-		return 0, fmt.Errorf("unmarshaling: %w", err)
+		return chain.FirstStreamableBlock, fmt.Errorf("unmarshaling: %w", err)
 	}
 
 	if len(response.Result) == 0 {
-		return 0, fmt.Errorf("empty result from response %v", response)
+		return chain.FirstStreamableBlock, fmt.Errorf("empty result from response %v", response)
 	}
 
 	blockNum, err := strconv.ParseUint(response.Result[0].BlockNumber, 10, 64)
 	if err != nil {
-		return 0, fmt.Errorf("parsing block number: %w", err)
+		return chain.FirstStreamableBlock, fmt.Errorf("parsing block number: %w", err)
 	}
 
 	return blockNum, nil

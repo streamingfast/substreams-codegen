@@ -91,7 +91,7 @@ func TestConvoUpdate(t *testing.T) {
 	assert.Equal(t, FetchContractInitialBlock{}, next())
 
 	next = conv.Update(ReturnFetchContractInitialBlock{Err: fmt.Errorf("failed")})
-	assert.Equal(t, AskContractInitialBlock{}, next())
+	assert.Contains(t, next().(*pbconvo.SystemOutput).Entry.(*pbconvo.SystemOutput_TextInput_).TextInput.String(), "Please enter the contract initial block number")
 
 	next = conv.Update(InputContractInitialBlock{UserInput_TextInput: pbconvo.UserInput_TextInput{Value: "123"}})
 	assert.Equal(t, AskContractName{}, next())

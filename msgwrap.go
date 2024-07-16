@@ -29,7 +29,7 @@ func (m *IncomingMessage) Humanize(seconds int) string {
 		return ("---")
 	}
 
-	return fmt.Sprintf("%d | %T %v -- %d", seconds, m.Msg, m.Msg)
+	return fmt.Sprintf("%d | %T %v", seconds, m.Msg, m.Msg)
 }
 
 type MsgWrapFactory struct {

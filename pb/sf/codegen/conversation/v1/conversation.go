@@ -64,7 +64,7 @@ func (i UserInput_Confirmation) Humanize(seconds int) string {
 
 func (i UserInput_DownloadedFiles) Humanize(seconds int) string {
 	time := fmt.Sprintf("%4d ", seconds)
-	return fmt.Sprintf("[Downloaded files] %t", time)
+	return fmt.Sprintf("[Downloaded files] %s", time)
 }
 
 func (i UserInput_File) Humanize(seconds int) string {
