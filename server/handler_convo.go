@@ -23,6 +23,7 @@ import (
 
 	_ "github.com/streamingfast/substreams-codegen/ethfull"
 	_ "github.com/streamingfast/substreams-codegen/injective-events"
+	_ "github.com/streamingfast/substreams-codegen/starknet"
 )
 
 func (s *server) Discover(ctx context.Context, req *connect.Request[pbconvo.DiscoveryRequest]) (*connect.Response[pbconvo.DiscoveryResponse], error) {

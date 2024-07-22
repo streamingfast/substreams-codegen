@@ -1,0 +1,4 @@
+dev-environment/data/
+node_modules/
+substreams/target/*
+generated-buf-build.binpb

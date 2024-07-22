@@ -6,3 +6,4 @@
 .envrc
 /sink-data
 .idea
+*.log

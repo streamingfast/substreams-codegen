@@ -26,6 +26,7 @@ require (
 	github.com/streamingfast/logging v0.0.0-20230608130331-f22c91403091
 	github.com/streamingfast/shutter v1.5.0
 	github.com/stretchr/testify v1.8.4
+	github.com/tidwall/gjson v1.14.1
 	github.com/tidwall/sjson v1.0.4
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.47.0
 	go.opentelemetry.io/otel v1.23.1
@@ -118,7 +119,6 @@ require (
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/teris-io/shortid v0.0.0-20171029131806-771a37caa5cf // indirect
 	github.com/thedevsaddam/govalidator v1.9.6 // indirect
-	github.com/tidwall/gjson v1.14.1 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	go.opencensus.io v0.24.0 // indirect
