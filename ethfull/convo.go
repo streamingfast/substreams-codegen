@@ -1087,7 +1087,6 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 						AddFile("logs.txt", []byte(msg.Logs), `text/x-logs`, "").
 						Cmd(),
 				)
-					)
 			}
 
 			return loop.Seq(
