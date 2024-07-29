@@ -1078,6 +1078,18 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 
 	case codegen.ReturnBuild:
 		if msg.Err != nil {
+			if c.state.outputType == outputTypeSubstreams {
+				return loop.Seq(
+					c.msg().Messagef("Remote build failed with error: %q. See full logs in `{project-path}/logs.txt`", msg.Err).Cmd(),
+					c.msg().Messagef("You will need to pack your substreams using `substreams pack` command").Cmd(),
+					c.action(codegen.PackageDownloaded{}).
+						DownloadFiles().
+						AddFile("logs.txt", []byte(msg.Logs), `text/x-logs`, "").
+						Cmd(),
+				)
+					)
+			}
+
 			return loop.Seq(
 				c.msg().Messagef("Remote build failed with error: %q. See full logs in `{project-path}/logs.txt`", msg.Err).Cmd(),
 				c.msg().Messagef("You will need to unzip the 'substreams-src.zip' file and run `make package` to try and generate the .spkg file.").Cmd(),
@@ -1098,6 +1110,14 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 					Cmd(),
 			)
 		}
+
+		if c.state.outputType == outputTypeSubstreams {
+			return loop.Seq(
+				c.msg().Messagef("Substreams Package was not compiled: You will need to pack your substreams using `substreams pack` command").Cmd(),
+				loop.Quit(nil),
+			)
+		}
+
 		return loop.Seq(
 			c.msg().Messagef("Substreams Package was not compiled: You will need to unzip the 'substreams-src.zip' file and run `make package` to generate the .spkg file.").Cmd(),
 			loop.Quit(nil),
