@@ -83,14 +83,18 @@ func (p *Project) generate(outType outputType) (substreamsZip, projectZip []byte
 		return nil, nil, fmt.Errorf("rendering template: %w", err)
 	}
 
-	substreamsZip, err = codegen.ZipFiles(srcFiles)
-	if err != nil {
-		return nil, nil, fmt.Errorf("zipping: %w", err)
+	if len(srcFiles) != 0 {
+		substreamsZip, err = codegen.ZipFiles(srcFiles)
+		if err != nil {
+			return nil, nil, fmt.Errorf("zipping: %w", err)
+		}
 	}
 
-	projectZip, err = codegen.ZipFiles(projFiles)
-	if err != nil {
-		return nil, nil, fmt.Errorf("zipping: %w", err)
+	if len(projFiles) != 0 {
+		projectZip, err = codegen.ZipFiles(projFiles)
+		if err != nil {
+			return nil, nil, fmt.Errorf("zipping: %w", err)
+		}
 	}
 
 	return
@@ -212,6 +216,18 @@ func (p *Project) Render(outType outputType) (substreamsFiles map[string][]byte,
 	}
 
 	switch outType {
+	case outputTypeSubstreams:
+		templateFiles = map[string]string{
+			"proto/contract.proto.gotmpl": "proto/contract.proto",
+			"src/abi/mod.rs.gotmpl":       "src/abi/mod.rs",
+			"src/pb/mod.rs.gotmpl":        "src/pb/mod.rs",
+			"src/lib.rs.gotmpl":           "src/lib.rs",
+			"build.rs.gotmpl":             "build.rs",
+			"Cargo.toml.gotmpl":           "Cargo.toml",
+			"rust-toolchain.toml":         "rust-toolchain.toml",
+			".gitignore":                  ".gitignore",
+			"substreams.yaml.gotmpl":      "substreams.yaml",
+		}
 	case outputTypeSQL:
 		templateFiles["sql/substreams-Makefile.gotmpl"] = "substreams/Makefile"
 		templateFiles["sql/Makefile.gotmpl"] = "Makefile"
@@ -262,6 +278,7 @@ func (p *Project) Render(outType outputType) (substreamsFiles map[string][]byte,
 		default:
 			return nil, nil, fmt.Errorf("unknown subgraph output flavor %q", p.SubgraphOutputFlavor)
 		}
+
 	default:
 		return nil, nil, fmt.Errorf("invalid output type %q", p.outputType)
 	}
@@ -283,6 +300,13 @@ func (p *Project) Render(outType outputType) (substreamsFiles map[string][]byte,
 			}
 		}
 
+		if p.outputType == outputTypeSubstreams {
+			if strings.HasPrefix(finalFileName, "substreams/") {
+				projectFiles[finalFileName] = content
+				continue
+			}
+		}
+
 		if strings.HasPrefix(finalFileName, "substreams/") {
 			substreamsFiles[finalFileName] = content
 		} else if strings.HasPrefix(finalFileName, "BOTH/") {
@@ -295,10 +319,18 @@ func (p *Project) Render(outType outputType) (substreamsFiles map[string][]byte,
 	}
 
 	for _, contract := range p.Contracts {
+		if p.outputType == outputTypeSubstreams {
+			projectFiles[fmt.Sprintf("abi/%s_contract.abi.json", contract.Name)] = []byte(contract.abi.raw)
+			continue
+		}
 		substreamsFiles[fmt.Sprintf("substreams/abi/%s_contract.abi.json", contract.Name)] = []byte(contract.abi.raw)
 	}
 
 	for _, dds := range p.DynamicContracts {
+		if p.outputType == outputTypeSubstreams {
+			projectFiles[fmt.Sprintf("abi/%s_contract.abi.json", dds.Name)] = []byte(dds.abi.raw)
+			continue
+		}
 		substreamsFiles[fmt.Sprintf("substreams/abi/%s_contract.abi.json", dds.Name)] = []byte(dds.abi.raw)
 	}
 

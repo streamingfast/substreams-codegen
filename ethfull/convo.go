@@ -22,6 +22,7 @@ type outputType string
 
 const outputTypeSQL = "sql"
 const outputTypeSubgraph = "subgraph"
+const outputTypeSubstreams = "substreams"
 
 type Convo struct {
 	factory    *codegen.MsgWrapFactory
@@ -36,6 +37,14 @@ func init() {
 	for _, conf := range ChainConfigs {
 		supportedChains = append(supportedChains, conf.DisplayName)
 	}
+	codegen.RegisterConversation(
+		"ethereum-events-calls",
+		"Decode Ethereum events/calls and generate a fully functional substreams",
+		`Given a list of contracts and their ABIs, this will build an Ethereum substreams that decodes events and/or calls.
+Supported networks: `+strings.Join(supportedChains, ", "),
+		codegen.ConversationFactory(NewOnlySubstreams),
+		80,
+	)
 	codegen.RegisterConversation(
 		"ethereum-subgraph",
 		"Decode Ethereum events/calls and and use them as triggers to feed your Subgraph",
@@ -80,6 +89,16 @@ func NewWithSubgraph(factory *codegen.MsgWrapFactory) codegen.Conversation {
 	return h
 }
 
+func NewOnlySubstreams(factory *codegen.MsgWrapFactory) codegen.Conversation {
+	h := &Convo{
+		state:            &Project{currentContractIdx: -1},
+		factory:          factory,
+		outputType:       outputTypeSubstreams,
+		remoteBuildState: &codegen.RemoteBuildState{},
+	}
+	return h
+}
+
 func (h *Convo) msg() *codegen.MsgWrap { return h.factory.NewMsg(h.state) }
 func (h *Convo) action(element any) *codegen.MsgWrap {
 	return h.factory.NewInput(element, h.state)
@@ -114,6 +133,7 @@ func (c *Convo) validate() error {
 		if c.state.SqlOutputFlavor != "" {
 			return fmt.Errorf("cannot have SqlOutputFlavor set on this code generator")
 		}
+	case outputTypeSubstreams:
 	default:
 		return fmt.Errorf("invalid output type %q (should not happen, this is a bug)", c.outputType)
 	}
@@ -973,7 +993,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 				).AddFile(
 				"substreams_src.zip",
 				msg.SubstreamsSourceZip,
-				"application/zip",
+				"application/x-zip+extract",
 				"\nGenerated source code ready to compile.\nThis module is a Rust-based module, and you can compile it with \"make all\" in the root directory.\n",
 			).Cmd())
 

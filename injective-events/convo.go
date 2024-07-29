@@ -411,7 +411,7 @@ func (c *InjectiveConvo) Update(msg loop.Msg) loop.Cmd {
 		cmds = append(cmds, c.msg().Message("Code generation complete!").Cmd())
 		cmds = append(cmds, c.action(codegen.RunBuild{}).DownloadFiles().
 			AddFile("project.zip", msg.ProjectZip, "application/x-zip+extract", "\nProject files, schemas, dev environment...").
-			AddFile("substreams_src.zip", msg.SubstreamsSourceZip, "application/zip", "").
+			AddFile("substreams_src.zip", msg.SubstreamsSourceZip, "application/x-zip+extract", "").
 			Cmd())
 
 		c.state.generatedCodeCompleted = true
