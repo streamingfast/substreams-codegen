@@ -140,7 +140,7 @@ func TestConvoUpdate(t *testing.T) {
 	next = conv.Update(codegen.InputSQLOutputFlavor{UserInput_Selection: pbconvo.UserInput_Selection{Value: "sql"}})
 	assert.Equal(t, codegen.RunGenerate{}, next())
 
-	next = conv.Update(codegen.ReturnGenerate{ProjectZip: nil})
+	next = conv.Update(codegen.ReturnGenerate{ProjectFiles: nil})
 	seq = next().(loop.SeqMsg)
 
 	//cmds := next()
