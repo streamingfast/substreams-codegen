@@ -33,3 +33,15 @@ func ListConversationHandlers() []*ConversationHandler {
 	})
 	return handlers
 }
+
+var FileDescriptions = map[string]string{
+	"contract.proto":      "File containing the contract proto definition",
+	"build.rs":            "File containing the build script for the project",
+	"Cargo.toml":          "Cargo manifest file, a configuration file which defines the project",
+	"substreams.yaml":     "Substreams manifest, a configuration file which defines the different modules",
+	"rust-toolchain.toml": "File containing the rust toolchain version",
+	"lib.rs":              "Substreams modules definition code in Rust",
+	".gitignore":          "File containing the gitignore rules",
+	"mod.rs":              "Rust module definitions file",
+	"contract.abi.json":   "File containing the contract ABI definition",
+}

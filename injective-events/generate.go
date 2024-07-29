@@ -119,23 +119,13 @@ func (p *Project) Render(outType outputType) (substreamsFiles map[string][]byte,
 	return
 }
 
-func (p *Project) generate(outType outputType) ([]byte, []byte, error) {
+func (p *Project) generate(outType outputType) (map[string][]byte, map[string][]byte, error) {
 	srcFiles, projectFiles, err := p.Render(outType)
 	if err != nil {
 		return nil, nil, fmt.Errorf("rendering template: %w", err)
 	}
 
-	substreamsZip, err := codegen.ZipFiles(srcFiles)
-	if err != nil {
-		return nil, nil, fmt.Errorf("zipping: %w", err)
-	}
-
-	projectZip, err := codegen.ZipFiles(projectFiles)
-	if err != nil {
-		return nil, nil, fmt.Errorf("zipping: %w", err)
-	}
-
-	return projectZip, substreamsZip, nil
+	return projectFiles, srcFiles, nil
 }
 
 func (p *Project) build(remoteBuildContentChan chan<- *codegen.RemoteBuildState) {
@@ -173,10 +163,17 @@ func (p *Project) build(remoteBuildContentChan chan<- *codegen.RemoteBuildState)
 		}
 	}()
 
+	projectZip, err := codegen.ZipFiles(p.projectFiles)
+	if err != nil {
+		remoteBuildContentChan <- &codegen.RemoteBuildState{
+			Error: err.Error(),
+		}
+	}
+
 	client := pbbuild.NewBuildServiceClient(conn)
 	res, err := client.Build(context.Background(),
 		&pbbuild.BuildRequest{
-			SourceCode:     p.sourceZip,
+			SourceCode:     projectZip,
 			CollectPattern: "*.spkg",
 			Subfolder:      "substreams",
 		},
@@ -229,13 +226,13 @@ func cmdGenerate(p *Project, outType outputType) loop.Cmd {
 	p.buildStarted = time.Now()
 
 	return func() loop.Msg {
-		projectZip, substreamsZip, err := p.generate(outType)
+		projectFiles, sourceFiles, err := p.generate(outType)
 		if err != nil {
 			return codegen.ReturnGenerate{Err: err}
 		}
 		return codegen.ReturnGenerate{
-			ProjectZip:          projectZip,
-			SubstreamsSourceZip: substreamsZip,
+			ProjectFiles: projectFiles,
+			SourceFiles:  sourceFiles,
 		}
 	}
 }

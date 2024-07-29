@@ -184,18 +184,31 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			)
 		}
 
-		c.state.projectZip = msg.ProjectZip
-		c.state.sourceZip = msg.SubstreamsSourceZip
-
-		var cmds []loop.Cmd
-		cmds = append(cmds, c.msg().Message("Code generation complete!").Cmd())
-		cmds = append(cmds, c.action(codegen.RunBuild{}).DownloadFiles().
-			AddFile("project.zip", msg.ProjectZip, "application/x-zip+extract", "\nProject files, schemas, dev environment...").
-			AddFile("substreams_src.zip", msg.SubstreamsSourceZip, "application/zip", "").
-			Cmd())
-
+		c.state.projectFiles = msg.ProjectFiles
+		c.state.sourceFiles = msg.SourceFiles
 		c.state.generatedCodeCompleted = true
-		return loop.Seq(cmds...)
+
+		downloadCmd := c.action(codegen.InputSourceDownloaded{}).DownloadFiles()
+
+		for fileName, fileContent := range msg.SourceFiles {
+			fileDescription := ""
+			if _, ok := codegen.FileDescriptions[fileName]; ok {
+				fileDescription = codegen.FileDescriptions[fileName]
+			}
+
+			downloadCmd.AddFile(fileName, fileContent, "text/plain", fileDescription)
+		}
+
+		for fileName, fileContent := range msg.ProjectFiles {
+			fileDescription := ""
+			if _, ok := codegen.FileDescriptions[fileName]; ok {
+				fileDescription = codegen.FileDescriptions[fileName]
+			}
+
+			downloadCmd.AddFile(fileName, fileContent, "text/plain", fileDescription)
+		}
+
+		return loop.Seq(c.msg().Messagef("Code generation complete!").Cmd(), downloadCmd.Cmd())
 
 	case codegen.RunBuild:
 		return cmdBuild(c.state)

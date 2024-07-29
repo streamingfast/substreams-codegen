@@ -978,24 +978,31 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 			)
 		}
 
-		c.state.sourceZip = msg.SubstreamsSourceZip
-		c.state.projectZip = msg.ProjectZip
+		c.state.sourceFiles = msg.SourceFiles
+		c.state.projectFiles = msg.ProjectFiles
 		c.state.generatedCodeCompleted = true
 
-		return loop.Seq(c.msg().Messagef("Code generation complete!").Cmd(),
-			c.action(codegen.InputSourceDownloaded{}).
-				DownloadFiles().
-				AddFile(
-					"project.zip",
-					msg.ProjectZip,
-					"application/x-zip+extract",
-					"\nProject files, schemas, dev environment....\n",
-				).AddFile(
-				"substreams_src.zip",
-				msg.SubstreamsSourceZip,
-				"application/x-zip+extract",
-				"\nGenerated source code ready to compile.\nThis module is a Rust-based module, and you can compile it with \"make all\" in the root directory.\n",
-			).Cmd())
+		downloadCmd := c.action(codegen.InputSourceDownloaded{}).DownloadFiles()
+
+		for fileName, fileContent := range msg.SourceFiles {
+			fileDescription := ""
+			if _, ok := codegen.FileDescriptions[fileName]; ok {
+				fileDescription = codegen.FileDescriptions[fileName]
+			}
+
+			downloadCmd.AddFile(fileName, fileContent, "text/plain", fileDescription)
+		}
+
+		for fileName, fileContent := range msg.ProjectFiles {
+			fileDescription := ""
+			if _, ok := codegen.FileDescriptions[fileName]; ok {
+				fileDescription = codegen.FileDescriptions[fileName]
+			}
+
+			downloadCmd.AddFile(fileName, fileContent, "text/plain", fileDescription)
+		}
+
+		return loop.Seq(c.msg().Messagef("Code generation complete!").Cmd(), downloadCmd.Cmd())
 
 	case codegen.InputSourceDownloaded:
 		return c.NextStep()

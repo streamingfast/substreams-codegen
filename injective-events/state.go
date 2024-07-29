@@ -31,8 +31,8 @@ type Project struct {
 
 	generatedCodeCompleted bool
 	compilingBuild         bool
-	projectZip             []byte
-	sourceZip              []byte
+	projectFiles           map[string][]byte
+	sourceFiles            map[string][]byte
 
 	buildStarted time.Time
 

@@ -24,13 +24,13 @@ var templatesFS embed.FS
 
 func cmdGenerate(p *Project, outType outputType) loop.Cmd {
 	return func() loop.Msg {
-		substreamsZip, projectZip, err := p.generate(outType)
+		srcFiles, projFiles, err := p.generate(outType)
 		if err != nil {
 			return codegen.ReturnGenerate{Err: err}
 		}
 		return codegen.ReturnGenerate{
-			SubstreamsSourceZip: substreamsZip,
-			ProjectZip:          projectZip,
+			SourceFiles:  srcFiles,
+			ProjectFiles: projFiles,
 		}
 	}
 }
@@ -69,7 +69,7 @@ func cmdBuildCompleted(content *codegen.RemoteBuildState) loop.Cmd {
 	}
 }
 
-func (p *Project) generate(outType outputType) (substreamsZip, projectZip []byte, err error) {
+func (p *Project) generate(outType outputType) (srcFiles, projFiles map[string][]byte, err error) {
 	// TODO: before doing any generation, we'll want to validate
 	// all data points that are going into source code.
 	// We don't want some weird things getting into `build.rs`
@@ -78,23 +78,9 @@ func (p *Project) generate(outType outputType) (substreamsZip, projectZip []byte
 	// TODO: add some checking to make sure `ParentContractName` of DynamicContract
 	// do match a Contract that exists here.
 
-	srcFiles, projFiles, err := p.Render(outType)
+	srcFiles, projFiles, err = p.Render(outType)
 	if err != nil {
 		return nil, nil, fmt.Errorf("rendering template: %w", err)
-	}
-
-	if len(srcFiles) != 0 {
-		substreamsZip, err = codegen.ZipFiles(srcFiles)
-		if err != nil {
-			return nil, nil, fmt.Errorf("zipping: %w", err)
-		}
-	}
-
-	if len(projFiles) != 0 {
-		projectZip, err = codegen.ZipFiles(projFiles)
-		if err != nil {
-			return nil, nil, fmt.Errorf("zipping: %w", err)
-		}
 	}
 
 	return
@@ -135,10 +121,17 @@ func (p *Project) build(remoteBuildContentChan chan<- *codegen.RemoteBuildState)
 		}
 	}()
 
+	projectZip, err := codegen.ZipFiles(p.projectFiles)
+	if err != nil {
+		remoteBuildContentChan <- &codegen.RemoteBuildState{
+			Error: err.Error(),
+		}
+	}
+
 	client := pbbuild.NewBuildServiceClient(conn)
 	res, err := client.Build(context.Background(),
 		&pbbuild.BuildRequest{
-			SourceCode:     p.sourceZip,
+			SourceCode:     projectZip,
 			CollectPattern: "*.spkg",
 			Subfolder:      "substreams",
 		},

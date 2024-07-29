@@ -54,9 +54,9 @@ type InputSubgraphOutputFlavor struct{ pbconvo.UserInput_Selection }
 type RunGenerate struct{}
 
 type ReturnGenerate struct {
-	Err                 error
-	SubstreamsSourceZip []byte
-	ProjectZip          []byte
+	Err          error
+	SourceFiles  map[string][]byte
+	ProjectFiles map[string][]byte
 }
 
 type RunBuild struct {
