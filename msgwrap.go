@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"path/filepath"
 	"reflect"
 
 	"github.com/streamingfast/substreams-codegen/loop"
@@ -127,12 +126,11 @@ func (w *MsgWrap) DownloadFiles() *MsgWrap {
 	return w
 }
 
-func (w *MsgWrap) AddFile(localFilename string, cnt []byte, fileType string, description string) *MsgWrap {
+func (w *MsgWrap) AddFile(filename string, cnt []byte, fileType string, description string) *MsgWrap {
 	switch entry := w.Msg.Entry.(type) {
 	case *pbconvo.SystemOutput_DownloadFiles_:
 		input := entry.DownloadFiles
 
-		filename := filepath.Base(localFilename)
 		input.Files = append(input.Files, &pbconvo.SystemOutput_DownloadFile{
 			Filename:    filename,
 			Content:     cnt,

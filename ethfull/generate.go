@@ -295,10 +295,8 @@ func (p *Project) Render(outType outputType) (substreamsFiles map[string][]byte,
 		}
 
 		if p.outputType == outputTypeSubstreams {
-			if strings.HasPrefix(finalFileName, "substreams/") {
-				projectFiles[finalFileName] = content
-				continue
-			}
+			projectFiles[finalFileName] = content
+			continue
 		}
 
 		if strings.HasPrefix(finalFileName, "substreams/") {
