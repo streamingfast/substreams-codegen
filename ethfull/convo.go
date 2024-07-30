@@ -359,7 +359,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return loop.Seq(
 			c.msg().Messagef("We're tackling the %s contract.", humanize.Ordinal(c.state.currentContractIdx+1)).Cmd(),
 			c.action(InputContractAddress{}).TextInput("Please enter the contract address", "Submit").
-				Description("Format it with 0x prefix and make sure it's a valid Ethereum address").
+				Description("Format it with 0x prefix and make sure it's a valid Ethereum address.\nFor example, the Uniswap v3 factory address: 0x1f98431c8ad98523631ae4a59f267346ea31f984").
 				Validation("^0x[a-fA-F0-9]{40}$", "Please enter a valid Ethereum address").Cmd(),
 		)
 
@@ -369,7 +369,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			return QuitInvalidContext
 		}
 		return c.action(InputDynamicContractAddress{}).TextInput(fmt.Sprintf("Please enter an example contract created by the %q factory", factory.Name), "Submit").
-			Description("Format it with 0x prefix and make sure it's a valid Ethereum address").
+			Description("Format it with 0x prefix and make sure it's a valid Ethereum address.\nFor example, the USDC/ETH pool at: 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640").
 			Validation("^0x[a-fA-F0-9]{40}$", "Please enter a valid Ethereum address").Cmd()
 
 	case InputDynamicContractAddress:
