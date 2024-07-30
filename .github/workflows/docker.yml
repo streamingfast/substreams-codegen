@@ -7,6 +7,7 @@ on:
     branches:
       - develop
       - feature/*
+      - codegen-cmd
 
 env:
   REGISTRY: ghcr.io
