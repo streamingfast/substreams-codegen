@@ -389,7 +389,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			return QuitInvalidContext
 		}
 		return c.action(InputDynamicContractAddress{}).TextInput(fmt.Sprintf("Please enter an example contract created by the %q factory", factory.Name), "Submit").
-			Description("Format it with 0x prefix and make sure it's a valid Ethereum address.\nFor example, the USDC/ETH pool at: 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640").
+			Description("Format it with 0x prefix and make sure it's a valid Ethereum address.\nFor example, the UNI/ETH pool at: 0x1d42064fc4beb5f8aaf85f4617ae8b3b5b8bd801").
 			Validation("^0x[a-fA-F0-9]{40}$", "Please enter a valid Ethereum address").Cmd()
 
 	case InputDynamicContractAddress:
