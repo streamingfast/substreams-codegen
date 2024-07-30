@@ -220,6 +220,7 @@ func (p *Project) Render(outType outputType) (substreamsFiles map[string][]byte,
 			"rust-toolchain.toml":         "rust-toolchain.toml",
 			".gitignore":                  ".gitignore",
 			"substreams.yaml.gotmpl":      "substreams.yaml",
+			"entities/Makefile.gotmpl":    "Makefile",
 		}
 	case outputTypeSQL:
 		templateFiles["sql/substreams-Makefile.gotmpl"] = "substreams/Makefile"
