@@ -5,13 +5,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/codemodus/kace"
-	"github.com/golang-cz/textcase"
-	"github.com/huandu/xstrings"
 	"math"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/codemodus/kace"
+	"github.com/golang-cz/textcase"
+	"github.com/huandu/xstrings"
 
 	"github.com/streamingfast/eth-go"
 )
