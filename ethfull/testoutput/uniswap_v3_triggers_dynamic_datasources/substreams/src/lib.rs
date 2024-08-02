@@ -712,6 +712,7 @@ fn map_events(
     let mut events = contract::Events::default();
     map_factory_events(&blk, &mut events);
     map_pools_events(&blk, &store_pools, &mut events);
+    substreams::skip_empty_output();
     Ok(events)
 }
 #[substreams::handlers::map]
@@ -723,6 +724,7 @@ fn map_calls(
 let mut calls = contract::Calls::default();
     map_factory_calls(&blk, &mut calls);
     map_pools_calls(&blk, &store_pools, &mut calls);
+    substreams::skip_empty_output();
     Ok(calls)
 }
 

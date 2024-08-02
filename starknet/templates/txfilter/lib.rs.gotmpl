@@ -14,6 +14,8 @@ fn db_out(transactions: Transactions) -> Result<DatabaseChanges, substreams::err
     let block_number = transactions.clone().clock.unwrap().number;
     let block_hash = transactions.clock.unwrap().id;
 
+    substreams::skip_empty_output();
+
     transactions.transactions_with_receipt.into_iter().for_each(|trx| {
         let trx_hash = &trx.receipt.unwrap().transaction_hash;
         match trx.transaction {

@@ -1048,6 +1048,7 @@ fn map_events(
     let mut events = contract::Events::default();
     map_ewqocontraadd123_events(&blk, &mut events);
     map_test_events(&blk, &store_test, &mut events);
+    substreams::skip_empty_output();
     Ok(events)
 }
 #[substreams::handlers::map]
@@ -1059,6 +1060,7 @@ fn map_calls(
 let mut calls = contract::Calls::default();
     map_ewqocontraadd123_calls(&blk, &mut calls);
     map_test_calls(&blk, &store_test, &mut calls);
+    substreams::skip_empty_output();
     Ok(calls)
 }
 #[substreams::handlers::map]
