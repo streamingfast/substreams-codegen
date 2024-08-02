@@ -153,6 +153,18 @@ var ChainConfigByID = map[string]*ChainConfig{
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
 	},
+	"base-mainnet": {
+		DisplayName:          "Base Mainnet",
+		ExplorerLink:         "https://basescan.org",
+		ApiEndpoint:          "https://api.basescan.org",
+		FirehoseEndpoint:     "base-mainnet.streamingfast.io",
+		FirstStreamableBlock: 0,
+		Network:              "base-mainnet",
+		abiCache:             make(map[string]*ABI),
+		initialBlockCache:    make(map[string]uint64),
+		SupportsCalls:        true,
+		APIKeyEnvVar:         "CODEGEN_BASE_API_KEY",
+	},
 }
 
 func init() {
