@@ -38,7 +38,7 @@ func init() {
 		supportedChains = append(supportedChains, conf.DisplayName)
 	}
 	codegen.RegisterConversation(
-		"ethereum-events-calls",
+		"evm-events-calls",
 		"Decode Ethereum events/calls and generate a fully functional substreams",
 		`Given a list of contracts and their ABIs, this will build an Ethereum substreams that decodes events and/or calls.
 Supported networks: `+strings.Join(supportedChains, ", "),
@@ -46,7 +46,7 @@ Supported networks: `+strings.Join(supportedChains, ", "),
 		80,
 	)
 	codegen.RegisterConversation(
-		"ethereum-subgraph",
+		"evm-subgraph",
 		"Decode Ethereum events/calls and and use them as triggers to feed your Subgraph",
 		`Given a list of contracts and their ABIs, this will build an Ethereum substreams that decodes events and/or calls
 and creates entities that can be sent directly into a Subgraph.
@@ -57,7 +57,7 @@ Supported networks: `+strings.Join(supportedChains, ", "),
 
 	codegen.RegisterConversation(
 
-		"ethereum-sql",
+		"evm-sql",
 		"Decode Ethereum events/calls and insert them into PostgreSQL or Clickhouse",
 		`Given a list of contracts and their ABIs, this will build an Ethereum substreams that can be used to fill
 
