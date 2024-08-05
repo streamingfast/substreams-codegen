@@ -428,6 +428,7 @@ fn map_events(blk: eth::Block) -> Result<contract::Events, substreams::errors::E
     map_{{ $ddsContract.Identifier }}_events(&blk, &store_{{ $ddsContract.Identifier }}, &mut events);
     {{- end }}
     {{- end }}
+    substreams::skip_empty_output();
     Ok(events)
 }
 {{- end }}
@@ -457,6 +458,7 @@ let mut calls = contract::Calls::default();
 {{- end }}
 {{- end }}
 {{- end }}
+    substreams::skip_empty_output();
     Ok(calls)
 }
 {{- end }}

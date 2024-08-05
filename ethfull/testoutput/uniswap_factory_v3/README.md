@@ -30,16 +30,6 @@ To run a local `graph-node` instance, you will need to install Docker. You can d
 
 To run the proto assembly script bindings, you will need to install the `buf` [cli](https://buf.build/docs/installation).
 
-## Run the entire stack with the `run-local.sh` script
-
-You can run the entire stack (`docker`, `npm` installations and `graph` creation with deployment) by running the below script
-
-```bash
-./run-local.sh
-```
-
-However, if you want to run each commen individually, follow the instructions below:
-
 ## Install npm and nodeJS packages
 
 Run the following command in the `root` of the repository:

@@ -18,6 +18,7 @@ type ChainConfig struct {
 	FirstStreamableBlock uint64
 	Network              string
 	SupportsCalls        bool
+	APIKeyEnvVar         string
 
 	abiCache          map[string]*ABI
 	initialBlockCache map[string]uint64
@@ -36,6 +37,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		abiCache:             make(map[string]*ABI),
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
+		APIKeyEnvVar:         "CODEGEN_MAINNET_API_KEY",
 	},
 	"bnb": {
 		DisplayName:          "BNB",
@@ -47,6 +49,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		abiCache:             make(map[string]*ABI),
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
+		APIKeyEnvVar:         "CODEGEN_BNB_API_KEY",
 	},
 	"polygon": {
 		DisplayName:          "Polygon",
@@ -58,6 +61,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		abiCache:             make(map[string]*ABI),
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
+		APIKeyEnvVar:         "CODEGEN_POLYGON_API_KEY",
 	},
 	"amoy": {
 		DisplayName:          "Polygon Amoy Testnet",
@@ -113,6 +117,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		abiCache:             make(map[string]*ABI),
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        false,
+		APIKeyEnvVar:         "CODEGEN_OPTIMISM_API_KEY",
 	},
 	"avalanche": {
 		DisplayName:          "Avalanche C-chain",
@@ -147,6 +152,18 @@ var ChainConfigByID = map[string]*ChainConfig{
 		abiCache:             make(map[string]*ABI),
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
+	},
+	"base-mainnet": {
+		DisplayName:          "Base Mainnet",
+		ExplorerLink:         "https://basescan.org",
+		ApiEndpoint:          "https://api.basescan.org",
+		FirehoseEndpoint:     "base-mainnet.streamingfast.io",
+		FirstStreamableBlock: 0,
+		Network:              "base-mainnet",
+		abiCache:             make(map[string]*ABI),
+		initialBlockCache:    make(map[string]uint64),
+		SupportsCalls:        true,
+		APIKeyEnvVar:         "CODEGEN_BASE_API_KEY",
 	},
 }
 

@@ -10,6 +10,7 @@ fn db_out(events: EventList) -> Result<DatabaseChanges, substreams::errors::Erro
     let mut tables = DatabaseChangeTables::new();
     let mut i = 0;
 
+    substreams::skip_empty_output();
     events.events.into_iter().for_each(|event| {
         let trx_hash = &event.transaction_hash;
         let evt = event.event.unwrap();

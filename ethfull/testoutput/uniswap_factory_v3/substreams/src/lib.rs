@@ -87,6 +87,7 @@ fn map_unifactory_events(blk: &eth::Block, events: &mut contract::Events) {
 fn map_events(blk: eth::Block) -> Result<contract::Events, substreams::errors::Error> {
     let mut events = contract::Events::default();
     map_unifactory_events(&blk, &mut events);
+    substreams::skip_empty_output();
     Ok(events)
 }
 
