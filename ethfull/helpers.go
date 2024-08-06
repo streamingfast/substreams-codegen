@@ -6,6 +6,10 @@ import (
 )
 
 func sanitizeABIStructName(rustABIStructName string) string {
+	if strings.HasPrefix(rustABIStructName, "_") {
+		rustABIStructName = "u_" + rustABIStructName[1:]
+	}
+
 	reg := regexp.MustCompile("_+")
 
 	result := reg.ReplaceAllStringFunc(rustABIStructName, func(s string) string {
@@ -15,5 +19,6 @@ func sanitizeABIStructName(rustABIStructName string) string {
 
 		return replacement
 	})
+
 	return result
 }
