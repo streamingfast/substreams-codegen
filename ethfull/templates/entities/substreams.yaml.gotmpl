@@ -6,6 +6,7 @@ package:
 imports:
   graph: https://github.com/streamingfast/substreams-sink-subgraph/releases/download/v{{ .GraphImportVersion }}/substreams-sink-subgraph-protodefs-v{{ .GraphImportVersion }}.spkg
   entity: https://github.com/streamingfast/substreams-entity-change/releases/download/v{{ .EntityChangeImportVersion }}/substreams-entity-change-v{{ .EntityChangeImportVersion }}.spkg
+  ethcommon: https://spkg.io/streamingfast/ethereum-common-v0.3.0.spkg
 
 protobuf:
   files:
@@ -29,9 +30,13 @@ modules:
       - source: sf.ethereum.type.v2.Block
 {{- end}}
 {{- if .TrackAnyEvents }}
-
   - name: map_events
     kind: map
+    blockFilter:
+        module: ethcommon:index_events
+        {{- $eventQuery := .GenerateEventsBlockFilterQuery }}
+        query:
+          string: {{ $eventQuery }}
     initialBlock: {{ .MustLowestStartBlock }}
     inputs:
       - source: sf.ethereum.type.v2.Block
@@ -59,6 +64,11 @@ modules:
   - name: map_calls
     kind: map
     initialBlock: {{ .MustLowestStartBlock }}
+    blockFilter:
+            module: ethcommon:index_calls
+            {{ $callQuery := .GenerateCallsBlockFilterQuery }}
+            query:
+              string: {{ $callQuery }}
     inputs:
       - source: sf.ethereum.type.v2.Block
 {{- range $ddsContract := .DynamicContracts }}

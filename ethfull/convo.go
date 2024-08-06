@@ -207,7 +207,7 @@ func (p *Project) NextStep() (out loop.Cmd) {
 			}
 			if dynContract.abi == nil {
 				if dynContract.RawABI == nil {
-					if dynContract.referenceContractAddress == "" {
+					if dynContract.ReferenceContractAddress == "" {
 						if p.ChainConfig().ApiEndpoint == "" {
 							return notifyContext(cmd(AskDynamicContractABI{}))
 						}
@@ -384,7 +384,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 
 		contract := c.state.dynamicContractOf(factory.Name)
-		contract.referenceContractAddress = inputAddress
+		contract.ReferenceContractAddress = inputAddress
 
 		return c.NextStep()
 
@@ -509,7 +509,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		contract := c.state.dynamicContractOf(factory.Name)
 		if msg.err != nil {
 			return loop.Seq(
-				c.msg().Messagef("Cannot fetch the ABI for contract %q (%s)", contract.referenceContractAddress, msg.err).Cmd(),
+				c.msg().Messagef("Cannot fetch the ABI for contract %q (%s)", contract.ReferenceContractAddress, msg.err).Cmd(),
 				cmd(AskDynamicContractABI{}),
 			)
 		}

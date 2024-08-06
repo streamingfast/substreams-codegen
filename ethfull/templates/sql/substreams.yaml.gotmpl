@@ -6,6 +6,7 @@ package:
 imports:
   sql: https://github.com/streamingfast/substreams-sink-sql/releases/download/protodefs-v{{ .SQLImportVersion }}/substreams-sink-sql-protodefs-v{{ .SQLImportVersion }}.spkg
   database_change: https://github.com/streamingfast/substreams-sink-database-changes/releases/download/v{{ .DatabaseChangeImportVersion }}/substreams-database-change-v{{ .DatabaseChangeImportVersion }}.spkg
+  ethcommon: https://spkg.io/streamingfast/ethereum-common-v0.3.0.spkg
 
 protobuf:
   files:
@@ -33,6 +34,11 @@ modules:
   - name: map_events
     kind: map
     initialBlock: {{ .MustLowestStartBlock }}
+    blockFilter:
+            module: ethcommon:index_events
+            {{- $eventQuery := .GenerateEventsBlockFilterQuery }}
+            query:
+              string: {{ $eventQuery }}
     inputs:
       - source: sf.ethereum.type.v2.Block
 {{- range $index, $ddsContract := .DynamicContracts }}
@@ -60,6 +66,11 @@ modules:
   - name: map_calls
     kind: map
     initialBlock: {{ .MustLowestStartBlock }}
+    blockFilter:
+        module: ethcommon:index_calls
+        {{ $callQuery := .GenerateCallsBlockFilterQuery }}
+        query:
+          string: {{ $callQuery }}
     inputs:
       - source: sf.ethereum.type.v2.Block
 {{- range $ddsContract := .DynamicContracts }}
