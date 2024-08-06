@@ -45,6 +45,17 @@ modules:
 
 {{- end -}}{{/* if TrackAnyEvents */}}
 
+{{- if and $.TrackAnyEvents $.TrackAnyCalls }}
+  - name: map_events_calls
+    kind: map
+    initialBlock: {{ .MustLowestStartBlock }}
+    inputs:
+      - map: map_events # TODO: add the dynamic data source
+      - map: map_calls
+    output:
+      type: proto:contract.v1.EventsCalls
+{{- end }}
+
 {{- if .TrackAnyCalls }}
   - name: map_calls
     kind: map

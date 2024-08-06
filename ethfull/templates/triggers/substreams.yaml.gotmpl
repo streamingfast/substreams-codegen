@@ -52,7 +52,7 @@ modules:
 {{- end }}
 
 {{- if and $.TrackAnyEvents $.TrackAnyCalls }}
-  - name: zipped_events_calls
+  - name: map_events_calls
     kind: map
     initialBlock: {{ .MustLowestStartBlock }}
     inputs:
