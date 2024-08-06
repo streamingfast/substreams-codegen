@@ -14,6 +14,9 @@ protobuf:
     - contract.proto
   importPaths:
     - ./proto
+excludePaths:
+    - sf/substreams
+    - google
 
 binaries:
   default:
@@ -60,6 +63,16 @@ modules:
       type: proto:contract.v1.Calls
 {{- end }}{{/* if TrackAnyCalls */}}
 
+{{- if and $.TrackAnyEvents $.TrackAnyCalls }}
+    - name: map_events_calls
+      kind: map
+      initialBlock: {{ $.MustLowestStartBlock }}
+      inputs:
+          - map: map_events
+          - map: map_calls
+{{- end }}
+
+{{- if .IsOutputSQL }}
   - name: db_out
     kind: map
     initialBlock: {{ .MustLowestStartBlock }}
@@ -72,7 +85,8 @@ modules:
 {{- end }}
     output:
       type: proto:sf.substreams.sink.database.v1.DatabaseChanges
-
+{{- end }}
+{{- if .IsOutputSubgraph }}
   - name: graph_out
     kind: map
     initialBlock: {{ .MustLowestStartBlock }}
@@ -85,5 +99,5 @@ modules:
 {{- end }}
     output:
       type: proto:sf.substreams.entity.v1.EntityChanges
-
+{{- end }}
 network: {{ .ChainName }}
