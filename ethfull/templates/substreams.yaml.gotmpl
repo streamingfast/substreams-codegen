@@ -14,7 +14,7 @@ protobuf:
     - contract.proto
   importPaths:
     - ./proto
-excludePaths:
+  excludePaths:
     - sf/substreams
     - google
 
@@ -64,12 +64,12 @@ modules:
 {{- end }}{{/* if TrackAnyCalls */}}
 
 {{- if and $.TrackAnyEvents $.TrackAnyCalls }}
-    - name: map_events_calls
-      kind: map
-      initialBlock: {{ $.MustLowestStartBlock }}
-      inputs:
-          - map: map_events
-          - map: map_calls
+  - name: map_events_calls
+    kind: map
+    initialBlock: {{ $.MustLowestStartBlock }}
+    inputs:
+      - map: map_events
+      - map: map_calls
 {{- end }}
 
 {{- if .IsOutputSQL }}
