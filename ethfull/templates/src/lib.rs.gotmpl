@@ -101,7 +101,7 @@ fn map_{{ $contract.Identifier }}_calls(blk: &eth::Block, calls: &mut contract::
 {{- end }}{{/* range .Contracts */}}
 {{- if and $.TrackAnyEvents $.TrackAnyCalls }}
 #[substreams::handlers::map]
-fn zipped_events_calls(
+fn map_events_calls(
     events: contract::Events,
     calls: contract::Calls,
 ) -> Result<contract::EventsCalls, substreams::errors::Error> {
