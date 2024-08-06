@@ -4,8 +4,8 @@ package:
   version: v0.1.0
 
 imports:
-  sql: https://github.com/streamingfast/substreams-sink-sql/releases/download/protodefs-v{{ .SQLImportVersion }}/substreams-sink-sql-protodefs-v{{ .SQLImportVersion }}.spkg
-  database_change: https://github.com/streamingfast/substreams-sink-database-changes/releases/download/v{{ .DatabaseChangeImportVersion }}/substreams-database-change-v{{ .DatabaseChangeImportVersion }}.spkg
+  graph: https://github.com/streamingfast/substreams-sink-subgraph/releases/download/v{{ .GraphImportVersion }}/substreams-sink-subgraph-protodefs-v{{ .GraphImportVersion }}.spkg
+  entity: https://github.com/streamingfast/substreams-entity-change/releases/download/v{{ .EntityChangeImportVersion }}/substreams-entity-change-v{{ .EntityChangeImportVersion }}.spkg
   ethcommon: https://spkg.io/streamingfast/ethereum-common-v0.3.0.spkg
 
 protobuf:
@@ -23,40 +23,38 @@ modules:
 {{ range $ddsContract := .DynamicContracts }}
   - name: store_{{ $ddsContract.Identifier }}_created
     kind: store
-    initialBlock: {{ with $ddsContract.ParentContract.InitialBlock }}{{ . }}{{ else }}0{{ end }}
+    initialBlock: {{ with $ddsContract.FactoryInitialBlock }}{{ . }}{{ else }}0{{ end }}
     updatePolicy: set
     valueType: proto:dynamic_datasource
     inputs:
       - source: sf.ethereum.type.v2.Block
 {{- end}}
-
 {{- if .TrackAnyEvents }}
   - name: map_events
     kind: map
-    initialBlock: {{ .MustLowestStartBlock }}
     blockFilter:
-            module: ethcommon:index_events
-            {{- $eventQuery := .GenerateEventsBlockFilterQuery }}
-            query:
-              string: {{ $eventQuery }}
+        module: ethcommon:index_events
+        {{- $eventQuery := .GenerateEventsBlockFilterQuery }}
+        query:
+          string: {{ $eventQuery }}
+    initialBlock: {{ .MustLowestStartBlock }}
     inputs:
       - source: sf.ethereum.type.v2.Block
-{{- range $index, $ddsContract := .DynamicContracts }}
-      {{- if $ddsContract.TrackEvents }}
+{{- range $ddsContract := .DynamicContracts }}
+    {{- if $ddsContract.TrackEvents }}
       - store: store_{{ $ddsContract.Identifier }}_created
-      {{- end }}
+    {{- end }}
 {{- end }}
     output:
       type: proto:contract.v1.Events
-
-{{- end -}}{{/* if TrackAnyEvents */}}
+{{- end }}
 
 {{- if and $.TrackAnyEvents $.TrackAnyCalls }}
   - name: map_events_calls
     kind: map
     initialBlock: {{ .MustLowestStartBlock }}
     inputs:
-      - map: map_events # TODO: add the dynamic data source
+      - map: map_events
       - map: map_calls
     output:
       type: proto:contract.v1.EventsCalls
@@ -67,32 +65,32 @@ modules:
     kind: map
     initialBlock: {{ .MustLowestStartBlock }}
     blockFilter:
-        module: ethcommon:index_calls
-        {{ $callQuery := .GenerateCallsBlockFilterQuery }}
-        query:
-          string: {{ $callQuery }}
+            module: ethcommon:index_calls
+            {{ $callQuery := .GenerateCallsBlockFilterQuery }}
+            query:
+              string: {{ $callQuery }}
     inputs:
       - source: sf.ethereum.type.v2.Block
 {{- range $ddsContract := .DynamicContracts }}
-      {{- if $ddsContract.TrackCalls -}}
+      {{- if $ddsContract.TrackCalls }}
       - store: store_{{ $ddsContract.Identifier }}_created
-      {{- end -}}
+      {{- end }}  
 {{- end }}
     output:
       type: proto:contract.v1.Calls
 {{- end }}{{/* if TrackAnyCalls */}}
 
-  - name: db_out
+  - name: graph_out
     kind: map
     initialBlock: {{ .MustLowestStartBlock }}
     inputs:
 {{- if .TrackAnyEvents }}
       - map: map_events
-{{- end -}}
+{{- end }}
 {{- if .TrackAnyCalls }}
       - map: map_calls
 {{- end }}
     output:
-      type: proto:sf.substreams.sink.database.v1.DatabaseChanges
+      type: proto:sf.substreams.entity.v1.EntityChanges
 
 network: {{ .ChainName }}

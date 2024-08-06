@@ -3,6 +3,9 @@ package:
   name: {{ .ModuleName }}
   version: v0.1.0
 
+imports:
+    ethcommon: https://spkg.io/streamingfast/ethereum-common-v0.3.0.spkg
+
 protobuf:
   files:
     - contract.proto
@@ -32,6 +35,11 @@ modules:
   - name: map_events
     kind: map
     initialBlock: {{ .MustLowestStartBlock }}
+    blockFilter:
+        module: ethcommon:index_events
+        {{- $eventQuery := .GenerateEventsBlockFilterQuery }}
+        query:
+          string: {{ $eventQuery }}
     inputs:
       - source: sf.ethereum.type.v2.Block
     {{- range $index, $ddsContract := .DynamicContracts }}
@@ -46,6 +54,11 @@ modules:
   - name: map_calls
     kind: map
     initialBlock: {{ .MustLowestStartBlock }}
+    blockFilter:
+        module: ethcommon:index_calls
+        {{ $callQuery := .GenerateCallsBlockFilterQuery }}
+        query:
+          string: {{ $callQuery }}
     inputs:
       - source: sf.ethereum.type.v2.Block
   {{- range $index, $ddsContract := .DynamicContracts }}
