@@ -569,7 +569,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 {{- range .events }}
 message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
   {{- range $idx, $field := .Proto.Fields }}
-  {{$field.Type}} ({{$field.Name}}) = {{ len (printf "a%*s" $idx "") }};
+  {{$field.Type}} {{$field.Name}} = {{ len (printf "a%*s" $idx "") }};
   {{- end}}
 }
 {{- end}}
@@ -578,7 +578,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 {{- range .calls }}
 message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
   {{- range $idx, $field := .Proto.Fields }}
-  {{$field.Type}} ({{$field.Name}}) = {{ len (printf "a%*s" $idx "") }};
+  {{$field.Type}} {{$field.Name}} = {{ len (printf "a%*s" $idx "") }};
   {{- end}}
 }
 {{- end}}
