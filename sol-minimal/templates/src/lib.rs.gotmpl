@@ -1,14 +1,10 @@
-mod abi;
 mod pb;
-use hex_literal::hex;
 use pb::mydata::v1 as mydata;
 
 // use substreams::prelude::*;
 // use substreams::store;
 
-use substreams::Hex;
-use substreams_ethereum::pb::eth::v2 as eth;
-// use substreams_ethereum::Event;
+use substreams_solana::pb::sf::solana::r#type::v1::Block;
 
 
 #[allow(unused_imports)]
@@ -16,10 +12,13 @@ use num_traits::cast::ToPrimitive;
 use std::str::FromStr;
 use substreams::scalar::BigDecimal;
 
-substreams_ethereum::init!();
-
-fn map_my_data(blk: &eth::Block) -> mydata::MyData {
+#[substreams::handlers::map]
+fn map_my_data(blk: Block) -> mydata::MyData {
     let mut my_data = mydata::MyData::default();
+    if let Some(block_height) = blk.block_height {
+        my_data.counter = block_height.block_height;
+    }
 
+    return my_data
 }
-{{- end }}
+

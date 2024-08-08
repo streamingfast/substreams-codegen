@@ -1,8 +1,9 @@
 package ethfull
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestSanitizeStructABI(t *testing.T) {
@@ -21,7 +22,7 @@ func TestSanitizeStructABI(t *testing.T) {
 		},
 		{
 			inputStructAbiName: "__foo_bar",
-			expectedName:       "_u_foo_bar",
+			expectedName:       "u_u_foo_bar",
 		},
 		{
 			inputStructAbiName: "foobar__",
@@ -29,7 +30,7 @@ func TestSanitizeStructABI(t *testing.T) {
 		},
 		{
 			inputStructAbiName: "__foobar",
-			expectedName:       "_u_foobar",
+			expectedName:       "u_u_foobar",
 		},
 	}
 

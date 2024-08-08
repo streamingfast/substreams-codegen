@@ -194,16 +194,13 @@ func (p *Project) Render() (projectFiles map[string][]byte, err error) {
 	}
 
 	templateFiles := map[string]string{
-		"proto/contract.proto.gotmpl": "proto/contract.proto",
-		"src/abi/mod.rs.gotmpl":       "src/abi/mod.rs",
-		"src/pb/mod.rs.gotmpl":        "src/pb/mod.rs",
-		"src/lib.rs.gotmpl":           "src/lib.rs",
-		"build.rs.gotmpl":             "build.rs",
-		"Cargo.toml.gotmpl":           "Cargo.toml",
-		"rust-toolchain.toml":         "rust-toolchain.toml",
-		".gitignore":                  ".gitignore",
-		"substreams.yaml.gotmpl":      "substreams.yaml",
-		"entities/Makefile.gotmpl":    "Makefile",
+		"proto/mydata.proto.gotmpl": "proto/mydata.proto",
+		"src/pb/mod.rs.gotmpl":      "src/pb/mod.rs",
+		"src/lib.rs.gotmpl":         "src/lib.rs",
+		"Cargo.toml.gotmpl":         "Cargo.toml",
+		".gitignore":                ".gitignore",
+		"substreams.yaml.gotmpl":    "substreams.yaml",
+		"Makefile.gotmpl":           "Makefile",
 	}
 
 	for templateFile, finalFileName := range templateFiles {

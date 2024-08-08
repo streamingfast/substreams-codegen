@@ -124,6 +124,13 @@ func (c *Convo) validate() error {
 	}
 
 	switch c.outputType {
+	case outputTypeSubstreams:
+		if c.state.SqlOutputFlavor != "" {
+			return fmt.Errorf("cannot have SqlOutputFlavor set on this code generator")
+		}
+		if c.state.SubgraphOutputFlavor != "" {
+			return fmt.Errorf("cannot have SubgraphOutputFlavor set on this code generator")
+		}
 	case outputTypeSQL:
 		if c.state.SubgraphOutputFlavor != "" {
 			return fmt.Errorf("cannot have SubgraphOutputFlavor set on this code generator")

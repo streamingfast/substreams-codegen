@@ -19,7 +19,7 @@ type Convo struct {
 
 func init() {
 	codegen.RegisterConversation(
-		"evm-minimal",
+		"sol-minimal",
 		"Simplest Substreams to get you started on solana",
 		`This will .`,
 		codegen.ConversationFactory(New),
@@ -66,9 +66,6 @@ func (c *Convo) NextStep() loop.Cmd {
 func (p *Project) NextStep() (out loop.Cmd) {
 	if p.Name == "" {
 		return cmd(codegen.AskProjectName{})
-	}
-	if p.ChainName == "" {
-		return cmd(codegen.AskChainName{})
 	}
 
 	if !p.generatedCodeCompleted {

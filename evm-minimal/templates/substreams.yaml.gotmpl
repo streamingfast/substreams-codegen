@@ -4,7 +4,7 @@ package:
   version: v0.1.0
 
 imports:
-  eth: spkg.io/streamingfast/ethereum-common-latest # CHANGE ME
+  # eth: spkg.io/streamingfast/ethereum-common-latest # CHANGE ME
 
 protobuf:
   files:
@@ -23,15 +23,16 @@ binaries:
 modules:
  - name: map_my_data
    kind: map
-   input:
-   - map: eth:filtered_transactions
-   TODO: fill in
+   inputs:
+   - source: sf.ethereum.type.v2.Block
+   output :
+    type: proto:mydata.v1.MyData
 
 # Uncomment to get the raw feed of all events and calls
 #
 # - name: map_my_data
 #   kind: map
-#   input:
+#   inputs:
 #   - map: eth:all_events_calls
 #   TODO: fill in
 

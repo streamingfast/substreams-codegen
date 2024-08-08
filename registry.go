@@ -33,6 +33,7 @@ func ListConversationHandlers() []*ConversationHandler {
 	sort.Slice(handlers, func(i, j int) bool {
 		return handlers[i].Weight > handlers[j].Weight // heighest weight first
 	})
+
 	return handlers
 }
 
