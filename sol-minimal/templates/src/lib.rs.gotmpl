@@ -15,10 +15,8 @@ use substreams::scalar::BigDecimal;
 #[substreams::handlers::map]
 fn map_my_data(blk: Block) -> mydata::MyData {
     let mut my_data = mydata::MyData::default();
-    if let Some(block_height) = blk.block_height {
-        my_data.counter = block_height.block_height;
-    }
-
+    my_data.counter = blk.parent_slot;
+    
     return my_data
 }
 

@@ -4,7 +4,7 @@ package:
   version: v0.1.0
 
 imports:
-  # eth: spkg.io/streamingfast/ethereum-common-latest # CHANGE ME
+  # eth: spkg.io/streamingfast/ethereum-common-v0.3.0.spkg # CHANGE ME
 
 protobuf:
   files:
@@ -28,12 +28,10 @@ modules:
    output :
     type: proto:mydata.v1.MyData
 
-# Uncomment to get the raw feed of all events and calls
-#
 # - name: map_my_data
 #   kind: map
 #   inputs:
-#   - map: eth:all_events_calls
-#   TODO: fill in
+#   - map: eth:map_events_calls
+#   //TODO Fill in
 
 network: {{ .ChainName }}
