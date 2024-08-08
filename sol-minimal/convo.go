@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	codegen "github.com/streamingfast/substreams-codegen"
@@ -19,15 +18,10 @@ type Convo struct {
 }
 
 func init() {
-	supportedChains := make([]string, 0, len(ChainConfigs))
-	for _, conf := range ChainConfigs {
-		supportedChains = append(supportedChains, conf.DisplayName)
-	}
 	codegen.RegisterConversation(
 		"evm-minimal",
-		"Simplest Substreams to get you started on EVM and compatible chains.",
-		`This will .
-		Supported networks: `+strings.Join(supportedChains, ", "),
+		"Simplest Substreams to get you started on solana",
+		`This will .`,
 		codegen.ConversationFactory(New),
 		20,
 	)
@@ -77,10 +71,6 @@ func (p *Project) NextStep() (out loop.Cmd) {
 		return cmd(codegen.AskChainName{})
 	}
 
-	if !isValidChainName(p.ChainName) {
-		return loop.Seq(cmd(codegen.MsgInvalidChainName{}), cmd(codegen.AskChainName{}))
-	}
-
 	if !p.generatedCodeCompleted {
 		return cmd(codegen.RunGenerate{})
 	}
@@ -90,10 +80,6 @@ func (p *Project) NextStep() (out loop.Cmd) {
 	}
 
 	return cmd(codegen.RunBuild{})
-}
-
-func isValidChainName(input string) bool {
-	return ChainConfigByID[input] != nil
 }
 
 func (c *Convo) Update(msg loop.Msg) loop.Cmd {
@@ -124,32 +110,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case codegen.InputProjectName:
 		c.state.Name = msg.Value
-		return c.NextStep()
-
-	case codegen.AskChainName:
-		var labels, values []string
-		for _, conf := range ChainConfigs {
-			labels = append(labels, conf.DisplayName)
-			values = append(values, conf.ID)
-		}
-		return c.action(codegen.InputChainName{}).ListSelect("Please select the chain").
-			Labels(labels...).
-			Values(values...).
-			Cmd()
-
-	case codegen.MsgInvalidChainName:
-		return c.msg().
-			Messagef(`Hmm, %q seems like an invalid chain name. Maybe it was supported and is not anymore?`, c.state.ChainName).
-			Cmd()
-
-	case codegen.InputChainName:
-		c.state.ChainName = msg.Value
-		if isValidChainName(msg.Value) {
-			return loop.Seq(
-				c.msg().Messagef("Got it, will be using chain %q", c.state.ChainConfig().DisplayName).Cmd(),
-				c.NextStep(),
-			)
-		}
 		return c.NextStep()
 
 	case codegen.InputConfirmCompile:

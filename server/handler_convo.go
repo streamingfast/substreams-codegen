@@ -22,7 +22,9 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	_ "github.com/streamingfast/substreams-codegen/ethfull"
+	_ "github.com/streamingfast/substreams-codegen/evm-minimal"
 	_ "github.com/streamingfast/substreams-codegen/injective-events"
+	_ "github.com/streamingfast/substreams-codegen/sol-minimal"
 	_ "github.com/streamingfast/substreams-codegen/starknet"
 )
 

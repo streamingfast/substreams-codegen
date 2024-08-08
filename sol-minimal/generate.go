@@ -74,6 +74,7 @@ func (p *Project) generate() (projFiles map[string][]byte, err error) {
 	// of all inputs here.
 	// TODO: add some checking to make sure `ParentContractName` of DynamicContract
 	// do match a Contract that exists here.
+
 	projFiles, err = p.Render()
 	if err != nil {
 		return nil, fmt.Errorf("rendering template: %w", err)

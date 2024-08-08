@@ -1,6 +1,8 @@
 package codegen
 
-import "sort"
+import (
+	"sort"
+)
 
 var Registry = make(map[string]*ConversationHandler)
 

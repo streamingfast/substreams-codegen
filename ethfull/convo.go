@@ -38,14 +38,6 @@ func init() {
 		supportedChains = append(supportedChains, conf.DisplayName)
 	}
 	codegen.RegisterConversation(
-		"evm-events-calls",
-		"Decode Ethereum events/calls and generate a fully functional substreams",
-		`Given a list of contracts and their ABIs, this will build an Ethereum substreams that decodes events and/or calls.
-Supported networks: `+strings.Join(supportedChains, ", "),
-		codegen.ConversationFactory(NewOnlySubstreams),
-		80,
-	)
-	codegen.RegisterConversation(
 		"evm-subgraph",
 		"Decode Ethereum events/calls and and use them as triggers to feed your Subgraph",
 		`Given a list of contracts and their ABIs, this will build an Ethereum substreams that decodes events and/or calls
@@ -56,7 +48,6 @@ Supported networks: `+strings.Join(supportedChains, ", "),
 	)
 
 	codegen.RegisterConversation(
-
 		"evm-sql",
 		"Decode Ethereum events/calls and insert them into PostgreSQL or Clickhouse",
 		`Given a list of contracts and their ABIs, this will build an Ethereum substreams that can be used to fill
@@ -66,6 +57,14 @@ Supported networks: `+strings.Join(supportedChains, ", "),
 
 		codegen.ConversationFactory(NewWithSQL),
 		60,
+	)
+
+	codegen.RegisterConversation(
+		"evm-events-calls",
+		"Decode Ethereum events/calls and create a substreams as source",
+		`Given a list of contracts and their ABIs, this will build an Ethereum substreams that decodes events and/or calls`,
+		codegen.ConversationFactory(NewWithOnlySubstreams),
+		80,
 	)
 }
 
@@ -89,7 +88,7 @@ func NewWithSubgraph(factory *codegen.MsgWrapFactory) codegen.Conversation {
 	return h
 }
 
-func NewOnlySubstreams(factory *codegen.MsgWrapFactory) codegen.Conversation {
+func NewWithOnlySubstreams(factory *codegen.MsgWrapFactory) codegen.Conversation {
 	h := &Convo{
 		state:            &Project{currentContractIdx: -1},
 		factory:          factory,
@@ -133,7 +132,6 @@ func (c *Convo) validate() error {
 		if c.state.SqlOutputFlavor != "" {
 			return fmt.Errorf("cannot have SqlOutputFlavor set on this code generator")
 		}
-	case outputTypeSubstreams:
 	default:
 		return fmt.Errorf("invalid output type %q (should not happen, this is a bug)", c.outputType)
 	}
@@ -389,7 +387,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			return QuitInvalidContext
 		}
 		return c.action(InputDynamicContractAddress{}).TextInput(fmt.Sprintf("Please enter an example contract created by the %q factory", factory.Name), "Submit").
-			Description("Format it with 0x prefix and make sure it's a valid Ethereum address.\nFor example, the UNI/ETH pool at: 0x1d42064fc4beb5f8aaf85f4617ae8b3b5b8bd801").
+			Description("Format it with 0x prefix and make sure it's a valid Ethereum address.\nFor example, the USDC/ETH pool at: 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640").
 			Validation("^0x[a-fA-F0-9]{40}$", "Please enter a valid Ethereum address").Cmd()
 
 	case InputDynamicContractAddress:
@@ -1085,17 +1083,6 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 
 	case codegen.ReturnBuild:
 		if msg.Err != nil {
-			if c.state.outputType == outputTypeSubstreams {
-				return loop.Seq(
-					c.msg().Messagef("Remote build failed with error: %q. See full logs in `{project-path}/logs.txt`", msg.Err).Cmd(),
-					c.msg().Messagef("You will need to pack your substreams using `substreams pack` command").Cmd(),
-					c.action(codegen.PackageDownloaded{}).
-						DownloadFiles().
-						AddFile("logs.txt", []byte(msg.Logs), `text/x-logs`, "").
-						Cmd(),
-				)
-			}
-
 			return loop.Seq(
 				c.msg().Messagef("Remote build failed with error: %q. See full logs in `{project-path}/logs.txt`", msg.Err).Cmd(),
 				c.msg().Messagef("You will need to unzip the 'substreams-src.zip' file and run `make package` to try and generate the .spkg file.").Cmd(),
@@ -1116,14 +1103,6 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 					Cmd(),
 			)
 		}
-
-		if c.state.outputType == outputTypeSubstreams {
-			return loop.Seq(
-				c.msg().Messagef("Substreams Package was not compiled: You will need to pack your substreams using `substreams pack` command").Cmd(),
-				loop.Quit(nil),
-			)
-		}
-
 		return loop.Seq(
 			c.msg().Messagef("Substreams Package was not compiled: You will need to unzip the 'substreams-src.zip' file and run `make package` to generate the .spkg file.").Cmd(),
 			loop.Quit(nil),
