@@ -19,9 +19,9 @@ type Convo struct {
 
 func init() {
 	codegen.RegisterConversation(
-		"sol-minimal",
-		"Simplest Substreams to get you started on solana",
-		`This creating the most simple substreams on Solana`,
+		"injective-minimal",
+		"Simplest Substreams to get you started on Injective Mainnet",
+		`This creating the most simple substreams on Injective Mainnet`,
 		codegen.ConversationFactory(New),
 		20,
 	)
