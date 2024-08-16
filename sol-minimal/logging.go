@@ -1,4 +1,4 @@
-package ethfull
+package solminimal
 
 import (
 	"github.com/streamingfast/logging"

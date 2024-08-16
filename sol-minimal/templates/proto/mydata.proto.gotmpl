@@ -1,9 +1,11 @@
 syntax = "proto3";
 
-import "google/protobuf/timestamp.proto";
-
 package mydata.v1;
 
 message MyData {
-  uint64 counter = 1;
+  string block_hash = 1;
+  uint64 block_slot = 2;
+  uint64 block_timestamp = 3;
+  uint64 transactions_len = 4;
+  uint64 instructions_len = 5;
 }

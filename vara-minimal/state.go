@@ -20,12 +20,6 @@ type Project struct {
 	projectFiles           map[string][]byte
 
 	buildStarted time.Time
-
-	// always set by the server
-	// only for SQL projects
-
-	SqlOutputFlavor      string `json:"sql_output_flavor,omitempty"`      // either "clickhouse" or "sql"
-	SubgraphOutputFlavor string `json:"subgraph_output_flavor,omitempty"` // either "trigger" or "entity"
 }
 
 func (p *Project) ModuleName() string { return strings.ReplaceAll(p.Name, "-", "_") }

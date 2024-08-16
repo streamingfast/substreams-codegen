@@ -273,6 +273,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		)
 
 	case codegen.ReturnBuild:
+		// Remote build part removed for the moment
 		// if msg.Err != nil {
 		// 	return loop.Seq(
 		// 		c.msg().Messagef("Remote build failed with error: %q. See full logs in `{project-path}/logs.txt`", msg.Err).Cmd(),
