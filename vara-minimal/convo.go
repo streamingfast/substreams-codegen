@@ -1,11 +1,10 @@
-package ethfull
+package vara
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	codegen "github.com/streamingfast/substreams-codegen"
@@ -19,17 +18,12 @@ type Convo struct {
 }
 
 func init() {
-	supportedChains := make([]string, 0, len(ChainConfigs))
-	for _, conf := range ChainConfigs {
-		supportedChains = append(supportedChains, conf.DisplayName)
-	}
 	codegen.RegisterConversation(
-		"evm-minimal",
-		"Simplest Substreams to get you started on EVM and compatible chains.",
-		`This will .
-		Supported networks: `+strings.Join(supportedChains, ", "),
+		"vara-minimal",
+		"Simplest Substreams to get you started on Vara Mainnet",
+		`This creating the most simple substreams on Vara Mainnet`,
 		codegen.ConversationFactory(New),
-		83,
+		40,
 	)
 }
 
@@ -73,27 +67,16 @@ func (p *Project) NextStep() (out loop.Cmd) {
 	if p.Name == "" {
 		return cmd(codegen.AskProjectName{})
 	}
-	if p.ChainName == "" {
-		return cmd(codegen.AskChainName{})
-	}
-
-	if !isValidChainName(p.ChainName) {
-		return loop.Seq(cmd(codegen.MsgInvalidChainName{}), cmd(codegen.AskChainName{}))
-	}
 
 	if !p.generatedCodeCompleted {
 		return cmd(codegen.RunGenerate{})
 	}
 
-	if !p.confirmDoCompile && !p.confirmDownloadOnly {
-		return cmd(codegen.AskConfirmCompile{})
-	}
+	// if !p.confirmDoCompile && !p.confirmDownloadOnly {
+	// 	return cmd(codegen.AskConfirmCompile{})
+	// }
 
 	return cmd(codegen.RunBuild{})
-}
-
-func isValidChainName(input string) bool {
-	return ChainConfigByID[input] != nil
 }
 
 func (c *Convo) Update(msg loop.Msg) loop.Cmd {
@@ -126,49 +109,16 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		c.state.Name = msg.Value
 		return c.NextStep()
 
-	case codegen.AskChainName:
-		var labels, values []string
-		for _, conf := range ChainConfigs {
-			labels = append(labels, conf.DisplayName)
-			values = append(values, conf.ID)
-		}
-		return c.action(codegen.InputChainName{}).ListSelect("Please select the chain").
-			Labels(labels...).
-			Values(values...).
-			Cmd()
-
-	case codegen.MsgInvalidChainName:
-		return c.msg().
-			Messagef(`Hmm, %q seems like an invalid chain name. Maybe it was supported and is not anymore?`, c.state.ChainName).
-			Cmd()
-
-	case codegen.InputChainName:
-		c.state.ChainName = msg.Value
-		if isValidChainName(msg.Value) {
-			return loop.Seq(
-				c.msg().Messagef("Got it, will be using chain %q", c.state.ChainConfig().DisplayName).Cmd(),
-				c.NextStep(),
-			)
-		}
-		return c.NextStep()
-
-	case codegen.InputConfirmCompile:
-		if msg.Affirmative {
-			c.state.confirmDoCompile = true
-		} else {
-			c.state.confirmDownloadOnly = true
-		}
-		return c.NextStep()
-
 	case codegen.RunGenerate:
 		return loop.Seq(
 			cmdGenerate(c.state),
 		)
 
-	case codegen.AskConfirmCompile:
-		return c.action(codegen.InputConfirmCompile{}).
-			Confirm("Should we build the Substreams package for you?", "Yes, build it", "No").
-			Cmd()
+	// Removing the remote build part for the moment
+	// case codegen.AskConfirmCompile:
+	// 	return c.action(codegen.InputConfirmCompile{}).
+	// 		Confirm("Should we build the Substreams package for you?", "Yes, build it", "No").
+	// 		Cmd()
 
 	case codegen.ReturnGenerate:
 		if msg.Err != nil {
@@ -207,15 +157,22 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.NextStep()
 
 	case codegen.RunBuild:
+		// Remove the remote build part for the moment
 		// Do not run the build, the user only wants to download the files
-		if c.state.confirmDownloadOnly {
-			return cmd(codegen.ReturnBuild{
-				Err:       nil,
-				Artifacts: nil,
-			})
-		}
+		// if c.state.confirmDownloadOnly {
+		// 	return cmd(codegen.ReturnBuild{
+		// 		Err:       nil,
+		// 		Artifacts: nil,
+		// 	})
+		// }
 
-		return cmdBuild(c.state)
+		return cmd(codegen.ReturnBuild{
+			Err:       nil,
+			Artifacts: nil,
+		})
+
+		// Removing the remote build part for the moment
+		// return cmdBuild(c.state)
 
 	case codegen.CompilingBuild:
 		resp, ok := <-msg.RemoteBuildChan
@@ -283,30 +240,30 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		)
 
 	case codegen.ReturnBuild:
-		if msg.Err != nil {
-			return loop.Seq(
-				c.msg().Messagef("Remote build failed with error: %q. See full logs in `{project-path}/logs.txt`", msg.Err).Cmd(),
-				c.msg().Messagef("You will need to unzip the 'substreams-src.zip' file and run `make package` to try and generate the .spkg file.").Cmd(),
-				c.action(codegen.PackageDownloaded{}).
-					DownloadFiles().
-					AddFile("logs.txt", []byte(msg.Logs), `text/x-logs`, "").
-					Cmd(),
-			)
-		}
-		if c.state.confirmDoCompile {
-			return loop.Seq(
-				c.msg().Messagef("Build completed successfully, took %s", time.Since(c.state.buildStarted)).Cmd(),
-				c.action(codegen.PackageDownloaded{}).
-					DownloadFiles().
-					// In both AddFile(...) calls, do not show any description, as we already have enough description in the substreams init part of the conversation
-					AddFile(msg.Artifacts[0].Filename, msg.Artifacts[0].Content, `application/x-protobuf+sf.substreams.v1.Package`, "").
-					AddFile("logs.txt", []byte(msg.Logs), `text/x-logs`, "").
-					Cmd(),
-			)
-		}
+		// if msg.Err != nil {
+		// 	return loop.Seq(
+		// 		c.msg().Messagef("Remote build failed with error: %q. See full logs in `{project-path}/logs.txt`", msg.Err).Cmd(),
+		// 		c.msg().Messagef("You will need to unzip the 'substreams-src.zip' file and run `make package` to try and generate the .spkg file.").Cmd(),
+		// 		c.action(codegen.PackageDownloaded{}).
+		// 			DownloadFiles().
+		// 			AddFile("logs.txt", []byte(msg.Logs), `text/x-logs`, "").
+		// 			Cmd(),
+		// 	)
+		// }
+		// if c.state.confirmDoCompile {
+		// 	return loop.Seq(
+		// 		c.msg().Messagef("Build completed successfully, took %s", time.Since(c.state.buildStarted)).Cmd(),
+		// 		c.action(codegen.PackageDownloaded{}).
+		// 			DownloadFiles().
+		// 			// In both AddFile(...) calls, do not show any description, as we already have enough description in the substreams init part of the conversation
+		// 			AddFile(msg.Artifacts[0].Filename, msg.Artifacts[0].Content, `application/x-protobuf+sf.substreams.v1.Package`, "").
+		// 			AddFile("logs.txt", []byte(msg.Logs), `text/x-logs`, "").
+		// 			Cmd(),
+		// 	)
+		// }
 
 		return loop.Seq(
-			c.msg().Messagef("Substreams Package was not compiled: You will need to unzip the 'substreams-src.zip' file and run `make package` to generate the .spkg file.").Cmd(),
+			c.msg().Messagef("Substreams Package successfully downloaded. You will need to run `make package` inside your newly created substreams to generate the .spkg file.").Cmd(),
 			loop.Quit(nil),
 		)
 

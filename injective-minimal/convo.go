@@ -23,7 +23,7 @@ func init() {
 		"Simplest Substreams to get you started on Injective Mainnet",
 		`This creating the most simple substreams on Injective Mainnet`,
 		codegen.ConversationFactory(New),
-		20,
+		72,
 	)
 }
 

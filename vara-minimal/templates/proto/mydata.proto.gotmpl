@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package mydata.v1;
+
+message MyData {
+  string block_hash = 1;
+  uint64 block_number = 2;
+  google.protobuf.Timestamp block_timestamp = 3;
+  uint64 extrinsics_len = 4;
+  uint64 events_len = 5;
+}

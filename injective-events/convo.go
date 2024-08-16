@@ -34,14 +34,14 @@ func init() {
 		"Insert Injective events into a Graph-Node subgraph",
 		"Create an Injective Substreams module from specific events that can feed a subgraph.",
 		codegen.ConversationFactory(NewWithSubgraph),
-		40,
+		70,
 	)
 	codegen.RegisterConversation(
 		"injective-sql",
 		"Insert Injective events into PostgreSQL or Clickhouse",
 		"Given a list of events, generate the SQL schema and the Substreams module to insert them into a SQL database",
 		codegen.ConversationFactory(NewWithSQL),
-		20,
+		71,
 	)
 }
 

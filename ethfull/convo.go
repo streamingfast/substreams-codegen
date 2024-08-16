@@ -56,7 +56,7 @@ Supported networks: `+strings.Join(supportedChains, ", "),
 	Supported networks: `+strings.Join(supportedChains, ", "),
 
 		codegen.ConversationFactory(NewWithSQL),
-		60,
+		81,
 	)
 
 	codegen.RegisterConversation(
@@ -64,7 +64,7 @@ Supported networks: `+strings.Join(supportedChains, ", "),
 		"Decode Ethereum events/calls and create a substreams as source",
 		`Given a list of contracts and their ABIs, this will build an Ethereum substreams that decodes events and/or calls`,
 		codegen.ConversationFactory(NewWithOnlySubstreams),
-		80,
+		82,
 	)
 }
 

@@ -25,7 +25,7 @@ func init() {
 		"Inject Starknet transaction data into a database",
 		"",
 		codegen.ConversationFactory(NewWithSql),
-		20,
+		50,
 	)
 }
 

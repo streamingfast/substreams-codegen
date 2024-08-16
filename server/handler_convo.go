@@ -27,6 +27,7 @@ import (
 	_ "github.com/streamingfast/substreams-codegen/injective-minimal"
 	_ "github.com/streamingfast/substreams-codegen/sol-minimal"
 	_ "github.com/streamingfast/substreams-codegen/starknet"
+	_ "github.com/streamingfast/substreams-codegen/vara-minimal"
 )
 
 func (s *server) Discover(ctx context.Context, req *connect.Request[pbconvo.DiscoveryRequest]) (*connect.Response[pbconvo.DiscoveryResponse], error) {

@@ -10,8 +10,17 @@ type ConversationHandler struct {
 	ID          string
 	Title       string
 	Description string
-	Weight      int
-	Factory     ConversationFactory
+
+	// Weight is used to sort the list of conversations, higher weight first
+	// EVM: 80+
+	// Injective; 70+
+	// Solana: 60+
+	// Starknet: 50+
+	// Substrate: 40+
+
+	Weight int
+
+	Factory ConversationFactory
 }
 
 func RegisterConversation(conversationID string, title, description string, newFunc ConversationFactory, weight int) {
