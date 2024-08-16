@@ -1,4 +1,4 @@
-package vara
+package varaminimal
 
 import (
 	"encoding/json"
@@ -47,8 +47,6 @@ func cmd(msg any) loop.Cmd {
 	}
 }
 
-// This function does NOT mutate anything. Only reads.
-
 func (c *Convo) validate() error {
 	if _, err := json.Marshal(c.state); err != nil {
 		return fmt.Errorf("validating state format: %w", err)
@@ -68,10 +66,19 @@ func (p *Project) NextStep() (out loop.Cmd) {
 		return cmd(codegen.AskProjectName{})
 	}
 
+	if p.ChainName == "" {
+		return cmd(codegen.AskChainName{})
+	}
+
+	if !p.IsValidChainName(p.ChainName) {
+		return loop.Seq(cmd(codegen.MsgInvalidChainName{}), cmd(codegen.AskChainName{}))
+	}
+
 	if !p.generatedCodeCompleted {
 		return cmd(codegen.RunGenerate{})
 	}
 
+	// Remote build part removed for the moment
 	// if !p.confirmDoCompile && !p.confirmDownloadOnly {
 	// 	return cmd(codegen.AskConfirmCompile{})
 	// }
@@ -100,13 +107,39 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case codegen.AskProjectName:
 		return c.action(codegen.InputProjectName{}).
-			TextInput("Please enter the project name", "Submit").
-			Description("Identifier with only letters and numbers").
-			Validation(`^([a-z][a-z0-9_]{0,63})$`, "The project name must be a valid identifier with only letters and numbers, and no spaces.").
+			TextInput(codegen.InputProjectNameTextInput(), "Submit").
+			Description(codegen.InputProjectNameDescription()).
+			Validation(codegen.InputProjectNameRegex(), codegen.InputProjectNameValidation()).
 			Cmd()
 
 	case codegen.InputProjectName:
 		c.state.Name = msg.Value
+		return c.NextStep()
+
+	case codegen.AskChainName:
+		var labels, values []string
+		for _, conf := range ChainConfigs {
+			labels = append(labels, conf.DisplayName)
+			values = append(values, conf.ID)
+		}
+		return c.action(codegen.InputChainName{}).ListSelect("Please select the chain").
+			Labels(labels...).
+			Values(values...).
+			Cmd()
+
+	case codegen.MsgInvalidChainName:
+		return c.msg().
+			Messagef(`Hmm, %q seems like an invalid chain name. Maybe it was supported and is not anymore?`, c.state.ChainName).
+			Cmd()
+
+	case codegen.InputChainName:
+		c.state.ChainName = msg.Value
+		if c.state.IsValidChainName(msg.Value) {
+			return loop.Seq(
+				c.msg().Messagef("Got it, will be using chain %q", c.state.ChainConfig().DisplayName).Cmd(),
+				c.NextStep(),
+			)
+		}
 		return c.NextStep()
 
 	case codegen.RunGenerate:
@@ -114,7 +147,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			cmdGenerate(c.state),
 		)
 
-	// Removing the remote build part for the moment
+	// Remote build part removed for the moment
 	// case codegen.AskConfirmCompile:
 	// 	return c.action(codegen.InputConfirmCompile{}).
 	// 		Confirm("Should we build the Substreams package for you?", "Yes, build it", "No").
@@ -157,7 +190,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.NextStep()
 
 	case codegen.RunBuild:
-		// Remove the remote build part for the moment
+		// Remote build part removed for the moment
 		// Do not run the build, the user only wants to download the files
 		// if c.state.confirmDownloadOnly {
 		// 	return cmd(codegen.ReturnBuild{
@@ -171,7 +204,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			Artifacts: nil,
 		})
 
-		// Removing the remote build part for the moment
+		// Remote build part removed for the moment
 		// return cmdBuild(c.state)
 
 	case codegen.CompilingBuild:
@@ -263,7 +296,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		// }
 
 		return loop.Seq(
-			c.msg().Messagef("Substreams Package successfully downloaded. You will need to run `make package` inside your newly created substreams to generate the .spkg file.").Cmd(),
+			c.msg().Message(codegen.ReturnBuildMessage()).Cmd(),
 			loop.Quit(nil),
 		)
 

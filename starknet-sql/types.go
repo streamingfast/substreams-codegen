@@ -1,4 +1,4 @@
-package starknet
+package starknetsql
 
 import pbconvo "github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1"
 

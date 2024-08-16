@@ -3,9 +3,6 @@ package:
   name: {{ .ModuleName }}
   version: v0.1.0
 
-imports:
-  # eth: spkg.io/streamingfast/ethereum-common-v0.3.0.spkg # CHANGE ME
-
 protobuf:
   files:
     - mydata.proto
@@ -27,11 +24,5 @@ modules:
    - source: sf.ethereum.type.v2.Block
    output :
     type: proto:mydata.v1.MyData
-
-# - name: map_my_data
-#   kind: map
-#   inputs:
-#   - map: eth:map_events_calls
-#   //TODO Fill in
 
 network: {{ .ChainName }}

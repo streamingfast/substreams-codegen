@@ -1,4 +1,4 @@
-package vara
+package varaminimal
 
 import (
 	"github.com/streamingfast/logging"

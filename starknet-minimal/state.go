@@ -1,4 +1,4 @@
-package varaminimal
+package starknetminimal
 
 import (
 	"strings"

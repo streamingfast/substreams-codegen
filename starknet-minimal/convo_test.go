@@ -1,4 +1,4 @@
-package ethminimal
+package starknetminimal
 
 import (
 	"testing"
@@ -17,8 +17,4 @@ func TestConvoNextStep(t *testing.T) {
 	assert.Equal(t, codegen.AskProjectName{}, next())
 
 	p.Name = "my-proj"
-
-	assert.Equal(t, codegen.AskChainName{}, next())
-
-	p.ChainName = "arbitrum"
 }

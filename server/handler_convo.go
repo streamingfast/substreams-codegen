@@ -26,7 +26,8 @@ import (
 	_ "github.com/streamingfast/substreams-codegen/injective-events"
 	_ "github.com/streamingfast/substreams-codegen/injective-minimal"
 	_ "github.com/streamingfast/substreams-codegen/sol-minimal"
-	_ "github.com/streamingfast/substreams-codegen/starknet"
+	_ "github.com/streamingfast/substreams-codegen/starknet-minimal"
+	_ "github.com/streamingfast/substreams-codegen/starknet-sql"
 	_ "github.com/streamingfast/substreams-codegen/vara-minimal"
 )
 

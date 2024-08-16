@@ -1,4 +1,4 @@
-package starknet
+package starknetminimal
 
 import "sort"
 
@@ -16,14 +16,14 @@ var ChainConfigs []*ChainConfig
 
 var ChainConfigByID = map[string]*ChainConfig{
 	"starknet-mainnet": {
-		DisplayName:       "Starknet Mainnet Transactions",
+		DisplayName:       "Starknet Mainnet",
 		ExplorerLink:      "https://starkscan.co/",
 		FirehoseEndpoint:  "mainnet.starknet.streamingfast.io:443",
 		Network:           "starknet-mainnet",
 		initialBlockCache: make(map[string]uint64),
 	},
 	"starknet-testnet": {
-		DisplayName:       "Starknet Testnet Transactions",
+		DisplayName:       "Starknet Testnet",
 		ExplorerLink:      "",
 		FirehoseEndpoint:  "testnet.starknet.streamingfast.io:443",
 		Network:           "starknet-testnet",

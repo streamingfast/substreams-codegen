@@ -1,4 +1,4 @@
-package varaminimal
+package starknetsql
 
 import "sort"
 
@@ -15,18 +15,18 @@ type ChainConfig struct {
 var ChainConfigs []*ChainConfig
 
 var ChainConfigByID = map[string]*ChainConfig{
-	"vara-mainnet": {
-		DisplayName:       "Vara Mainnet",
-		ExplorerLink:      "https://vara.subscan.io/",
-		FirehoseEndpoint:  "mainnet.vara.streamingfast.io:443",
-		Network:           "vara-mainnet",
+	"starknet-mainnet": {
+		DisplayName:       "Starknet Mainnet",
+		ExplorerLink:      "https://starkscan.co/",
+		FirehoseEndpoint:  "mainnet.starknet.streamingfast.io:443",
+		Network:           "starknet-mainnet",
 		initialBlockCache: make(map[string]uint64),
 	},
-	"vara-testnet": {
-		DisplayName:       "Vara Testnet",
+	"starknet-testnet": {
+		DisplayName:       "Starknet Testnet",
 		ExplorerLink:      "",
-		FirehoseEndpoint:  "testnet.vara.streamingfast.io:443",
-		Network:           "vara-testnet",
+		FirehoseEndpoint:  "testnet.starknet.streamingfast.io:443",
+		Network:           "starknet-testnet",
 		initialBlockCache: make(map[string]uint64),
 	},
 }

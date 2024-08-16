@@ -4,7 +4,7 @@ package:
   version: v0.1.0
 
 imports:
-  gear: https://github.com/streamingfast/substreams-gear/releases/download/v0.1.1/gear-v0.1.1.spkg
+  starknet: https://github.com/streamingfast/substreams-starknet/releases/download/v0.1.1/starknet-v0.1.1.spkg
 
 protobuf:
   files:
@@ -24,7 +24,7 @@ modules:
  - name: map_my_data
    kind: map
    inputs:
-   - source: sf.gear.type.v1.Block
+   - source: sf.starknet.type.v1.Block
    output:
     type: proto:mydata.v1.MyData
 

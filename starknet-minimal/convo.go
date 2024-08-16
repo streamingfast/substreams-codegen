@@ -1,4 +1,4 @@
-package starknet
+package starknetminimal
 
 import (
 	"encoding/json"
@@ -8,63 +8,49 @@ import (
 	"time"
 
 	codegen "github.com/streamingfast/substreams-codegen"
-
 	"github.com/streamingfast/substreams-codegen/loop"
 )
 
-type outputType string
-
-const outputTypeSQL = "sql"
-
-const sqlTypeSQL = "sql"
-const sqlTypeClickhouse = "clickhouse"
-
-func init() {
-	codegen.RegisterConversation(
-		"starknet-sql",
-		"Inject Starknet transaction data into a database",
-		"",
-		codegen.ConversationFactory(NewWithSql),
-		50,
-	)
-}
-
 type Convo struct {
-	factory    *codegen.MsgWrapFactory
-	state      *Project
-	outputType outputType
-
+	factory          *codegen.MsgWrapFactory
+	state            *Project
 	remoteBuildState *codegen.RemoteBuildState
 }
 
-func NewWithSql(factory *codegen.MsgWrapFactory) codegen.Conversation {
-	c := &Convo{
-		factory:          factory,
-		state:            &Project{},
-		remoteBuildState: &codegen.RemoteBuildState{},
-		outputType:       outputTypeSQL,
-	}
-	return c
+func init() {
+	codegen.RegisterConversation(
+		"starknet-minimal",
+		"Simplest Substreams to get you started on Starknet",
+		`This creating the most simple substreams on Starknet`,
+		codegen.ConversationFactory(New),
+		59,
+	)
 }
 
-func (c *Convo) msg() *codegen.MsgWrap { return c.factory.NewMsg(c.state) }
+func New(factory *codegen.MsgWrapFactory) codegen.Conversation {
+	h := &Convo{
+		state:            &Project{},
+		factory:          factory,
+		remoteBuildState: &codegen.RemoteBuildState{},
+	}
+	return h
+}
 
-func (c *Convo) action(element any) *codegen.MsgWrap {
-	return c.factory.NewInput(element, c.state)
+func (h *Convo) msg() *codegen.MsgWrap { return h.factory.NewMsg(h.state) }
+func (h *Convo) action(element any) *codegen.MsgWrap {
+	return h.factory.NewInput(element, h.state)
+}
+
+func cmd(msg any) loop.Cmd {
+	return func() loop.Msg {
+		return msg
+	}
 }
 
 func (c *Convo) validate() error {
 	if _, err := json.Marshal(c.state); err != nil {
 		return fmt.Errorf("validating state format: %w", err)
 	}
-
-	switch c.outputType {
-	case outputTypeSQL:
-		//
-	default:
-		return fmt.Errorf("invalid output type %q (should not happen, this is a bug)", c.outputType)
-	}
-	c.state.outputType = c.outputType
 	return nil
 }
 
@@ -75,39 +61,27 @@ func (c *Convo) NextStep() loop.Cmd {
 	return c.state.NextStep()
 }
 
-func cmd(msg any) loop.Cmd {
-	return func() loop.Msg {
-		return msg
-	}
-}
-
 func (p *Project) NextStep() (out loop.Cmd) {
 	if p.Name == "" {
 		return cmd(codegen.AskProjectName{})
 	}
+
 	if p.ChainName == "" {
 		return cmd(codegen.AskChainName{})
 	}
 
-	if !isValidChainName(p.ChainName) {
+	if !p.IsValidChainName(p.ChainName) {
 		return loop.Seq(cmd(codegen.MsgInvalidChainName{}), cmd(codegen.AskChainName{}))
-	}
-
-	if p.TransactionFilter == "" && !p.filterAsked {
-		return cmd(AskTransactionFilter{})
-	}
-
-	if p.SqlOutputFlavor == "" {
-		return cmd(codegen.AskSqlOutputFlavor{})
 	}
 
 	if !p.generatedCodeCompleted {
 		return cmd(codegen.RunGenerate{})
 	}
 
-	if !p.confirmDoCompile && !p.confirmDownloadOnly {
-		return cmd(codegen.AskConfirmCompile{})
-	}
+	// Remote build part removed for the moment
+	// if !p.confirmDoCompile && !p.confirmDownloadOnly {
+	// 	return cmd(codegen.AskConfirmCompile{})
+	// }
 
 	return cmd(codegen.RunBuild{})
 }
@@ -124,6 +98,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			if err := json.Unmarshal([]byte(msg.Hydrate.SavedState), &c.state); err != nil {
 				return loop.Quit(fmt.Errorf(`something went wrong, here's an error message to share with our devs (%s); we've notified them already`, err))
 			}
+
 			msgCmd = c.msg().Message("Ok, I reloaded your state.").Cmd()
 		} else {
 			msgCmd = c.msg().Message("Ok, let's start a new package.").Cmd()
@@ -132,9 +107,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case codegen.AskProjectName:
 		return c.action(codegen.InputProjectName{}).
-			TextInput("Please enter the project name", "Submit").
-			Description("Identifier with only letters and numbers").
-			Validation(`^([a-z][a-z0-9_]{0,63})$`, "The project name must be a valid identifier with only letters and numbers, and no spaces").
+			TextInput(codegen.InputProjectNameTextInput(), "Submit").
+			Description(codegen.InputProjectNameDescription()).
+			Validation(codegen.InputProjectNameRegex(), codegen.InputProjectNameValidation()).
 			Cmd()
 
 	case codegen.InputProjectName:
@@ -159,7 +134,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case codegen.InputChainName:
 		c.state.ChainName = msg.Value
-		if isValidChainName(msg.Value) {
+		if c.state.IsValidChainName(msg.Value) {
 			return loop.Seq(
 				c.msg().Messagef("Got it, will be using chain %q", c.state.ChainConfig().DisplayName).Cmd(),
 				c.NextStep(),
@@ -169,23 +144,24 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case codegen.RunGenerate:
 		return loop.Seq(
-			c.msg().Message("Generating Substreams module code").Cmd(),
-			loop.Batch(
-				cmdGenerate(c.state, c.outputType),
-			),
+			cmdGenerate(c.state),
 		)
+
+	// Remote build part removed for the moment
+	// case codegen.AskConfirmCompile:
+	// 	return c.action(codegen.InputConfirmCompile{}).
+	// 		Confirm("Should we build the Substreams package for you?", "Yes, build it", "No").
+	// 		Cmd()
 
 	case codegen.ReturnGenerate:
 		if msg.Err != nil {
 			return loop.Seq(
-				c.msg().Message("Build failed!").Cmd(),
-				c.msg().Messagef("The build failed with error: %s", msg.Err).Cmd(),
+				c.msg().Messagef("Code generation failed with error: %s", msg.Err).Cmd(),
 				loop.Quit(msg.Err),
 			)
 		}
 
 		c.state.projectFiles = msg.ProjectFiles
-		c.state.sourceFiles = msg.SourceFiles
 		c.state.generatedCodeCompleted = true
 
 		downloadCmd := c.action(codegen.InputSourceDownloaded{}).DownloadFiles()
@@ -210,8 +186,26 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 		return loop.Seq(c.msg().Messagef("Code generation complete!").Cmd(), downloadCmd.Cmd())
 
+	case codegen.InputSourceDownloaded:
+		return c.NextStep()
+
 	case codegen.RunBuild:
-		return cmdBuild(c.state)
+		// Remote build part removed for the moment
+		// Do not run the build, the user only wants to download the files
+		// if c.state.confirmDownloadOnly {
+		// 	return cmd(codegen.ReturnBuild{
+		// 		Err:       nil,
+		// 		Artifacts: nil,
+		// 	})
+		// }
+
+		return cmd(codegen.ReturnBuild{
+			Err:       nil,
+			Artifacts: nil,
+		})
+
+		// Remote build part removed for the moment
+		// return cmdBuild(c.state)
 
 	case codegen.CompilingBuild:
 		resp, ok := <-msg.RemoteBuildChan
@@ -228,15 +222,16 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			// dont fail the command line yet, go to the return build step
 			return loop.Seq(
 				c.msg().StopLoading().Cmd(),
-				cmdBuildFailed(errors.New("build response is nil")),
+				cmdBuildFailed(nil, errors.New("build response is nil")),
 			)
 		}
 
 		if resp.Error != "" {
 			// dont fail the command line yet, go to the return build step
 			return loop.Seq(
-				c.msg().StopLoading().Cmd(),
-				cmdBuildFailed(errors.New(resp.Error)),
+				// This is not an error, send a loading false to remove the loading spinner
+				c.msg().Loading(false, "").Cmd(),
+				cmdBuildFailed(resp.Logs, errors.New(resp.Error)),
 			)
 		}
 
@@ -253,21 +248,15 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			)
 		}
 
-		if c.remoteBuildState.Error != "" {
-			// dont fail the command line yet, go to the return build step
-			return loop.Seq(
-				c.msg().StopLoading().Cmd(),
-				cmdBuildFailed(errors.New(c.remoteBuildState.Error)),
-			)
-		}
-
-		if len(c.remoteBuildState.Artifacts) == 0 {
+		if len(resp.Artifacts) == 0 {
 			if len(c.remoteBuildState.Logs) == 0 {
 				// don't accumulate any empty logs, just keep looping
-				return cmd(codegen.CompilingBuild{
-					FirstTime:       false,
-					RemoteBuildChan: msg.RemoteBuildChan,
-				}) // keep staying in the CompilingBuild state
+				return loop.Seq(
+					cmd(codegen.CompilingBuild{
+						FirstTime:       false,
+						RemoteBuildChan: msg.RemoteBuildChan,
+					}), // keep staying in the CompilingBuild state
+				)
 			}
 
 			return cmd(codegen.CompilingBuild{
@@ -278,59 +267,42 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 		// done, we have the artifacts
 		return loop.Seq(
-			c.msg().StopLoading().Cmd(),
+			// This is not an error, send a loading false to remove the loading spinner
+			c.msg().Loading(false, "").Cmd(),
 			cmdBuildCompleted(c.remoteBuildState),
 		)
 
 	case codegen.ReturnBuild:
-		if msg.Err != nil {
-			return loop.Seq(
-				c.msg().Messagef("Remote build failed with error: %s\nYou can package your Substreams with \"make package\".", msg.Err).Cmd(),
-				loop.Quit(nil),
-			)
-		}
+		// if msg.Err != nil {
+		// 	return loop.Seq(
+		// 		c.msg().Messagef("Remote build failed with error: %q. See full logs in `{project-path}/logs.txt`", msg.Err).Cmd(),
+		// 		c.msg().Messagef("You will need to unzip the 'substreams-src.zip' file and run `make package` to try and generate the .spkg file.").Cmd(),
+		// 		c.action(codegen.PackageDownloaded{}).
+		// 			DownloadFiles().
+		// 			AddFile("logs.txt", []byte(msg.Logs), `text/x-logs`, "").
+		// 			Cmd(),
+		// 	)
+		// }
+		// if c.state.confirmDoCompile {
+		// 	return loop.Seq(
+		// 		c.msg().Messagef("Build completed successfully, took %s", time.Since(c.state.buildStarted)).Cmd(),
+		// 		c.action(codegen.PackageDownloaded{}).
+		// 			DownloadFiles().
+		// 			// In both AddFile(...) calls, do not show any description, as we already have enough description in the substreams init part of the conversation
+		// 			AddFile(msg.Artifacts[0].Filename, msg.Artifacts[0].Content, `application/x-protobuf+sf.substreams.v1.Package`, "").
+		// 			AddFile("logs.txt", []byte(msg.Logs), `text/x-logs`, "").
+		// 			Cmd(),
+		// 	)
+		// }
 
 		return loop.Seq(
-			c.msg().Messagef("Build completed successfully, took %s", time.Since(c.state.buildStarted)).Cmd(),
-			c.action(codegen.PackageDownloaded{}).
-				DownloadFiles().
-				// In both AddFile(...) calls, do not show any description, as we already have enough description in the substreams init part of the conversation
-				AddFile(msg.Artifacts[0].Filename, msg.Artifacts[0].Content, `application/x-protobuf+sf.substreams.v1.Package`, "").
-				AddFile("logs.txt", []byte(msg.Logs), `text/x-logs`, "").
-				Cmd(),
+			c.msg().Message(codegen.ReturnBuildMessage()).Cmd(),
+			loop.Quit(nil),
 		)
 
 	case codegen.PackageDownloaded:
 		return loop.Quit(nil)
-
-	case codegen.AskSqlOutputFlavor:
-		return c.action(codegen.InputSQLOutputFlavor{}).ListSelect("Please select the type of SQL output").
-			Labels("PostgreSQL", "Clickhouse").
-			Values(sqlTypeSQL, sqlTypeClickhouse).
-			Cmd()
-
-	case codegen.InputSQLOutputFlavor:
-		c.state.SqlOutputFlavor = msg.Value
-		return c.NextStep()
-
-	case AskTransactionFilter:
-		c.state.filterAsked = true
-		return c.action(InputTransactionFilter{}).
-			TextInput(`Please enter the transaction filter (leave blank for default: "(rc:execution_status:1)")`, "Submit").
-			Cmd()
-
-	case InputTransactionFilter:
-		c.state.TransactionFilter = msg.Value // Accept the value directly, even if it's blank
-		return c.NextStep()
 	}
 
 	return loop.Quit(fmt.Errorf("invalid loop message: %T", msg))
-}
-
-func isValidChainName(input string) bool {
-	return ChainConfigByID[input] != nil
-}
-
-func isTestnet(input string) bool {
-	return ChainConfigByID[input].Network == "injective-testnet"
 }

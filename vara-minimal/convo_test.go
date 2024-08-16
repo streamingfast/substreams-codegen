@@ -1,4 +1,4 @@
-package vara
+package varaminimal
 
 import (
 	"testing"

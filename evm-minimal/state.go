@@ -1,4 +1,4 @@
-package ethfull
+package ethminimal
 
 import (
 	"strings"
@@ -11,10 +11,12 @@ type Project struct {
 	Compile   bool   `json:"compile,omitempty"` // optional field to write in state and automatically compile with no confirmation.
 	Download  bool   `json:"download,omitempty"`
 
-	confirmDoCompile       bool
-	confirmDownloadOnly    bool
-	generatedCodeCompleted bool
+	// Remote build part removed for the moment
+	// confirmDoCompile       bool
+	// confirmDownloadOnly    bool
+
 	compilingBuild         bool
+	generatedCodeCompleted bool
 	projectFiles           map[string][]byte
 
 	buildStarted time.Time

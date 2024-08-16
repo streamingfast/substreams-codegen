@@ -109,8 +109,6 @@ func cmd(msg any) loop.Cmd {
 	}
 }
 
-// This function does NOT mutate anything. Only reads.
-
 func (c *Convo) contextContract() *Contract {
 	if c.state.currentContractIdx == -1 || c.state.currentContractIdx > len(c.state.Contracts)-1 {
 		return nil
@@ -319,9 +317,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case codegen.AskProjectName:
 		return c.action(codegen.InputProjectName{}).
-			TextInput("Please enter the project name", "Submit").
-			Description("Identifier with only letters and numbers").
-			Validation(`^([a-z][a-z0-9_]{0,63})$`, "The project name must be a valid identifier with only letters and numbers, and no spaces.").
+			TextInput(codegen.InputProjectNameTextInput(), "Submit").
+			Description(codegen.InputProjectNameDescription()).
+			Validation(codegen.InputProjectNameRegex(), codegen.InputProjectNameValidation()).
 			Cmd()
 
 	case codegen.InputProjectName:

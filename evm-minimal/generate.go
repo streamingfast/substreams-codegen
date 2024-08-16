@@ -1,4 +1,4 @@
-package ethfull
+package ethminimal
 
 import (
 	"bytes"
@@ -199,7 +199,8 @@ func (p *Project) Render() (projectFiles map[string][]byte, err error) {
 		"Cargo.toml.gotmpl":         "Cargo.toml",
 		".gitignore":                ".gitignore",
 		"substreams.yaml.gotmpl":    "substreams.yaml",
-		"Makefile.gotmpl":           "Makefile",
+		"README.md.gotmpl":          "README.md",
+		"CONTRIBUTING.md":           "CONTRIBUTING.md",
 	}
 
 	for templateFile, finalFileName := range templateFiles {

@@ -1,0 +1,25 @@
+# EVM Minimal
+
+## Build your Substreams
+
+```bash
+substreams build
+```
+
+## Authenticate
+
+To run your Substreams you will need to [authenticate](https://substreams.streamingfast.io/documentation/consume/authentication) yourself.
+
+```bash
+export API_KEY="your_api_key"
+export SUBSTREAMS_API_TOKEN=$(curl https://auth.thegraph.market/v1/auth/issue -s --data-binary '{"api_key":"'$API_KEY'"}' | jq -r .token)
+```
+
+## Run your Substreams
+
+```bash
+substreams run ./substreams.yaml map_my_data -t +1000
+substreams gui ./substreams.yaml map_my_data -t +1000
+```
+
+For reference on developing Substreams, refer to the [CONTRIBUTING.md](CONTRIBUTING.md).
