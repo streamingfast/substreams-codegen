@@ -201,7 +201,7 @@ func (p *Project) Render() (projectFiles map[string][]byte, err error) {
 		".gitignore":                ".gitignore",
 		"substreams.yaml.gotmpl":    "substreams.yaml",
 		"README.md.gotmpl":          "README.md",
-		"CONTRIBUTING.md":           "CONTRIBUTING.md",
+		// "CONTRIBUTING.md":           "CONTRIBUTING.md",
 	}
 
 	for templateFile, finalFileName := range templateFiles {

@@ -20,13 +20,13 @@ const sqlTypeSQL = "sql"
 const sqlTypeClickhouse = "clickhouse"
 
 func init() {
-	codegen.RegisterConversation(
-		"starknet-sql",
-		"Inject Starknet transaction data into a database",
-		"",
-		codegen.ConversationFactory(NewWithSql),
-		50,
-	)
+	// codegen.RegisterConversation(
+	// 	"starknet-sql",
+	// 	"Inject Starknet transaction data into a database",
+	// 	"",
+	// 	codegen.ConversationFactory(NewWithSql),
+	// 	50,
+	// )
 }
 
 type Convo struct {

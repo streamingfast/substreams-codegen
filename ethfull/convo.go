@@ -37,27 +37,27 @@ func init() {
 	for _, conf := range ChainConfigs {
 		supportedChains = append(supportedChains, conf.DisplayName)
 	}
-	codegen.RegisterConversation(
-		"evm-subgraph",
-		"Decode Ethereum events/calls and and use them as triggers to feed your Subgraph",
-		`Given a list of contracts and their ABIs, this will build an Ethereum substreams that decodes events and/or calls
-and creates entities that can be sent directly into a Subgraph.
-Supported networks: `+strings.Join(supportedChains, ", "),
-		codegen.ConversationFactory(NewWithSubgraph),
-		80,
-	)
+	// 	codegen.RegisterConversation(
+	// 		"evm-subgraph",
+	// 		"Decode Ethereum events/calls and and use them as triggers to feed your Subgraph",
+	// 		`Given a list of contracts and their ABIs, this will build an Ethereum substreams that decodes events and/or calls
+	// and creates entities that can be sent directly into a Subgraph.
+	// Supported networks: `+strings.Join(supportedChains, ", "),
+	// 		codegen.ConversationFactory(NewWithSubgraph),
+	// 		80,
+	// 	)
 
-	codegen.RegisterConversation(
-		"evm-sql",
-		"Decode Ethereum events/calls and insert them into PostgreSQL or Clickhouse",
-		`Given a list of contracts and their ABIs, this will build an Ethereum substreams that can be used to fill
+	// codegen.RegisterConversation(
+	// 	"evm-sql",
+	// 	"Decode Ethereum events/calls and insert them into PostgreSQL or Clickhouse",
+	// 	`Given a list of contracts and their ABIs, this will build an Ethereum substreams that can be used to fill
 
-	your SQL database using https://github.com/streamingfast/substreams-sink-sql.
-	Supported networks: `+strings.Join(supportedChains, ", "),
+	// your SQL database using https://github.com/streamingfast/substreams-sink-sql.
+	// Supported networks: `+strings.Join(supportedChains, ", "),
 
-		codegen.ConversationFactory(NewWithSQL),
-		81,
-	)
+	// 	codegen.ConversationFactory(NewWithSQL),
+	// 	81,
+	// )
 
 	codegen.RegisterConversation(
 		"evm-events-calls",

@@ -29,20 +29,20 @@ type InjectiveConvo struct {
 }
 
 func init() {
-	codegen.RegisterConversation(
-		"injective-subgraph",
-		"Insert Injective events into a Graph-Node subgraph",
-		"Create an Injective Substreams module from specific events that can feed a subgraph.",
-		codegen.ConversationFactory(NewWithSubgraph),
-		70,
-	)
-	codegen.RegisterConversation(
-		"injective-sql",
-		"Insert Injective events into PostgreSQL or Clickhouse",
-		"Given a list of events, generate the SQL schema and the Substreams module to insert them into a SQL database",
-		codegen.ConversationFactory(NewWithSQL),
-		71,
-	)
+	// codegen.RegisterConversation(
+	// 	"injective-subgraph",
+	// 	"Insert Injective events into a Graph-Node subgraph",
+	// 	"Create an Injective Substreams module from specific events that can feed a subgraph.",
+	// 	codegen.ConversationFactory(NewWithSubgraph),
+	// 	70,
+	// )
+	// codegen.RegisterConversation(
+	// 	"injective-sql",
+	// 	"Insert Injective events into PostgreSQL or Clickhouse",
+	// 	"Given a list of events, generate the SQL schema and the Substreams module to insert them into a SQL database",
+	// 	codegen.ConversationFactory(NewWithSQL),
+	// 	71,
+	// )
 }
 
 func NewWithSubgraph(factory *codegen.MsgWrapFactory) codegen.Conversation {
