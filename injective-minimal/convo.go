@@ -1,4 +1,4 @@
-package ethfull
+package injectiveminimal
 
 import (
 	"encoding/json"
@@ -46,8 +46,6 @@ func cmd(msg any) loop.Cmd {
 		return msg
 	}
 }
-
-// This function does NOT mutate anything. Only reads.
 
 func (c *Convo) validate() error {
 	if _, err := json.Marshal(c.state); err != nil {
@@ -102,6 +100,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.action(codegen.InputProjectName{}).
 			TextInput(codegen.InputProjectNameTextInput(), "Submit").
 			Description(codegen.InputProjectNameDescription()).
+			DefaultValue("my_project").
 			Validation(codegen.InputProjectNameRegex(), codegen.InputProjectNameValidation()).
 			Cmd()
 

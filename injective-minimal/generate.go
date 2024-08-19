@@ -1,4 +1,4 @@
-package ethfull
+package injectiveminimal
 
 import (
 	"bytes"

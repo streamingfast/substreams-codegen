@@ -47,8 +47,6 @@ func cmd(msg any) loop.Cmd {
 	}
 }
 
-// This function does NOT mutate anything. Only reads.
-
 func (c *Convo) validate() error {
 	if _, err := json.Marshal(c.state); err != nil {
 		return fmt.Errorf("validating state format: %w", err)
@@ -103,6 +101,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.action(codegen.InputProjectName{}).
 			TextInput(codegen.InputProjectNameTextInput(), "Submit").
 			Description(codegen.InputProjectNameDescription()).
+			DefaultValue("my_project").
 			Validation(codegen.InputProjectNameRegex(), codegen.InputProjectNameValidation()).
 			Cmd()
 
