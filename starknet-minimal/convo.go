@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	codegen "github.com/streamingfast/substreams-codegen"
@@ -74,6 +75,10 @@ func (p *Project) NextStep() (out loop.Cmd) {
 		return loop.Seq(cmd(codegen.MsgInvalidChainName{}), cmd(codegen.AskChainName{}))
 	}
 
+	if !p.InitialBlockSet {
+		return cmd(codegen.AskInitialStartBlockType{})
+	}
+
 	if !p.generatedCodeCompleted {
 		return cmd(codegen.RunGenerate{})
 	}
@@ -141,6 +146,23 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 				c.NextStep(),
 			)
 		}
+		return c.NextStep()
+
+	case codegen.AskInitialStartBlockType:
+		return c.action(codegen.InputAskInitialStartBlockType{}).
+			TextInput(codegen.InputAskInitialStartBlockTypeTextInput(), "Submit").
+			DefaultValue("0").
+			Validation(codegen.InputAskInitialStartBlockTypeRegex(), codegen.InputAskInitialStartBlockTypeValidation()).
+			Cmd()
+
+	case codegen.InputAskInitialStartBlockType:
+		initialBlock, err := strconv.ParseUint(msg.Value, 10, 64)
+		if err != nil {
+			return loop.Quit(fmt.Errorf("invalid start block input value %q, expected a number", msg.Value))
+		}
+
+		c.state.InitialBlock = initialBlock
+		c.state.InitialBlockSet = true
 		return c.NextStep()
 
 	case codegen.RunGenerate:

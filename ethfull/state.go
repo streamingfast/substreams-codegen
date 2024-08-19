@@ -25,12 +25,14 @@ type Project struct {
 	Compile          bool               `json:"compile,omitempty"` // optional field to write in state and automatically compile with no confirmation.
 	Download         bool               `json:"download,omitempty"`
 
+	// Remote build part removed for the moment
+	// confirmDownloadOnly bool
+	// confirmDoCompile    bool
+
 	currentContractIdx     int
 	confirmEnoughContracts bool
-	confirmDoCompile       bool
-	confirmDownloadOnly    bool
-	generatedCodeCompleted bool
 	compilingBuild         bool
+	generatedCodeCompleted bool
 	sourceFiles            map[string][]byte
 	projectFiles           map[string][]byte
 
@@ -191,14 +193,14 @@ func (p *Project) AllContracts() []*BaseContract {
 }
 
 type BaseContract struct {
-	Name        string `json:"name,omitempty"`
-	TrackEvents bool   `json:"trackEvents"`
-	TrackCalls  bool   `json:"trackCalls"`
+	Name        string          `json:"name,omitempty"`
+	TrackEvents bool            `json:"trackEvents"`
+	TrackCalls  bool            `json:"trackCalls"`
+	RawABI      json.RawMessage `json:"rawAbi,omitempty"`
 
-	RawABI                  json.RawMessage `json:"rawAbi,omitempty"`
 	abiFetchedInThisSession bool
-
-	abi *ABI
+	abi                     *ABI
+	emptyABI                bool
 }
 
 func (c *BaseContract) Identifier() string { return c.Name }

@@ -197,6 +197,7 @@ func (p *Project) Render(outType outputType) (substreamsFiles map[string][]byte,
 		return nil, nil, fmt.Errorf("parse templates: %w", err)
 	}
 
+	// TODO: here we want ONLY the output type substreams, split the rest (sql and subgraph) into their own codegens
 	templateFiles := map[string]string{
 		"proto/contract.proto.gotmpl": "substreams/proto/contract.proto",
 		"src/abi/mod.rs.gotmpl":       "substreams/src/abi/mod.rs",
@@ -220,11 +221,11 @@ func (p *Project) Render(outType outputType) (substreamsFiles map[string][]byte,
 			"rust-toolchain.toml":         "rust-toolchain.toml",
 			".gitignore":                  ".gitignore",
 			"substreams.yaml.gotmpl":      "substreams.yaml",
-			"entities/Makefile.gotmpl":    "Makefile",
+			"README.md":                   "README.md",
 		}
 	case outputTypeSQL:
-		templateFiles["sql/substreams-Makefile.gotmpl"] = "substreams/Makefile"
-		templateFiles["sql/Makefile.gotmpl"] = "Makefile"
+		// templateFiles["sql/substreams-Makefile.gotmpl"] = "substreams/Makefile"
+		// templateFiles["sql/Makefile.gotmpl"] = "Makefile"
 		templateFiles["sql/substreams.yaml.gotmpl"] = "substreams/substreams.yaml"
 		templateFiles["sql/dev-environment/docker-compose.yml.gotmpl"] = "dev-environment/docker-compose.yml"
 		templateFiles["sql/dev-environment/start.sh.gotmpl"] = "dev-environment/start.sh"
@@ -242,6 +243,7 @@ func (p *Project) Render(outType outputType) (substreamsFiles map[string][]byte,
 			return nil, nil, fmt.Errorf("unknown sql output flavor %q", p.SqlOutputFlavor)
 		}
 
+	// TODO: split these up in defferent codegens
 	case outputTypeSubgraph:
 		switch p.SubgraphOutputFlavor {
 		case "entity":

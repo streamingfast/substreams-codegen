@@ -17,6 +17,7 @@ import (
 )
 
 var QuitInvalidContext = loop.Quit(fmt.Errorf("invalid state context: no current contract"))
+var AbiFilepathPrefix = "file://"
 
 type outputType string
 
@@ -33,10 +34,10 @@ type Convo struct {
 }
 
 func init() {
-	supportedChains := make([]string, 0, len(ChainConfigs))
-	for _, conf := range ChainConfigs {
-		supportedChains = append(supportedChains, conf.DisplayName)
-	}
+	// supportedChains := make([]string, 0, len(ChainConfigs))
+	// for _, conf := range ChainConfigs {
+	// 	supportedChains = append(supportedChains, conf.DisplayName)
+	// }
 	// 	codegen.RegisterConversation(
 	// 		"evm-subgraph",
 	// 		"Decode Ethereum events/calls and and use them as triggers to feed your Subgraph",
@@ -183,6 +184,12 @@ func (p *Project) NextStep() (out loop.Cmd) {
 		}
 
 		if contract.abi == nil {
+			// if the user pasted an empty ABI, we would restart the process or choosing a contract address
+			if contract.emptyABI {
+				contract.Address = ""     // reset the address
+				contract.emptyABI = false // reset the flag
+				return notifyContext(cmd(AskContractAddress{}))
+			}
 			if contract.RawABI == nil {
 				return notifyContext(cmd(FetchContractABI{}))
 			}
@@ -229,6 +236,12 @@ func (p *Project) NextStep() (out loop.Cmd) {
 				return notifyContext(cmd(AskDynamicContractTrackWhat{}))
 			}
 			if dynContract.abi == nil {
+				// if the user pasted an empty ABI, we would restart the process or choosing a contract address
+				if dynContract.emptyABI {
+					dynContract.referenceContractAddress = "" // reset the reference address
+					dynContract.emptyABI = false              // reset the flag
+					return notifyContext(cmd(AskContractAddress{}))
+				}
 				if dynContract.RawABI == nil {
 					if dynContract.referenceContractAddress == "" {
 						if p.ChainConfig().ApiEndpoint == "" {
@@ -265,9 +278,10 @@ func (p *Project) NextStep() (out loop.Cmd) {
 		return cmd(codegen.RunGenerate{})
 	}
 
-	if !p.confirmDoCompile && !p.confirmDownloadOnly {
-		return cmd(codegen.AskConfirmCompile{})
-	}
+	// Remote build part removed for the moment
+	// if !p.confirmDoCompile && !p.confirmDownloadOnly {
+	// 	return cmd(codegen.AskConfirmCompile{})
+	// }
 
 	return cmd(codegen.RunBuild{})
 }
@@ -384,6 +398,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			c.msg().Messagef("We're tackling the %s contract.", humanize.Ordinal(c.state.currentContractIdx+1)).Cmd(),
 			c.action(InputContractAddress{}).TextInput("Please enter the contract address", "Submit").
 				Description("Format it with 0x prefix and make sure it's a valid Ethereum address.\nFor example, the Uniswap v3 factory address: 0x1f98431c8ad98523631ae4a59f267346ea31f984").
+				DefaultValue("0x1f98431c8ad98523631ae4a59f267346ea31f984").
 				Validation("^0x[a-fA-F0-9]{40}$", "Please enter a valid Ethereum address").Cmd(),
 		)
 
@@ -413,7 +428,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.NextStep()
 
 	case AskContractABI:
-		return c.action(InputContractABI{}).TextInput("Please paste the contract ABI", "Submit").
+		return c.action(InputContractABI{}).TextInput(fmt.Sprintf("Please paste the contract ABI or the full JSON ABI file path starting with %sfullpath/to/abi.json", AbiFilepathPrefix), "Submit").
 			Cmd()
 
 	case AskDynamicContractABI:
@@ -432,7 +447,28 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			return QuitInvalidContext
 		}
 
-		rawMessage := json.RawMessage(msg.Value)
+		// if the user pasted and empty string or hit the enter button by not supplying anything,
+		// we want to go back to the ABI question
+		if msg.Value == "" {
+			contract.emptyABI = true
+			return c.NextStep()
+		}
+
+		var rawMessage json.RawMessage
+
+		if strings.HasPrefix(msg.Value, AbiFilepathPrefix) {
+			abiPath := strings.TrimPrefix(msg.Value, AbiFilepathPrefix)
+
+			fileBytes, err := os.ReadFile(abiPath)
+			if err != nil {
+				return loop.Seq(c.msg().Messagef("Cannot read the ABI file %q: %s", abiPath, err).Cmd(), cmd(AskContractABI{}))
+			}
+
+			rawMessage = json.RawMessage(fileBytes)
+		} else {
+			rawMessage = json.RawMessage(msg.Value)
+		}
+
 		if _, err := json.Marshal(rawMessage); err != nil {
 			return loop.Seq(c.msg().Messagef("ABI %q isn't valid: %q", msg.Value, err).Cmd(), cmd(AskContractABI{}))
 		}
@@ -486,10 +522,12 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		if contract == nil {
 			return QuitInvalidContext
 		}
+
 		config := c.state.ChainConfig()
 		if config.ApiEndpoint == "" {
 			return cmd(AskContractABI{})
 		}
+
 		return func() loop.Msg {
 			abi, err := contract.FetchABI(config)
 			return ReturnFetchContractABI{abi: abi, err: err}
@@ -956,23 +994,25 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		c.state.SubgraphOutputFlavor = msg.Value
 		return c.NextStep()
 
-	case codegen.InputConfirmCompile:
-		if msg.Affirmative {
-			c.state.confirmDoCompile = true
-		} else {
-			c.state.confirmDownloadOnly = true
-		}
-		return c.NextStep()
+	// Remote build part removed for the moment
+	// case codegen.InputConfirmCompile:
+	// 	if msg.Affirmative {
+	// 		c.state.confirmDoCompile = true
+	// 	} else {
+	// 		c.state.confirmDownloadOnly = true
+	// 	}
+	// 	return c.NextStep()
 
 	case codegen.RunGenerate:
 		return loop.Seq(
 			cmdGenerate(c.state, c.outputType),
 		)
 
-	case codegen.AskConfirmCompile:
-		return c.action(codegen.InputConfirmCompile{}).
-			Confirm("Should we build the Substreams package for you?", "Yes, build it", "No").
-			Cmd()
+	// Remote build part removed for the moment
+	// case codegen.AskConfirmCompile:
+	// 	return c.action(codegen.InputConfirmCompile{}).
+	// 		Confirm("Should we build the Substreams package for you?", "Yes, build it", "No").
+	// 		Cmd()
 
 	case codegen.ReturnGenerate:
 		if msg.Err != nil {
@@ -1012,15 +1052,22 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		return c.NextStep()
 
 	case codegen.RunBuild:
+		// Remote build part removed for the moment
 		// Do not run the build, the user only wants to download the files
-		if c.state.confirmDownloadOnly {
-			return cmd(codegen.ReturnBuild{
-				Err:       nil,
-				Artifacts: nil,
-			})
-		}
+		// if c.state.confirmDownloadOnly {
+		// 	return cmd(codegen.ReturnBuild{
+		// 		Err:       nil,
+		// 		Artifacts: nil,
+		// 	})
+		// }
 
-		return cmdBuild(c.state)
+		return cmd(codegen.ReturnBuild{
+			Err:       nil,
+			Artifacts: nil,
+		})
+
+		// Remote build part removed for the moment
+		// return cmdBuild(c.state)
 
 	case codegen.CompilingBuild:
 		resp, ok := <-msg.RemoteBuildChan
@@ -1088,29 +1135,31 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		)
 
 	case codegen.ReturnBuild:
-		if msg.Err != nil {
-			return loop.Seq(
-				c.msg().Messagef("Remote build failed with error: %q. See full logs in `{project-path}/logs.txt`", msg.Err).Cmd(),
-				c.msg().Messagef("You will need to unzip the 'substreams-src.zip' file and run `make package` to try and generate the .spkg file.").Cmd(),
-				c.action(codegen.PackageDownloaded{}).
-					DownloadFiles().
-					AddFile("logs.txt", []byte(msg.Logs), `text/x-logs`, "").
-					Cmd(),
-			)
-		}
-		if c.state.confirmDoCompile {
-			return loop.Seq(
-				c.msg().Messagef("Build completed successfully, took %s", time.Since(c.state.buildStarted)).Cmd(),
-				c.action(codegen.PackageDownloaded{}).
-					DownloadFiles().
-					// In both AddFile(...) calls, do not show any description, as we already have enough description in the substreams init part of the conversation
-					AddFile(msg.Artifacts[0].Filename, msg.Artifacts[0].Content, `application/x-protobuf+sf.substreams.v1.Package`, "").
-					AddFile("logs.txt", []byte(msg.Logs), `text/x-logs`, "").
-					Cmd(),
-			)
-		}
+		// Remote build part removed for the moment
+		// if msg.Err != nil {
+		// 	return loop.Seq(
+		// 		c.msg().Messagef("Remote build failed with error: %q. See full logs in `{project-path}/logs.txt`", msg.Err).Cmd(),
+		// 		c.msg().Messagef("You will need to unzip the 'substreams-src.zip' file and run `make package` to try and generate the .spkg file.").Cmd(),
+		// 		c.action(codegen.PackageDownloaded{}).
+		// 			DownloadFiles().
+		// 			AddFile("logs.txt", []byte(msg.Logs), `text/x-logs`, "").
+		// 			Cmd(),
+		// 	)
+		// }
+		// if c.state.confirmDoCompile {
+		// 	return loop.Seq(
+		// 		c.msg().Messagef("Build completed successfully, took %s", time.Since(c.state.buildStarted)).Cmd(),
+		// 		c.action(codegen.PackageDownloaded{}).
+		// 			DownloadFiles().
+		// 			// In both AddFile(...) calls, do not show any description, as we already have enough description in the substreams init part of the conversation
+		// 			AddFile(msg.Artifacts[0].Filename, msg.Artifacts[0].Content, `application/x-protobuf+sf.substreams.v1.Package`, "").
+		// 			AddFile("logs.txt", []byte(msg.Logs), `text/x-logs`, "").
+		// 			Cmd(),
+		// 	)
+		// }
+
 		return loop.Seq(
-			c.msg().Messagef("Substreams Package was not compiled: You will need to unzip the 'substreams-src.zip' file and run `make package` to generate the .spkg file.").Cmd(),
+			c.msg().Message(codegen.ReturnBuildMessage()).Cmd(),
 			loop.Quit(nil),
 		)
 

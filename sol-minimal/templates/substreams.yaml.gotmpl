@@ -20,6 +20,7 @@ binaries:
 modules:
  - name: map_my_data
    kind: map
+   initialBlock: {{ .InitialBlock }}
    inputs:
    - source: sf.solana.type.v1.Block
    output:

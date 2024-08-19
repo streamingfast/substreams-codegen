@@ -6,15 +6,17 @@ import (
 )
 
 type Project struct {
-	Name      string `json:"name"`
-	ChainName string `json:"chainName"`
-	Compile   bool   `json:"compile,omitempty"` // optional field to write in state and automatically compile with no confirmation.
-	Download  bool   `json:"download,omitempty"`
+	Name            string `json:"name"`
+	ChainName       string `json:"chainName"`
+	Compile         bool   `json:"compile,omitempty"` // optional field to write in state and automatically compile with no confirmation.
+	Download        bool   `json:"download,omitempty"`
+	InitialBlock    uint64 `json:"initialBlock,omitempty"`
+	InitialBlockSet bool   `json:"initialBlockSet,omitempty"`
 
-	currentContractIdx     int
-	confirmEnoughContracts bool
-	confirmDoCompile       bool
-	confirmDownloadOnly    bool
+	// Remote build part removed for the moment
+	// confirmDoCompile       bool
+	// confirmDownloadOnly    bool
+
 	generatedCodeCompleted bool
 	compilingBuild         bool
 	projectFiles           map[string][]byte
@@ -35,3 +37,6 @@ func (p *Project) ChainConfig() *ChainConfig          { return ChainConfigByID[p
 func (p *Project) ChainEndpoint() string              { return ChainConfigByID[p.ChainName].FirehoseEndpoint }
 func (p *Project) ChainNetwork() string               { return ChainConfigByID[p.ChainName].Network }
 func (p *Project) IsValidChainName(input string) bool { return ChainConfigByID[input] != nil }
+func (p *Project) IsTestnet(input string) bool {
+	return ChainConfigByID[input].Network == "injective-testnet"
+}

@@ -59,6 +59,21 @@ type PackageDownloaded struct{ pbconvo.UserInput_Confirmation }
 type AskConfirmCompile struct{}
 type InputConfirmCompile struct{ pbconvo.UserInput_Confirmation } // SQL specific
 
+type AskInitialStartBlockType struct{}
+type InputAskInitialStartBlockType struct{ pbconvo.UserInput_TextInput }
+
+func InputAskInitialStartBlockTypeTextInput() string {
+	return "At what block do you want to start indexing data?"
+}
+
+func InputAskInitialStartBlockTypeRegex() string {
+	return `^\d+$`
+}
+
+func InputAskInitialStartBlockTypeValidation() string {
+	return "The start block cannot be empty and must be a number"
+}
+
 // SQL specific
 type AskSqlOutputFlavor struct{}
 type InputSQLOutputFlavor struct{ pbconvo.UserInput_Selection }

@@ -14,6 +14,7 @@ import (
 )
 
 var QuitInvalidContext = loop.Quit(fmt.Errorf("invalid state context: no current contract"))
+var InjectiveTestnetDefaultStartBlock uint64 = 37368800
 
 type outputType string
 
@@ -240,7 +241,7 @@ func (c *InjectiveConvo) Update(msg loop.Msg) loop.Cmd {
 		textInputMessage := "At what block do you want to start indexing data?"
 		defaultValue := "0"
 		if isTestnet(c.state.ChainName) {
-			defaultValue = "27751658"
+			defaultValue = fmt.Sprintf("%d", InjectiveTestnetDefaultStartBlock)
 			textInputMessage = fmt.Sprintf("At what block do you want to start indexing data? (the first available block on %s is: %s)", c.state.ChainName, defaultValue)
 		}
 		return c.action(InputAskInitialStartBlockType{}).
@@ -254,8 +255,8 @@ func (c *InjectiveConvo) Update(msg loop.Msg) loop.Cmd {
 		if err != nil {
 			return loop.Quit(fmt.Errorf("invalid start block input value %q, expected a number", msg.Value))
 		}
-		if isTestnet(c.state.ChainName) && initialBlock < 27751658 {
-			initialBlock = 27751658
+		if isTestnet(c.state.ChainName) && initialBlock < InjectiveTestnetDefaultStartBlock {
+			initialBlock = InjectiveTestnetDefaultStartBlock
 		}
 
 		c.state.InitialBlock = initialBlock

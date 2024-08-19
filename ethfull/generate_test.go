@@ -177,7 +177,7 @@ func Test_Generate(t *testing.T) {
 func TestUniFactory(t *testing.T) {
 	p := testProjectFromState(t, "./testdata/uniswap_factory_v3.json")
 
-	p.confirmDoCompile = true
+	// p.confirmDoCompile = true
 	assert.Equal(t, RunDecodeContractABI{}, p.NextStep()())
 
 	for _, contract := range p.Contracts {
@@ -203,7 +203,7 @@ func TestUniFactory(t *testing.T) {
 func TestBaycSQL(t *testing.T) {
 	p := testProjectFromState(t, "./testdata/bayc.state.json")
 
-	p.confirmDoCompile = true
+	// p.confirmDoCompile = true
 	assert.Equal(t, RunDecodeContractABI{}, p.NextStep()())
 
 	for _, contract := range p.Contracts {
@@ -221,7 +221,7 @@ func TestBaycSQL(t *testing.T) {
 func Test_Uniswapv3riggersDynamicDatasources(t *testing.T) {
 	p := testProjectFromState(t, "./testdata/uniswap_v3_dynamic_datasources.state.json")
 
-	p.confirmDoCompile = true
+	// p.confirmDoCompile = true
 	assert.Equal(t, RunDecodeContractABI{}, p.NextStep()())
 
 	for _, contract := range p.Contracts {
@@ -258,7 +258,7 @@ func Test_Uniswapv3riggersDynamicDatasources(t *testing.T) {
 func Test_BaycTriggers(t *testing.T) {
 	p := testProjectFromState(t, "./testdata/bayc.state.json")
 
-	p.confirmDoCompile = true
+	// p.confirmDoCompile = true
 	assert.Equal(t, RunDecodeContractABI{}, p.NextStep()())
 
 	for _, contract := range p.Contracts {
