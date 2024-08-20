@@ -47,13 +47,29 @@ func ListConversationHandlers() []*ConversationHandler {
 }
 
 var FileDescriptions = map[string]string{
-	"contract.proto":      "File containing the contract proto definition",
-	"build.rs":            "File containing the build script for the project",
-	"Cargo.toml":          "Cargo manifest file, a configuration file which defines the project",
-	"substreams.yaml":     "Substreams manifest, a configuration file which defines the different modules",
-	"rust-toolchain.toml": "File containing the rust toolchain version",
-	"lib.rs":              "Substreams modules definition code in Rust",
-	".gitignore":          "File containing the gitignore rules",
-	"mod.rs":              "Rust module definitions file",
-	"contract.abi.json":   "File containing the contract ABI definition",
+	// Git files
+	".gitignore": "File containing the gitignore rules which ignores the target/ directory and any spkg package produced",
+
+	// Documentation files
+	"README.md":       "File containing instructions on how to compile and run the project",
+	"CONTRIBUTING.md": "File containing the project contributing guidelines",
+
+	// Rust files
+	"src/lib.rs":    "This file is where your module code lives. Open it and tweak it",
+	"src/pb/mod.rs": "Rust module definitions file",
+	"src/build.rs":  "This file contains any build step needed to compile the project, think abi generation",
+
+	// Proto files
+	"proto/contract.proto": "File containing the contract proto definition",
+	"proto/mydata.proto":   "File containing the contract proto definition",
+
+	// Toml files
+	"Cargo.toml":          "Cargo manifest file, a configuration file which defines the project and it's dependencies",
+	"rust-toolchain.toml": "File containing the rust toolchain version and what build target to use",
+
+	// Substreams yaml files
+	"substreams.yaml": "Substreams manifest, a configuration file which defines the different modules",
+
+	// ABI JSON files
+	"abi/contract.abi.json": "File containing the contract ABI definition",
 }
