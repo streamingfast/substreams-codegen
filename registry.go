@@ -55,13 +55,13 @@ var FileDescriptions = map[string]string{
 	"CONTRIBUTING.md": "File containing the project contributing guidelines",
 
 	// Rust files
-	"src/lib.rs":    "This file is where your module code lives. Open it and tweak it",
+	"src/lib.rs":    "This is the main entrypoint file where your modules' code lives. Modify it and run `substreams build` to rebuild your package",
 	"src/pb/mod.rs": "Rust module definitions file",
 	"src/build.rs":  "This file contains any build step needed to compile the project, think abi generation",
 
 	// Proto files
-	"proto/contract.proto": "File containing the contract proto definition",
-	"proto/mydata.proto":   "File containing the contract proto definition",
+	"proto/contract.proto": "This file contains the data models used by your Substreams modules",
+	"proto/mydata.proto":   "This file contains the data models used by your Substreams modules",
 
 	// Toml files
 	"Cargo.toml":          "Cargo manifest file, a configuration file which defines the project and it's dependencies",

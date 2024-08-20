@@ -1,8 +1,10 @@
 package codegen
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/streamingfast/cli"
 	pbconvo "github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1"
 	pbbuild "github.com/streamingfast/substreams-codegen/pb/sf/codegen/remotebuild/v1"
 )
@@ -112,6 +114,33 @@ type ReturnBuild struct {
 	Artifacts []*pbbuild.BuildResponse_BuildArtifact
 }
 
-func ReturnBuildMessage() string {
-	return "Substreams Package successfully downloaded. Open the created README.md for more information on how to build and run your Substreams."
+func ReturnBuildMessage(projectName string) string {
+	return cli.Dedent(fmt.Sprintf(`
+		Congratulations! Your Substreams is ready!
+
+		Next, navigate to your Substreams with:
+		
+			cd %s
+		
+		Inspect the 'lib.rs' file, and build with:
+
+			substreams build
+
+		Authenticate with:
+	
+			substreams auth
+
+		Then start streaming data with:
+
+			substreams gui
+
+		If you want to have a substreams powered subgraph (https:///...) or run:
+
+			substreams codegen subgraph
+		
+		If you want to generate an SQL sink (https:///...), run:
+
+			substreams codegen sql
+
+	`, projectName))
 }
