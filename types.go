@@ -134,11 +134,11 @@ func ReturnBuildMessage(projectName string) string {
 
 			substreams gui
 
-		If you want to have a substreams powered subgraph (https:///...) or run:
+		If you want to have a substreams powered subgraph, run:
 
 			substreams codegen subgraph
 		
-		If you want to generate an SQL sink (https:///...), run:
+		If you want to generate an SQL sink, run:
 
 			substreams codegen sql
 
