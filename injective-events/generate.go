@@ -29,56 +29,9 @@ func (p *Project) Render(outType outputType) (substreamsFiles map[string][]byte,
 	}
 
 	templateFiles := map[string]string{
-		".gitignore": ".gitignore",
-	}
-
-	switch outType {
-	case outputTypeSQL:
-		templateFiles["sql/README.md"] = "README.md"
-		templateFiles["sql/dev-environment/docker-compose.yml.gotmpl"] = "dev-environment/docker-compose.yml"
-		templateFiles["sql/dev-environment/start.sh"] = "dev-environment/start.sh"
-		templateFiles["lib.rs.gotmpl"] = "substreams/src/lib.rs"
-		templateFiles["proto/events.proto"] = "substreams/proto/events.proto"
-		templateFiles["sql/buf.gen.yaml"] = "substreams/buf.gen.yaml"
-		templateFiles["sql/buf.yaml"] = "substreams/buf.yaml"
-		templateFiles["rust-toolchain.toml"] = "substreams/rust-toolchain.toml"
-		templateFiles["sql/Makefile.gotmpl"] = "substreams/Makefile"
-		templateFiles["sql/run-local.sh.gotmpl"] = "run-local.sh"
-		templateFiles["Cargo.toml.gotmpl"] = "substreams/Cargo.toml"
-
-		switch p.SqlOutputFlavor {
-		case "clickhouse":
-			templateFiles["sql/schema.clickhouse.sql.gotmpl"] = "BOTH/schema.sql"
-			templateFiles["sql/substreams.clickhouse.yaml.gotmpl"] = "substreams/substreams.clickhouse.yaml"
-		case "sql":
-			templateFiles["sql/schema.sql.gotmpl"] = "BOTH/schema.sql"
-			templateFiles["sql/substreams.sql.yaml.gotmpl"] = "substreams/substreams.sql.yaml"
-		default:
-			return nil, nil, fmt.Errorf("unknown sql output flavor %q", p.SqlOutputFlavor)
-		}
-
-	case outputTypeSubgraph:
-		templateFiles["triggers/README.md"] = "README.md"
-		switch p.SubgraphOutputFlavor {
-		case "trigger":
-			templateFiles["triggers/dev-environment/docker-compose.yml.gotmpl"] = "dev-environment/docker-compose.yml"
-			templateFiles["triggers/dev-environment/config.toml.gotmpl"] = "dev-environment/config.toml"
-			templateFiles["triggers/dev-environment/start.sh"] = "dev-environment/start.sh"
-			templateFiles["triggers/Makefile"] = "substreams/Makefile"
-			templateFiles["triggers/substreams.yaml.gotmpl"] = "substreams/substreams.yaml"
-			templateFiles["triggers/buf.gen.yaml"] = "buf.gen.yaml"
-			templateFiles["triggers/package.json.gotmpl"] = "package.json"
-			templateFiles["triggers/tsconfig.json"] = "tsconfig.json"
-			templateFiles["triggers/subgraph.yaml.gotmpl"] = "subgraph.yaml"
-			templateFiles["triggers/schema.graphql.gotmpl"] = "schema.graphql"
-			templateFiles["triggers/src/mappings.ts"] = "src/mappings.ts"
-			templateFiles["triggers/run-local.sh.gotmpl"] = "run-local.sh"
-		default:
-			return nil, nil, fmt.Errorf("unknown subgraph output flavor %q", p.SubgraphOutputFlavor)
-		}
-
-	default:
-		return nil, nil, fmt.Errorf("invalid output type %q", outType)
+		".gitignore":             ".gitignore",
+		"README.md":              "README.md",
+		"substreams.yaml.gotmpl": "substreams.yaml",
 	}
 
 	for templateFile, finalFilename := range templateFiles {
@@ -92,28 +45,12 @@ func (p *Project) Render(outType outputType) (substreamsFiles map[string][]byte,
 			}
 			content = buffer.Bytes()
 		} else {
-			if strings.Contains(templateFile, "triggers/src/mappings.ts") {
-				if p.IsTransactions() {
-					templateFile = "triggers/src/mappings_transactions.ts"
-				} else {
-					templateFile = "triggers/src/mappings_events.ts"
-				}
-			}
 			content, err = templatesFS.ReadFile("templates/" + templateFile)
 			if err != nil {
 				return nil, nil, fmt.Errorf("reading %q: %w", templateFile, err)
 			}
 		}
-
-		if strings.HasPrefix(finalFilename, "substreams/") {
-			substreamsFiles[finalFilename] = content
-		} else if strings.HasPrefix(finalFilename, "BOTH/") {
-			noPrefix, _ := strings.CutPrefix(finalFilename, "BOTH/")
-			substreamsFiles["substreams/"+noPrefix] = content
-			projectFiles[noPrefix] = content
-		} else {
-			projectFiles[finalFilename] = content
-		}
+		projectFiles[finalFilename] = content
 	}
 
 	return

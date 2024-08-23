@@ -30,13 +30,13 @@ type InjectiveConvo struct {
 }
 
 func init() {
-	// codegen.RegisterConversation(
-	// 	"injective-subgraph",
-	// 	"Insert Injective events into a Graph-Node subgraph",
-	// 	"Create an Injective Substreams module from specific events that can feed a subgraph.",
-	// 	codegen.ConversationFactory(NewWithSubgraph),
-	// 	70,
-	// )
+	codegen.RegisterConversation(
+		"injective-events",
+		"Stream Injective Events with specific attributes if specified",
+		"Create an Injective Substreams module from specific events",
+		codegen.ConversationFactory(NewWithSubgraph),
+		70,
+	)
 	// codegen.RegisterConversation(
 	// 	"injective-sql",
 	// 	"Insert Injective events into PostgreSQL or Clickhouse",
@@ -77,19 +77,6 @@ func (c *InjectiveConvo) validate() error {
 		return fmt.Errorf("validating state format: %w", err)
 	}
 
-	switch c.outputType {
-	case outputTypeSQL:
-		if c.state.SubgraphOutputFlavor != "" {
-			return fmt.Errorf("cannot have SubgraphOutputFlavor set on this code generator")
-		}
-	case outputTypeSubgraph:
-		if c.state.SqlOutputFlavor != "" {
-			return fmt.Errorf("cannot have SqlOutputFlavor set on this code generator")
-		}
-	default:
-		return fmt.Errorf("invalid output type %q (should not happen, this is a bug)", c.outputType)
-	}
-	c.state.outputType = c.outputType
 	return nil
 }
 
@@ -135,9 +122,6 @@ func (p *Project) NextStep() (out loop.Cmd) {
 		return cmd(AskDataType{})
 	case "events", "event_groups":
 	case "transactions":
-		if p.outputType == outputTypeSQL {
-			return loop.Quit(fmt.Errorf("transactions data type is not supported for SQL output"))
-		}
 	default:
 		return loop.Quit(fmt.Errorf("invalid data type %q", p.DataType))
 	}
@@ -169,16 +153,11 @@ func (p *Project) NextStep() (out loop.Cmd) {
 		return cmd(AskAnotherEventType{})
 	}
 
-	if p.outputType == outputTypeSQL && p.SqlOutputFlavor == "" {
-		return cmd(codegen.AskSqlOutputFlavor{})
+	if !p.generatedCodeCompleted {
+		return cmd(codegen.RunGenerate{})
 	}
 
-	// Hacky way of setting the trigger, change this once we add the entities support
-	if p.outputType == outputTypeSubgraph && p.SubgraphOutputFlavor == "" {
-		p.SubgraphOutputFlavor = "trigger"
-	}
-
-	return cmd(codegen.RunGenerate{})
+	return cmd(codegen.RunBuild{})
 }
 
 func (c *InjectiveConvo) Update(msg loop.Msg) loop.Cmd {
@@ -269,10 +248,6 @@ func (c *InjectiveConvo) Update(msg loop.Msg) loop.Cmd {
 			"All events in transactions where at least one event matches your query",
 		}
 		values := []string{EVENTS_DATA_TYPE, EVENT_GROUPS_DATA_TYPE}
-		if c.outputType == outputTypeSubgraph {
-			labels = append(labels, "Full transactions where at least one event matches your query")
-			values = append(values, TRXS_DATA_TYPE)
-		}
 		return c.action(InputDataType{}).
 			ListSelect(fmt.Sprintf("This codegen will build a substreams that filters data based on events.\n" +
 				"Do you want to target:")).
@@ -379,16 +354,6 @@ func (c *InjectiveConvo) Update(msg loop.Msg) loop.Cmd {
 		}
 		return nil
 
-	case codegen.AskSqlOutputFlavor:
-		return c.action(codegen.InputSQLOutputFlavor{}).ListSelect("Please select the type of SQL output").
-			Labels("PostgreSQL", "Clickhouse").
-			Values("sql", "clickhouse").
-			Cmd()
-
-	case codegen.InputSQLOutputFlavor:
-		c.state.SqlOutputFlavor = msg.Value
-		return c.NextStep()
-
 	case codegen.RunGenerate:
 		return loop.Seq(
 			c.msg().Message("Generating Substreams module code").Cmd(),
@@ -407,19 +372,9 @@ func (c *InjectiveConvo) Update(msg loop.Msg) loop.Cmd {
 		}
 
 		c.state.projectFiles = msg.ProjectFiles
-		c.state.sourceFiles = msg.SourceFiles
 		c.state.generatedCodeCompleted = true
 
 		downloadCmd := c.action(codegen.InputSourceDownloaded{}).DownloadFiles()
-
-		for fileName, fileContent := range msg.SourceFiles {
-			fileDescription := ""
-			if _, ok := codegen.FileDescriptions[fileName]; ok {
-				fileDescription = codegen.FileDescriptions[fileName]
-			}
-
-			downloadCmd.AddFile(fileName, fileContent, "text/plain", fileDescription)
-		}
 
 		for fileName, fileContent := range msg.ProjectFiles {
 			fileDescription := ""
@@ -432,8 +387,26 @@ func (c *InjectiveConvo) Update(msg loop.Msg) loop.Cmd {
 
 		return loop.Seq(c.msg().Messagef("Code generation complete!").Cmd(), downloadCmd.Cmd())
 
+	case codegen.InputSourceDownloaded:
+		return c.NextStep()
+
 	case codegen.RunBuild:
-		return cmdBuild(c.state)
+		// Remote build part removed for the moment
+		// Do not run the build, the user only wants to download the files
+		// if c.state.confirmDownloadOnly {
+		// 	return cmd(codegen.ReturnBuild{
+		// 		Err:       nil,
+		// 		Artifacts: nil,
+		// 	})
+		// }
+
+		return cmd(codegen.ReturnBuild{
+			Err:       nil,
+			Artifacts: nil,
+		})
+
+		// Remote build part removed for the moment
+		// return cmdBuild(c.state)
 
 	case codegen.CompilingBuild:
 		resp, ok := <-msg.RemoteBuildChan
@@ -505,21 +478,26 @@ func (c *InjectiveConvo) Update(msg loop.Msg) loop.Cmd {
 		)
 
 	case codegen.ReturnBuild:
-		if msg.Err != nil {
-			return loop.Seq(
-				c.msg().Messagef("Remote build failed with error: %s\nYou can package your Substreams with \"make package\".", msg.Err).Cmd(),
-				loop.Quit(nil),
-			)
-		}
+		// Remote build part removed for the moment
+		// if msg.Err != nil {
+		// 	return loop.Seq(
+		// 		c.msg().Messagef("Remote build failed with error: %s\nYou can package your Substreams with \"make package\".", msg.Err).Cmd(),
+		// 		loop.Quit(nil),
+		// 	)
+		// }
 
+		// return loop.Seq(
+		// 	c.msg().Messagef("Build completed successfully, took %s", time.Since(c.state.buildStarted)).Cmd(),
+		// 	c.action(codegen.PackageDownloaded{}).
+		// 		DownloadFiles().
+		// 		// In both AddFile(...) calls, do not show any description, as we already have enough description in the substreams init part of the conversation
+		// 		AddFile(msg.Artifacts[0].Filename, msg.Artifacts[0].Content, `application/x-protobuf+sf.substreams.v1.Package`, "").
+		// 		AddFile("logs.txt", []byte(msg.Logs), `text/x-logs`, "").
+		// 		Cmd(),
+		// )
 		return loop.Seq(
-			c.msg().Messagef("Build completed successfully, took %s", time.Since(c.state.buildStarted)).Cmd(),
-			c.action(codegen.PackageDownloaded{}).
-				DownloadFiles().
-				// In both AddFile(...) calls, do not show any description, as we already have enough description in the substreams init part of the conversation
-				AddFile(msg.Artifacts[0].Filename, msg.Artifacts[0].Content, `application/x-protobuf+sf.substreams.v1.Package`, "").
-				AddFile("logs.txt", []byte(msg.Logs), `text/x-logs`, "").
-				Cmd(),
+			c.msg().Message(codegen.ReturnBuildMessage(c.state.Name)).Cmd(),
+			loop.Quit(nil),
 		)
 
 	case codegen.PackageDownloaded:
