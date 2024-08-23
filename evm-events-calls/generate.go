@@ -24,12 +24,11 @@ var templatesFS embed.FS
 
 func cmdGenerate(p *Project) loop.Cmd {
 	return func() loop.Msg {
-		srcFiles, projFiles, err := p.generate()
+		projFiles, err := p.generate()
 		if err != nil {
 			return codegen.ReturnGenerate{Err: err}
 		}
 		return codegen.ReturnGenerate{
-			SourceFiles:  srcFiles,
 			ProjectFiles: projFiles,
 		}
 	}
@@ -69,7 +68,7 @@ func cmdBuildCompleted(content *codegen.RemoteBuildState) loop.Cmd {
 	}
 }
 
-func (p *Project) generate() (srcFiles, projFiles map[string][]byte, err error) {
+func (p *Project) generate() (projFiles map[string][]byte, err error) {
 	// TODO: before doing any generation, we'll want to validate
 	// all data points that are going into source code.
 	// We don't want some weird things getting into `build.rs`
@@ -78,9 +77,9 @@ func (p *Project) generate() (srcFiles, projFiles map[string][]byte, err error) 
 	// TODO: add some checking to make sure `ParentContractName` of DynamicContract
 	// do match a Contract that exists here.
 
-	srcFiles, projFiles, err = p.Render()
+	projFiles, err = p.Render()
 	if err != nil {
-		return nil, nil, fmt.Errorf("rendering template: %w", err)
+		return nil, fmt.Errorf("rendering template: %w", err)
 	}
 
 	return
@@ -188,16 +187,14 @@ func (p *Project) build(remoteBuildContentChan chan<- *codegen.RemoteBuildState)
 }
 
 // use the output type form the Project to render the templates
-func (p *Project) Render() (substreamsFiles map[string][]byte, projectFiles map[string][]byte, err error) {
-	substreamsFiles = map[string][]byte{}
+func (p *Project) Render() (projectFiles map[string][]byte, err error) {
 	projectFiles = map[string][]byte{}
 
 	tpls, err := codegen.ParseFS(nil, templatesFS, "**/*.gotmpl")
 	if err != nil {
-		return nil, nil, fmt.Errorf("parse templates: %w", err)
+		return nil, fmt.Errorf("parse templates: %w", err)
 	}
 
-	// TODO: here we want ONLY the output type substreams, split the rest (sql and subgraph) into their own codegens
 	templateFiles := map[string]string{
 		"proto/contract.proto.gotmpl": "proto/contract.proto",
 		"src/abi/mod.rs.gotmpl":       "src/abi/mod.rs",
@@ -218,13 +215,13 @@ func (p *Project) Render() (substreamsFiles map[string][]byte, projectFiles map[
 		if strings.HasSuffix(templateFile, ".gotmpl") {
 			buffer := &bytes.Buffer{}
 			if err := tpls.ExecuteTemplate(buffer, templateFile, p); err != nil {
-				return nil, nil, fmt.Errorf("embed render entry template %q: %w", templateFile, err)
+				return nil, fmt.Errorf("embed render entry template %q: %w", templateFile, err)
 			}
 			content = buffer.Bytes()
 		} else {
 			content, err = templatesFS.ReadFile("templates/" + templateFile)
 			if err != nil {
-				return nil, nil, fmt.Errorf("reading %q: %w", templateFile, err)
+				return nil, fmt.Errorf("reading %q: %w", templateFile, err)
 			}
 		}
 

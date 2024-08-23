@@ -76,14 +76,6 @@ func InputAskInitialStartBlockTypeValidation() string {
 	return "The start block cannot be empty and must be a number"
 }
 
-// SQL specific
-type AskSqlOutputFlavor struct{}
-type InputSQLOutputFlavor struct{ pbconvo.UserInput_Selection }
-
-// Subgraph specific
-type AskSubgraphOutputFlavor struct{}
-type InputSubgraphOutputFlavor struct{ pbconvo.UserInput_Selection }
-
 type RunGenerate struct{}
 
 type ReturnGenerate struct {

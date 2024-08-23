@@ -20,57 +20,46 @@ func Test_Generate(t *testing.T) {
 	cases := []struct {
 		name          string
 		generatorFile string
-		outputType    outputType
 	}{
 		{
 			name:          "uniswap_factory_track_calls",
 			generatorFile: "./testdata/uniswap_factory_track_calls.json",
-			outputType:    outputTypeSubgraph,
 		},
 		{
 			name:          "uniswap_factory_track_calls_events",
 			generatorFile: "./testdata/uniswap_factory_track_calls_events.json",
-			outputType:    outputTypeSubgraph,
 		},
 		{
 			name:          "uniswap_factory_events_dynamic_calls",
 			generatorFile: "./testdata/uniswap_factory_events_dynamic_calls.json",
-			outputType:    outputTypeSubgraph,
 		},
 		{
 			name:          "multiple_contract_with_factory",
 			generatorFile: "./testdata/multiple_contract_with_factory.json",
-			outputType:    outputTypeSubgraph,
 		},
 		{
 			name:          "multiple_factories",
 			generatorFile: "./testdata/multiple_factories.json",
-			outputType:    outputTypeSubgraph,
 		},
 		{
 			name:          "track events postgres sql",
 			generatorFile: "./testdata/uniswap_track_events_sql.json",
-			outputType:    outputTypeSQL,
 		},
 		{
 			name:          "track events clickhouse",
 			generatorFile: "./testdata/uniswap_track_events_clickhouse.json",
-			outputType:    outputTypeSQL,
 		},
 		{
 			name:          "track calls postgres sql",
 			generatorFile: "./testdata/uniswap_track_calls_sql.json",
-			outputType:    outputTypeSQL,
 		},
 		{
 			name:          "track calls clickhouse",
 			generatorFile: "./testdata/uniswap_track_calls_clickhouse.json",
-			outputType:    outputTypeSQL,
 		},
 		{
 			name:          "Complex abi with digits and specific character",
 			generatorFile: "./testdata/complex_abi.json",
-			outputType:    outputTypeSubgraph,
 		},
 	}
 
@@ -97,11 +86,8 @@ func Test_Generate(t *testing.T) {
 				}
 			}
 
-			p.outputType = c.outputType
-
-			sourceFiles, projFiles, err := p.generate(c.outputType)
+			projFiles, err := p.generate()
 			require.NoError(t, err)
-			assert.NotEmpty(t, len(sourceFiles))
 			assert.NotEmpty(t, len(projFiles))
 
 			sourceTmpDir, err := os.MkdirTemp(os.TempDir(), "test_output_src.zip")
@@ -186,11 +172,9 @@ func TestUniFactory(t *testing.T) {
 		contract.abi = res.abi
 	}
 
-	sourceFiles, projectFiles, err := p.generate(outputTypeSubgraph)
+	projectFiles, err := p.generate()
 	require.NoError(t, err)
-	assert.NotEmpty(t, len(sourceFiles))
 	assert.NotEmpty(t, len(projectFiles))
-	p.sourceFiles = sourceFiles
 	p.projectFiles = projectFiles
 
 	// requires a build server. Test manually by running `make all` in the unifactory directory
@@ -212,9 +196,8 @@ func TestBaycSQL(t *testing.T) {
 		contract.abi = res.abi
 	}
 
-	srcZip, projZip, err := p.generate(outputTypeSubgraph)
+	projZip, err := p.generate()
 	require.NoError(t, err)
-	assert.NotEmpty(t, srcZip)
 	assert.NotEmpty(t, projZip)
 }
 
@@ -237,11 +220,9 @@ func Test_Uniswapv3riggersDynamicDatasources(t *testing.T) {
 		contract.parentContract = p.Contracts[0]
 	}
 
-	sourceFiles, projectFiles, err := p.generate(outputTypeSubgraph)
+	projectFiles, err := p.generate()
 	require.NoError(t, err)
-	assert.NotEmpty(t, sourceFiles)
 	assert.NotEmpty(t, projectFiles)
-	p.projectFiles = sourceFiles
 	p.projectFiles = projectFiles
 
 	outDir := "testoutput/uniswap_v3_triggers_dynamic_datasources"
@@ -267,11 +248,9 @@ func Test_BaycTriggers(t *testing.T) {
 		contract.abi = res.abi
 	}
 
-	sourceFiles, projectFiles, err := p.generate(outputTypeSubgraph)
+	projectFiles, err := p.generate()
 	require.NoError(t, err)
-	assert.NotEmpty(t, len(sourceFiles))
 	assert.NotEmpty(t, len(projectFiles))
-	p.projectFiles = sourceFiles
 	p.projectFiles = projectFiles
 
 	outDir := "testoutput/uniswap_v3_triggers_dynamic_datasources"
