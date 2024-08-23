@@ -107,32 +107,18 @@ type ReturnBuild struct {
 }
 
 func ReturnBuildMessage(projectName string) string {
-	return cli.Dedent(fmt.Sprintf(`
-		Congratulations! Your Substreams is ready!
-
-		Next, navigate to your Substreams with:
-		
-			cd %s
-		
-		Inspect the 'lib.rs' file, and build with:
-
-			substreams build
-
-		Authenticate with:
-	
-			substreams auth
-
-		Then start streaming data with:
-
-			substreams gui
-
-		If you want to have a substreams powered subgraph, run:
-
-			substreams codegen subgraph
-		
-		If you want to generate an SQL sink, run:
-
-			substreams codegen sql
-
-	`, projectName))
+	return cli.Dedent(fmt.Sprintf(
+		"Your Substreams project is ready! Now follow the next steps:\n\n"+
+			"`cd %s`\n\n"+
+			"Inspect the 'lib.rs' file, and build with:\n\n"+
+			"`substreams build`\n\n"+
+			"Authenticate with:\n\n"+
+			"`substreams auth`\n\n"+
+			"Then start streaming data with:\n\n"+
+			"`substreams gui`\n\n"+
+			"If you want to have a substreams powered subgraph, run:\n\n"+
+			"`substreams codegen subgraph`\n\n"+
+			"If you want to generate an SQL sink, run:\n\n"+
+			"`substreams codegen sql`",
+		projectName))
 }
