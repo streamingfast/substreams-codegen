@@ -1,6 +1,6 @@
 specVersion: v0.1.0
 package:
-  name: {{ .Name }}
+  name: {{ .ModuleName }}
   version: v0.1.0
 
 protobuf:
@@ -8,6 +8,9 @@ protobuf:
     - contract.proto
   importPaths:
     - ./proto
+  excludePaths:
+    - sf/substreams
+    - google
 
 binaries:
   default:
@@ -15,51 +18,52 @@ binaries:
     file: ./target/wasm32-unknown-unknown/release/substreams.wasm
 
 modules:
-{{ range $ddsContract := .DynamicContracts }}
+{{ range $index, $ddsContract := .DynamicContracts }}
   - name: store_{{ $ddsContract.Identifier }}_created
     kind: store
-    initialBlock: {{ with $ddsContract.FactoryInitialBlock }}{{ . }}{{ else }}0{{ end }}
+    initialBlock: {{ with $ddsContract.ParentContract.InitialBlock }}{{ . }}{{ else }}0{{ end }}
     updatePolicy: set
     valueType: proto:dynamic_datasource
     inputs:
       - source: sf.ethereum.type.v2.Block
-{{- end }}
+{{- end}}
 
-{{- if $.TrackAnyEvents }}
+{{- if .TrackAnyEvents }}
   - name: map_events
     kind: map
     initialBlock: {{ .MustLowestStartBlock }}
     inputs:
       - source: sf.ethereum.type.v2.Block
-  {{- range $ddsContract := .DynamicContracts }}
+{{- range $index, $ddsContract := .DynamicContracts }}
+      {{- if $ddsContract.TrackEvents }}
       - store: store_{{ $ddsContract.Identifier }}_created
-  {{- end }}
+      {{- end }}
+{{- end }}
     output:
       type: proto:contract.v1.Events
 {{- end }}
-
-{{- if $.TrackAnyCalls }}
+{{- if .TrackAnyCalls }}
   - name: map_calls
     kind: map
     initialBlock: {{ .MustLowestStartBlock }}
     inputs:
       - source: sf.ethereum.type.v2.Block
-    {{- range $ddsContract := .DynamicContracts }}
+{{- range $index, $ddsContract := .DynamicContracts }}
+    {{- if $ddsContract.TrackCalls }}
       - store: store_{{ $ddsContract.Identifier }}_created
     {{- end }}
+{{- end }}
     output:
       type: proto:contract.v1.Calls
-{{- end }}
-
+{{- end }}{{/* if TrackAnyCalls */}}
 {{- if and $.TrackAnyEvents $.TrackAnyCalls }}
   - name: map_events_calls
     kind: map
     initialBlock: {{ .MustLowestStartBlock }}
     inputs:
-      - map: map_events # TODO: add the dynamic data source
+      - map: map_events
       - map: map_calls
     output:
       type: proto:contract.v1.EventsCalls
 {{- end }}
-
 network: {{ .ChainName }}

@@ -1,4 +1,4 @@
-package ethfull
+package evm_events_calls
 
 import (
 	"encoding/json"
@@ -19,81 +19,27 @@ import (
 var QuitInvalidContext = loop.Quit(fmt.Errorf("invalid state context: no current contract"))
 var AbiFilepathPrefix = "file://"
 
-type outputType string
-
-const outputTypeSQL = "sql"
-const outputTypeSubgraph = "subgraph"
-const outputTypeSubstreams = "substreams"
-
 type Convo struct {
-	factory    *codegen.MsgWrapFactory
-	state      *Project
-	outputType outputType
+	factory *codegen.MsgWrapFactory
+	state   *Project
 
 	remoteBuildState *codegen.RemoteBuildState
 }
 
 func init() {
-	// supportedChains := make([]string, 0, len(ChainConfigs))
-	// for _, conf := range ChainConfigs {
-	// 	supportedChains = append(supportedChains, conf.DisplayName)
-	// }
-	// 	codegen.RegisterConversation(
-	// 		"evm-subgraph",
-	// 		"Decode Ethereum events/calls and and use them as triggers to feed your Subgraph",
-	// 		`Given a list of contracts and their ABIs, this will build an Ethereum substreams that decodes events and/or calls
-	// and creates entities that can be sent directly into a Subgraph.
-	// Supported networks: `+strings.Join(supportedChains, ", "),
-	// 		codegen.ConversationFactory(NewWithSubgraph),
-	// 		80,
-	// 	)
-
-	// codegen.RegisterConversation(
-	// 	"evm-sql",
-	// 	"Decode Ethereum events/calls and insert them into PostgreSQL or Clickhouse",
-	// 	`Given a list of contracts and their ABIs, this will build an Ethereum substreams that can be used to fill
-
-	// your SQL database using https://github.com/streamingfast/substreams-sink-sql.
-	// Supported networks: `+strings.Join(supportedChains, ", "),
-
-	// 	codegen.ConversationFactory(NewWithSQL),
-	// 	81,
-	// )
-
 	codegen.RegisterConversation(
 		"evm-events-calls",
 		"Decode Ethereum events/calls and create a substreams as source",
 		`Given a list of contracts and their ABIs, this will build an Ethereum substreams that decodes events and/or calls`,
-		codegen.ConversationFactory(NewWithOnlySubstreams),
+		codegen.ConversationFactory(NewEventsAndCalls),
 		82,
 	)
 }
 
-func NewWithSQL(factory *codegen.MsgWrapFactory) codegen.Conversation {
+func NewEventsAndCalls(factory *codegen.MsgWrapFactory) codegen.Conversation {
 	h := &Convo{
 		state:            &Project{currentContractIdx: -1},
 		factory:          factory,
-		outputType:       outputTypeSQL,
-		remoteBuildState: &codegen.RemoteBuildState{},
-	}
-	return h
-}
-
-func NewWithSubgraph(factory *codegen.MsgWrapFactory) codegen.Conversation {
-	h := &Convo{
-		state:            &Project{currentContractIdx: -1},
-		factory:          factory,
-		outputType:       outputTypeSubgraph,
-		remoteBuildState: &codegen.RemoteBuildState{},
-	}
-	return h
-}
-
-func NewWithOnlySubstreams(factory *codegen.MsgWrapFactory) codegen.Conversation {
-	h := &Convo{
-		state:            &Project{currentContractIdx: -1},
-		factory:          factory,
-		outputType:       outputTypeSubstreams,
 		remoteBuildState: &codegen.RemoteBuildState{},
 	}
 	return h
@@ -121,27 +67,6 @@ func (c *Convo) validate() error {
 	if _, err := json.Marshal(c.state); err != nil {
 		return fmt.Errorf("validating state format: %w", err)
 	}
-
-	switch c.outputType {
-	case outputTypeSubstreams:
-		if c.state.SqlOutputFlavor != "" {
-			return fmt.Errorf("cannot have SqlOutputFlavor set on this code generator")
-		}
-		if c.state.SubgraphOutputFlavor != "" {
-			return fmt.Errorf("cannot have SubgraphOutputFlavor set on this code generator")
-		}
-	case outputTypeSQL:
-		if c.state.SubgraphOutputFlavor != "" {
-			return fmt.Errorf("cannot have SubgraphOutputFlavor set on this code generator")
-		}
-	case outputTypeSubgraph:
-		if c.state.SqlOutputFlavor != "" {
-			return fmt.Errorf("cannot have SqlOutputFlavor set on this code generator")
-		}
-	default:
-		return fmt.Errorf("invalid output type %q (should not happen, this is a bug)", c.outputType)
-	}
-	c.state.outputType = c.outputType
 	return nil
 }
 
@@ -261,17 +186,6 @@ func (p *Project) NextStep() (out loop.Cmd) {
 
 	if !p.confirmEnoughContracts {
 		return cmd(AskAddContract{})
-	}
-
-	switch p.outputType {
-	case outputTypeSQL:
-		if p.SqlOutputFlavor == "" {
-			return cmd(codegen.AskSqlOutputFlavor{})
-		}
-	case outputTypeSubgraph:
-		if p.SubgraphOutputFlavor == "" {
-			return cmd(codegen.AskSubgraphOutputFlavor{})
-		}
 	}
 
 	if !p.generatedCodeCompleted {
@@ -974,26 +888,6 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		}
 		return c.NextStep()
 
-	case codegen.AskSqlOutputFlavor:
-		return c.action(codegen.InputSQLOutputFlavor{}).ListSelect("Please select the type of SQL output").
-			Labels("PostgreSQL", "Clickhouse").
-			Values("sql", "clickhouse").
-			Cmd()
-
-	case codegen.InputSQLOutputFlavor:
-		c.state.SqlOutputFlavor = msg.Value
-		return c.NextStep()
-
-	case codegen.AskSubgraphOutputFlavor:
-		return c.action(codegen.InputSubgraphOutputFlavor{}).ListSelect("Choose how you want to use feed your subgraph.").
-			Labels("Triggers (allows you to write logic in your subgraph in AssemblyScript)", "Entities (direct, no AssemblyScript code allowed)").
-			Values("trigger", "entity").
-			Cmd()
-
-	case codegen.InputSubgraphOutputFlavor:
-		c.state.SubgraphOutputFlavor = msg.Value
-		return c.NextStep()
-
 	// Remote build part removed for the moment
 	// case codegen.InputConfirmCompile:
 	// 	if msg.Affirmative {
@@ -1005,7 +899,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 
 	case codegen.RunGenerate:
 		return loop.Seq(
-			cmdGenerate(c.state, c.outputType),
+			cmdGenerate(c.state),
 		)
 
 	// Remote build part removed for the moment
@@ -1022,7 +916,6 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 			)
 		}
 
-		c.state.sourceFiles = msg.SourceFiles
 		c.state.projectFiles = msg.ProjectFiles
 		c.state.generatedCodeCompleted = true
 

@@ -1,13 +1,14 @@
-package ethfull
+package evm_events_calls
 
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/golang-cz/textcase"
-	"github.com/huandu/xstrings"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/golang-cz/textcase"
+	"github.com/huandu/xstrings"
 
 	"github.com/gertd/go-pluralize"
 	"github.com/iancoleman/strcase"

@@ -1,4 +1,4 @@
-package ethfull
+package evm_events_calls
 
 import (
 	"context"
@@ -33,17 +33,9 @@ type Project struct {
 	confirmEnoughContracts bool
 	compilingBuild         bool
 	generatedCodeCompleted bool
-	sourceFiles            map[string][]byte
 	projectFiles           map[string][]byte
 
 	buildStarted time.Time
-
-	// always set by the server
-	outputType outputType
-	// only for SQL projects
-
-	SqlOutputFlavor      string `json:"sql_output_flavor,omitempty"`      // either "clickhouse" or "sql"
-	SubgraphOutputFlavor string `json:"subgraph_output_flavor,omitempty"` // either "trigger" or "entity"
 }
 
 func dynamicContractNames(contracts []*DynamicContract) (out []string) {
@@ -63,13 +55,8 @@ func contractNames(contracts []*Contract) (out []string) {
 func (p *Project) ChainConfig() *ChainConfig { return ChainConfigByID[p.ChainName] }
 func (p *Project) ChainEndpoint() string     { return ChainConfigByID[p.ChainName].FirehoseEndpoint }
 
-func (p *Project) SubgraphProjectName() string         { return textcase.KebabCase(p.Name) }
-func (p *Project) SQLImportVersion() string            { return "1.0.7" }
-func (p *Project) GraphImportVersion() string          { return "0.1.0" }
-func (p *Project) DatabaseChangeImportVersion() string { return "1.2.1" }
-func (p *Project) EntityChangeImportVersion() string   { return "1.1.0" }
-func (p *Project) ModuleName() string                  { return strings.ReplaceAll(p.Name, "-", "_") }
-func (p *Project) KebabName() string                   { return strings.ReplaceAll(p.Name, "_", "-") }
+func (p *Project) ModuleName() string { return strings.ReplaceAll(p.Name, "-", "_") }
+func (p *Project) KebabName() string  { return strings.ReplaceAll(p.Name, "_", "-") }
 
 func (p *Project) GetContractByName(contractName string) *Contract {
 	for _, contract := range p.Contracts {
@@ -142,22 +129,6 @@ func (p *Project) TrackOnlyEvents() bool {
 	}
 
 	return true
-}
-
-func (p *Project) IsOutputSQL() bool {
-	return p.outputType == outputTypeSQL
-}
-
-func (p *Project) IsOutputSubgraph() bool {
-	return p.outputType == outputTypeSubgraph
-}
-
-func (p *Project) FlavorIsPostgresSQL() bool {
-	return p.SqlOutputFlavor == "sql"
-}
-
-func (p *Project) FlavorIsClickHouse() bool {
-	return p.SqlOutputFlavor == "clickhouse"
 }
 
 func (p *Project) MustLowestStartBlock() (out uint64) {

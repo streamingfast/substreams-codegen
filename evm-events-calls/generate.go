@@ -1,4 +1,4 @@
-package ethfull
+package evm_events_calls
 
 import (
 	"bytes"
@@ -22,9 +22,9 @@ import (
 //go:embed templates/*
 var templatesFS embed.FS
 
-func cmdGenerate(p *Project, outType outputType) loop.Cmd {
+func cmdGenerate(p *Project) loop.Cmd {
 	return func() loop.Msg {
-		srcFiles, projFiles, err := p.generate(outType)
+		srcFiles, projFiles, err := p.generate()
 		if err != nil {
 			return codegen.ReturnGenerate{Err: err}
 		}
@@ -69,7 +69,7 @@ func cmdBuildCompleted(content *codegen.RemoteBuildState) loop.Cmd {
 	}
 }
 
-func (p *Project) generate(outType outputType) (srcFiles, projFiles map[string][]byte, err error) {
+func (p *Project) generate() (srcFiles, projFiles map[string][]byte, err error) {
 	// TODO: before doing any generation, we'll want to validate
 	// all data points that are going into source code.
 	// We don't want some weird things getting into `build.rs`
@@ -78,7 +78,7 @@ func (p *Project) generate(outType outputType) (srcFiles, projFiles map[string][
 	// TODO: add some checking to make sure `ParentContractName` of DynamicContract
 	// do match a Contract that exists here.
 
-	srcFiles, projFiles, err = p.Render(outType)
+	srcFiles, projFiles, err = p.Render()
 	if err != nil {
 		return nil, nil, fmt.Errorf("rendering template: %w", err)
 	}
@@ -188,7 +188,7 @@ func (p *Project) build(remoteBuildContentChan chan<- *codegen.RemoteBuildState)
 }
 
 // use the output type form the Project to render the templates
-func (p *Project) Render(outType outputType) (substreamsFiles map[string][]byte, projectFiles map[string][]byte, err error) {
+func (p *Project) Render() (substreamsFiles map[string][]byte, projectFiles map[string][]byte, err error) {
 	substreamsFiles = map[string][]byte{}
 	projectFiles = map[string][]byte{}
 
@@ -199,84 +199,16 @@ func (p *Project) Render(outType outputType) (substreamsFiles map[string][]byte,
 
 	// TODO: here we want ONLY the output type substreams, split the rest (sql and subgraph) into their own codegens
 	templateFiles := map[string]string{
-		"proto/contract.proto.gotmpl": "substreams/proto/contract.proto",
-		"src/abi/mod.rs.gotmpl":       "substreams/src/abi/mod.rs",
-		"src/pb/mod.rs.gotmpl":        "substreams/src/pb/mod.rs",
-		"src/lib.rs.gotmpl":           "substreams/src/lib.rs",
-		"build.rs.gotmpl":             "substreams/build.rs",
-		"Cargo.toml.gotmpl":           "substreams/Cargo.toml",
-		"rust-toolchain.toml":         "substreams/rust-toolchain.toml",
-		".gitignore":                  "substreams/.gitignore",
-	}
-
-	switch outType {
-	case outputTypeSubstreams:
-		templateFiles = map[string]string{
-			"proto/contract.proto.gotmpl": "proto/contract.proto",
-			"src/abi/mod.rs.gotmpl":       "src/abi/mod.rs",
-			"src/pb/mod.rs.gotmpl":        "src/pb/mod.rs",
-			"src/lib.rs.gotmpl":           "src/lib.rs",
-			"build.rs.gotmpl":             "build.rs",
-			"Cargo.toml.gotmpl":           "Cargo.toml",
-			"rust-toolchain.toml":         "rust-toolchain.toml",
-			".gitignore":                  ".gitignore",
-			"substreams.yaml.gotmpl":      "substreams.yaml",
-			"README.md":                   "README.md",
-		}
-	case outputTypeSQL:
-		// templateFiles["sql/substreams-Makefile.gotmpl"] = "substreams/Makefile"
-		// templateFiles["sql/Makefile.gotmpl"] = "Makefile"
-		templateFiles["sql/substreams.yaml.gotmpl"] = "substreams/substreams.yaml"
-		templateFiles["sql/dev-environment/docker-compose.yml.gotmpl"] = "dev-environment/docker-compose.yml"
-		templateFiles["sql/dev-environment/start.sh.gotmpl"] = "dev-environment/start.sh"
-		templateFiles["sql/README.md.gotmpl"] = "README.md"
-
-		switch p.SqlOutputFlavor {
-		case "clickhouse":
-			templateFiles["sql/schema.clickhouse.sql.gotmpl"] = "BOTH/schema.sql"
-			templateFiles["sql/substreams.clickhouse.yaml.gotmpl"] = "BOTH/substreams.clickhouse.yaml"
-		case "sql":
-			templateFiles["sql/run-local.sh.gotmpl"] = "run-local.sh"
-			templateFiles["sql/schema.sql.gotmpl"] = "BOTH/schema.sql"
-			templateFiles["sql/substreams.sql.yaml.gotmpl"] = "substreams/substreams.sql.yaml"
-		default:
-			return nil, nil, fmt.Errorf("unknown sql output flavor %q", p.SqlOutputFlavor)
-		}
-
-	// TODO: split these up in defferent codegens
-	case outputTypeSubgraph:
-		switch p.SubgraphOutputFlavor {
-		case "entity":
-			templateFiles["entities/Makefile.gotmpl"] = "substreams/Makefile"
-			templateFiles["entities/substreams.yaml.gotmpl"] = "substreams/substreams.yaml"
-			templateFiles["entities/schema.graphql.gotmpl"] = "schema.graphql"
-			templateFiles["entities/subgraph.yaml.gotmpl"] = "subgraph.yaml"
-			templateFiles["entities/README.md"] = "README.md"
-			// TODO: is this really needed in the entity mode? As all the entity changes are coming out of the substreams, this may not be useful
-			templateFiles["entities/package.json"] = "package.json"
-			templateFiles["entities/dev-environment/config.toml.gotmpl"] = "dev-environment/config.toml"
-			templateFiles["entities/dev-environment/docker-compose.yml"] = "dev-environment/docker-compose.yml"
-			templateFiles["entities/dev-environment/start.sh"] = "dev-environment/start.sh"
-
-		case "trigger":
-			templateFiles["triggers/Makefile.gotmpl"] = "substreams/Makefile"
-			templateFiles["triggers/substreams.yaml.gotmpl"] = "substreams/substreams.yaml"
-			templateFiles["triggers/subgraph.yaml.gotmpl"] = "subgraph.yaml"
-			templateFiles["triggers/schema.graphql.gotmpl"] = "schema.graphql"
-			templateFiles["triggers/package.json.gotmpl"] = "package.json"
-			templateFiles["triggers/src/mappings.ts.gotmpl"] = "src/mappings.ts"
-			templateFiles["triggers/buf.gen.yaml"] = "buf.gen.yaml"
-			templateFiles["triggers/README.md"] = "README.md"
-			templateFiles["triggers/run-local.sh.gotmpl"] = "run-local.sh"
-			templateFiles["triggers/dev-environment/config.toml.gotmpl"] = "dev-environment/config.toml"
-			templateFiles["triggers/dev-environment/docker-compose.yml"] = "dev-environment/docker-compose.yml"
-			templateFiles["triggers/dev-environment/start.sh"] = "dev-environment/start.sh"
-		default:
-			return nil, nil, fmt.Errorf("unknown subgraph output flavor %q", p.SubgraphOutputFlavor)
-		}
-
-	default:
-		return nil, nil, fmt.Errorf("invalid output type %q", p.outputType)
+		"proto/contract.proto.gotmpl": "proto/contract.proto",
+		"src/abi/mod.rs.gotmpl":       "src/abi/mod.rs",
+		"src/pb/mod.rs.gotmpl":        "src/pb/mod.rs",
+		"src/lib.rs.gotmpl":           "src/lib.rs",
+		"build.rs.gotmpl":             "build.rs",
+		"Cargo.toml.gotmpl":           "Cargo.toml",
+		"rust-toolchain.toml":         "rust-toolchain.toml",
+		".gitignore":                  ".gitignore",
+		"substreams.yaml.gotmpl":      "substreams.yaml",
+		"README.md":                   "README.md",
 	}
 
 	for templateFile, finalFileName := range templateFiles {
@@ -296,36 +228,15 @@ func (p *Project) Render(outType outputType) (substreamsFiles map[string][]byte,
 			}
 		}
 
-		if p.outputType == outputTypeSubstreams {
-			projectFiles[finalFileName] = content
-			continue
-		}
-
-		if strings.HasPrefix(finalFileName, "substreams/") {
-			substreamsFiles[finalFileName] = content
-		} else if strings.HasPrefix(finalFileName, "BOTH/") {
-			noPrefix, _ := strings.CutPrefix(finalFileName, "BOTH/")
-			substreamsFiles["substreams/"+noPrefix] = content
-			projectFiles[noPrefix] = content
-		} else {
-			projectFiles[finalFileName] = content
-		}
+		projectFiles[finalFileName] = content
 	}
 
 	for _, contract := range p.Contracts {
-		if p.outputType == outputTypeSubstreams {
-			projectFiles[fmt.Sprintf("abi/%s_contract.abi.json", contract.Name)] = []byte(contract.abi.raw)
-			continue
-		}
-		substreamsFiles[fmt.Sprintf("substreams/abi/%s_contract.abi.json", contract.Name)] = []byte(contract.abi.raw)
+		projectFiles[fmt.Sprintf("abi/%s_contract.abi.json", contract.Name)] = []byte(contract.abi.raw)
 	}
 
 	for _, dds := range p.DynamicContracts {
-		if p.outputType == outputTypeSubstreams {
-			projectFiles[fmt.Sprintf("abi/%s_contract.abi.json", dds.Name)] = []byte(dds.abi.raw)
-			continue
-		}
-		substreamsFiles[fmt.Sprintf("substreams/abi/%s_contract.abi.json", dds.Name)] = []byte(dds.abi.raw)
+		projectFiles[fmt.Sprintf("abi/%s_contract.abi.json", dds.Name)] = []byte(dds.abi.raw)
 	}
 
 	return

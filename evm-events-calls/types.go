@@ -1,4 +1,4 @@
-package ethfull
+package evm_events_calls
 
 import (
 	pbconvo "github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1"

@@ -1,4 +1,4 @@
-package ethfull
+package evm_events_calls
 
 import (
 	"regexp"
