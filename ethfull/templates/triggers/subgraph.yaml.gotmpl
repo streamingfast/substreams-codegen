@@ -10,7 +10,7 @@ dataSources:
     network: {{ .ChainName }}
     source:
       package:
-        moduleName: {{ if and $.TrackAnyEvents $.TrackAnyCalls }}zipped_events_calls{{ else if $.TrackAnyEvents }}map_events{{ else if $.TrackAnyCalls }}map_calls{{ end }}
+        moduleName: {{ if and $.TrackAnyEvents $.TrackAnyCalls }}map_events_calls{{ else if $.TrackAnyEvents }}map_events{{ else if $.TrackAnyCalls }}map_calls{{ end }}
         file: {{ $.KebabName }}-v0.1.0.spkg
     mapping:
       apiVersion: 0.0.7
