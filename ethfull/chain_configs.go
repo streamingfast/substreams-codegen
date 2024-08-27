@@ -153,7 +153,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
 	},
-	"base-mainnet": {
+	"base": {
 		DisplayName:          "Base Mainnet",
 		ExplorerLink:         "https://basescan.org",
 		ApiEndpoint:          "https://api.basescan.org",
