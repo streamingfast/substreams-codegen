@@ -21,8 +21,8 @@ type Convo struct {
 func init() {
 	codegen.RegisterConversation(
 		"sol-transactions",
-		"Simplest Substreams to get you started on solana",
-		`This creating the most simple substreams on Solana`,
+		"Get Solana transactions filtered by one or several Program IDs.",
+		`Allows you to specified a regex containing the Program IDs used to filter the Solana transactions.`,
 		codegen.ConversationFactory(New),
 		100,
 	)
