@@ -109,7 +109,6 @@ type ReturnBuild struct {
 func ReturnBuildMessage(projectName string) string {
 	return cli.Dedent(fmt.Sprintf(
 		"Your Substreams project is ready! Now follow the next steps:\n\n"+
-			"`cd %s`\n\n"+
 			"Inspect the 'lib.rs' file, and build with:\n\n"+
 			"`substreams build`\n\n"+
 			"Authenticate with:\n\n"+
