@@ -4,3 +4,4 @@ import pbconvo "github.com/streamingfast/substreams-codegen/pb/sf/codegen/conver
 
 type AskProgramId struct{}
 type InputProgramId struct{ pbconvo.UserInput_TextInput }
+type ShowInstructions struct{}

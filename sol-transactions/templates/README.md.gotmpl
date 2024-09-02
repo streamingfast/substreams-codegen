@@ -3,9 +3,32 @@
 This Substreams project allows you to retrieve Solana transactions filtered by one or several Program IDs (i.e. you will only receive transactions containing the specified Program IDs).
 **NOTE:** Transactions containing voting instructions will NOT be present.
 
+## Get Started
+
+
+### Build the Substreams
+
+```bash
+substreams build
+```
+
+### Authenticate
+
+To run your Substreams you will need to [authenticate](https://substreams.streamingfast.io/documentation/consume/authentication) yourself.
+
+```bash
+substreams auth
+```
+
+### Run your Substreams
+
+```bash
+substreams gui
+```
+
 ## Understand the Generated Project
 
-Only a `substreams.yaml` file has been generated. This file declare a Substreams module, `map_filtered_transactions`, which uses the Solana Foundational Modules (module built by the team).
+Only a `substreams.yaml` file has been generated. This file declares a Substreams module, `map_filtered_transactions`, which uses a Solana Foundational Module (a module built by the team).
 
 ```yaml
 specVersion: v0.1.0
@@ -30,17 +53,3 @@ params:
 3. Use the `filtered_transactions_without_votes` module from the Solana Foundational Modules.
 Essentially, you are _using_ the Solana Foundational Module, which is pre-built for you.
 4. Pass the regular expression to filter the transactions based on the specified Program IDs.
-
-## Authenticate
-
-To run your Substreams you will need to [authenticate](https://substreams.streamingfast.io/documentation/consume/authentication) yourself.
-
-```bash
-substreams auth
-```
-
-## Run your Substreams
-
-```bash
-substreams gui ./substreams.yaml -e mainnet.sol.streamingfast.io:443 --start-block={{ .InitialBlock }} --stop-block=+2 map_filtered_transactions
-```
