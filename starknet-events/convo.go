@@ -1,16 +1,18 @@
-package varaminimal
+package starknet_events
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
+	"strings"
 	"time"
 
 	codegen "github.com/streamingfast/substreams-codegen"
 	"github.com/streamingfast/substreams-codegen/loop"
 )
+
+var QuitInvalidContext = loop.Quit(fmt.Errorf("invalid state context: no current contract"))
 
 type Convo struct {
 	factory          *codegen.MsgWrapFactory
@@ -20,11 +22,11 @@ type Convo struct {
 
 func init() {
 	codegen.RegisterConversation(
-		"vara-minimal",
-		"Simplest Substreams to get you started on Vara Mainnet",
-		`This creating the most simple substreams on Vara Mainnet`,
+		"starknet-events",
+		"Filtered and decode desired Starknet events and create a substreams as source",
+		"Given a list of contracts and their ABIs, this will build an Starknet substreams that decodes events",
 		codegen.ConversationFactory(New),
-		40,
+		72,
 	)
 }
 
@@ -75,18 +77,35 @@ func (p *Project) NextStep() (out loop.Cmd) {
 		return loop.Seq(cmd(codegen.MsgInvalidChainName{}), cmd(codegen.AskChainName{}))
 	}
 
-	if !p.InitialBlockSet {
-		return cmd(codegen.AskInitialStartBlockType{})
+	if p.Contract.Address == "" {
+		return cmd(AskContractAddress{})
 	}
 
-	if !p.generatedCodeCompleted {
-		return cmd(codegen.RunGenerate{})
+	if p.Contract.InitialBlock == nil {
+		return cmd(AskContractInitialBlock{})
 	}
 
-	// Remote build part removed for the moment
-	// if !p.confirmDoCompile && !p.confirmDownloadOnly {
-	// 	return cmd(codegen.AskConfirmCompile{})
-	// }
+	if p.Contract.TrackedEvents == nil {
+		return cmd(AskEventAddress{})
+	}
+
+	if !p.EventsTrackCompleted {
+		return cmd(AskEventAddress{})
+	}
+
+	//if p.contract.abi == nil {
+	//	// if the user pasted an empty ABI, we would restart the process or choosing a contract address
+	//	if p.contract.emptyABI {
+	//		p.contract.Address = ""     // reset the address
+	//		p.contract.emptyABI = false // reset the flag
+	//		return cmd(AskContractAddress{})
+	//	}
+	//
+	//	if p.contract.RawABI == nil {
+	//		return cmd(FetchContractABI{})
+	//	}
+	//	return cmd(RunDecodeContractABI{})
+	//}
 
 	return cmd(codegen.RunBuild{})
 }
@@ -118,6 +137,58 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			Validation(codegen.InputProjectNameRegex(), codegen.InputProjectNameValidation()).
 			Cmd()
 
+	case MsgInvalidContractAddress:
+		contract := c.state.Contract
+		if contract == nil {
+			return QuitInvalidContext
+		}
+		return c.msg().
+			Messagef("Input address isn't valid : %q", msg.Err).
+			Cmd()
+
+	case AskContractAddress:
+		return loop.Seq(
+			c.action(InputContractAddress{}).TextInput("Please enter the contract address", "Submit").
+				Description("Format it with 0x prefix and make sure it's a valid Starknet address.\nFor example, the Ekubo Positions contract address: 0x02e0af29598b407c8716b17f6d2795eca1b471413fa03fb145a5e33722184067").
+				DefaultValue("0x02e0af29598b407c8716b17f6d2795eca1b471413fa03fb145a5e33722184067").
+				Validation("^0x[a-fA-F0-9]{40}$", "Please enter a valid Starknet address").Cmd(),
+		)
+
+	case AskEventAddress:
+		return loop.Seq(
+			c.action(InputContractAddress{}).TextInput("Please enter the event address", "Submit").
+				Description("Format it with 0x prefix and make sure it's a valid Starknet Event address.\nFor example, the Transfer event address: 0x02e0af29598b407c8716b17f6d2795eca1b471413fa03fb145a5e33722184067").
+				DefaultValue("0x02e0af29598b407c8716b17f6d2795eca1b471413fa03fb145a5e33722184067").
+				Validation("^0x[a-fA-F0-9]{40}$", "Please enter a valid Starknet address").Cmd(),
+		)
+
+	case InputEventAddress:
+		contract := c.state.Contract
+		if contract == nil {
+			return QuitInvalidContext
+		}
+
+		inputAddress := strings.ToLower(msg.Value)
+		//Change to validateEventAddress
+		if err := validateContractAddress(c.state, inputAddress); err != nil {
+			return loop.Seq(cmd(MsgInvalidEventAddress{err}), cmd(AskEventAddress{}))
+		}
+
+	case InputContractAddress:
+		contract := c.state.Contract
+		if contract == nil {
+			return QuitInvalidContext
+		}
+
+		inputAddress := strings.ToLower(msg.Value)
+		if err := validateContractAddress(c.state, inputAddress); err != nil {
+			return loop.Seq(cmd(MsgInvalidContractAddress{err}), cmd(AskContractAddress{}))
+		}
+
+		contract.Address = inputAddress
+
+		return c.NextStep()
+
 	case codegen.InputProjectName:
 		c.state.Name = msg.Value
 		return c.NextStep()
@@ -148,33 +219,10 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 		return c.NextStep()
 
-	case codegen.AskInitialStartBlockType:
-		return c.action(codegen.InputAskInitialStartBlockType{}).
-			TextInput(codegen.InputAskInitialStartBlockTypeTextInput(), "Submit").
-			DefaultValue("0").
-			Validation(codegen.InputAskInitialStartBlockTypeRegex(), codegen.InputAskInitialStartBlockTypeValidation()).
-			Cmd()
-
-	case codegen.InputAskInitialStartBlockType:
-		initialBlock, err := strconv.ParseUint(msg.Value, 10, 64)
-		if err != nil {
-			return loop.Quit(fmt.Errorf("invalid start block input value %q, expected a number", msg.Value))
-		}
-
-		c.state.InitialBlock = initialBlock
-		c.state.InitialBlockSet = true
-		return c.NextStep()
-
 	case codegen.RunGenerate:
 		return loop.Seq(
 			cmdGenerate(c.state),
 		)
-
-	// Remote build part removed for the moment
-	// case codegen.AskConfirmCompile:
-	// 	return c.action(codegen.InputConfirmCompile{}).
-	// 		Confirm("Should we build the Substreams package for you?", "Yes, build it", "No").
-	// 		Cmd()
 
 	case codegen.ReturnGenerate:
 		if msg.Err != nil {
@@ -188,15 +236,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		c.state.generatedCodeCompleted = true
 
 		downloadCmd := c.action(codegen.InputSourceDownloaded{}).DownloadFiles()
-
-		for fileName, fileContent := range msg.SourceFiles {
-			fileDescription := ""
-			if _, ok := codegen.FileDescriptions[fileName]; ok {
-				fileDescription = codegen.FileDescriptions[fileName]
-			}
-
-			downloadCmd.AddFile(fileName, fileContent, "text/plain", fileDescription)
-		}
 
 		for fileName, fileContent := range msg.ProjectFiles {
 			fileDescription := ""
@@ -329,4 +368,16 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 	}
 
 	return loop.Quit(fmt.Errorf("invalid loop message: %T", msg))
+}
+
+func validateContractAddress(p *Project, address string) error {
+	if !strings.HasPrefix(address, "0x") && len(address) == 42 {
+		return fmt.Errorf("contract address %s is invalid, it must be a 42 character hex string starting with 0x", address)
+	}
+
+	if p.Contract.Address == address {
+		return fmt.Errorf("contract address %s already exists in the project", address)
+	}
+
+	return nil
 }
