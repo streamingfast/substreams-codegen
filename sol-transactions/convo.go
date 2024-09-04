@@ -182,7 +182,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case ShowInstructions:
 		return loop.Seq(
-			c.msg().Message(codegen.ReturnBuildMessage(c.state.Name)).Cmd(),
+			c.msg().Message(codegen.ReturnBuildMessage(false)).Cmd(),
 			loop.Quit(nil),
 		)
 
