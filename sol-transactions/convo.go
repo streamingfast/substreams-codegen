@@ -130,13 +130,12 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case AskProgramId:
 		return c.action(InputProgramId{}).
-			TextInput(fmt.Sprintf("Filter the transactions based on one or several Program IDs.\n\nSupported operators are: logical or '||', logical and '&&' and parenthesis: '()'. \n\nExample: to only consume TRANSACTIONS containing Token or ComputeBudget instructions: 'program:TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA || program:ComputeBudget111111111111111111111111111111'. \n\nTransactions containing 'Vote111111111111111111111111111111111111111' instructions are always excluded."), "Submit").
+			TextInput(fmt.Sprintf("Filter the transactions based on one or several Program IDs.\nSupported operators are: logical or '||', logical and '&&' and parenthesis: '()'. \nExample: to only consume TRANSACTIONS containing Token or ComputeBudget instructions: 'program:TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA || program:ComputeBudget111111111111111111111111111111'. \nTransactions containing 'Vote111111111111111111111111111111111111111' instructions are always excluded."), "Submit").
 			DefaultValue("program:TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA").
 			Cmd()
 
 	case InputProgramId:
 		c.state.ProgramId = msg.Value
-		fmt.Printf("%s", msg.Value)
 		return c.NextStep()
 
 	case codegen.RunGenerate:
