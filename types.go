@@ -106,14 +106,20 @@ type ReturnBuild struct {
 	Artifacts []*pbbuild.BuildResponse_BuildArtifact
 }
 
-func ReturnBuildMessage() string {
+func ReturnBuildMessage(isMinimal bool) string {
+	var minimalStr string
+
+	if isMinimal {
+		minimalStr = "* Inspect and edit the the `./src/lib.rs` file\n"
+	}
+
 	return cli.Dedent(fmt.Sprintf(
-		"Your Substreams project is ready! Follow the next steps to start streaming:\n\n" +
-			"* Inspect and edit the the `./lib.rs` file\n" +
-			"* Build it: `substreams build`\n" +
-			"* Authenticate: `substreams auth`\n" +
-			"* Stream it: `substreams gui`\n\n" +
-			"* Build a *Subgraph* from this substreams: `substreams codegen subgraph`\n" +
+		"Your Substreams project is ready! Follow the next steps to start streaming:\n\n"+
+			"%s"+
+			"* Build it: `substreams build`\n"+
+			"* Authenticate: `substreams auth`\n"+
+			"* Stream it: `substreams gui`\n\n"+
+			"* Build a *Subgraph* from this substreams: `substreams codegen subgraph`\n"+
 			"* Feed your SQL database with this substreams: `substreams codegen sql`\n",
-	))
+		minimalStr))
 }

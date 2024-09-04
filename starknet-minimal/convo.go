@@ -320,7 +320,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		// }
 
 		return loop.Seq(
-			c.msg().Message(codegen.ReturnBuildMessage()).Cmd(),
+			c.msg().Message(codegen.ReturnBuildMessage(true)).Cmd(),
 			loop.Quit(nil),
 		)
 
