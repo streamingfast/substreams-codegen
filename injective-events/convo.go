@@ -496,7 +496,7 @@ func (c *InjectiveConvo) Update(msg loop.Msg) loop.Cmd {
 		// 		Cmd(),
 		// )
 		return loop.Seq(
-			c.msg().Message(codegen.ReturnBuildMessage(c.state.Name)).Cmd(),
+			c.msg().Message(codegen.ReturnBuildMessage()).Cmd(),
 			loop.Quit(nil),
 		)
 

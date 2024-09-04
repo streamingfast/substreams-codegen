@@ -1,0 +1,36 @@
+specVersion: v0.1.0
+package:
+  name: {{ .ModuleName }}
+  version: v0.1.0
+
+protobuf:
+  files:
+    - contract.proto
+  importPaths:
+    - ./proto
+  excludePaths:
+    - sf/substreams
+    - google
+
+binaries:
+  default:
+    type: wasm/rust-v1
+    file: ./target/wasm32-unknown-unknown/release/substreams.wasm
+
+imports:
+    starknet: https://spkg.io/streamingfast/starknet-foundational-v0.1.3.spkg
+
+modules:
+  - name: map_events
+    kind: map
+    initialBlock: {{ .MustLowestStartBlock }}
+    inputs:
+      - map: map_events
+      - map: map_calls
+    output:
+      type: proto:contract.v1.EventsCalls
+
+network: {{ .ChainName }}
+
+params:
+  {{ .ModuleName }}: {{ .GetEventsQuery }}

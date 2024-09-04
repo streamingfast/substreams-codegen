@@ -15,10 +15,12 @@ func TestConvoNextStep(t *testing.T) {
 	}
 
 	assert.Equal(t, codegen.AskProjectName{}, next())
-
 	p.Name = "my-proj"
 
 	assert.Equal(t, codegen.AskChainName{}, next())
-
 	p.ChainName = "arbitrum"
+
+	projectFiles, err := p.generate()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, projectFiles)
 }

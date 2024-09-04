@@ -81,6 +81,7 @@ func (p *Project) NextStep() (out loop.Cmd) {
 	if p.Name == "" {
 		return cmd(codegen.AskProjectName{})
 	}
+
 	if p.ChainName == "" {
 		return cmd(codegen.AskChainName{})
 	}
@@ -1052,7 +1053,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		// }
 
 		return loop.Seq(
-			c.msg().Message(codegen.ReturnBuildMessage(c.state.Name)).Cmd(),
+			c.msg().Message(codegen.ReturnBuildMessage()).Cmd(),
 			loop.Quit(nil),
 		)
 
