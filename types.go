@@ -108,7 +108,6 @@ type ReturnBuild struct {
 
 func ReturnBuildMessage() string {
 	return cli.Dedent(fmt.Sprintf(
-<<<<<<< HEAD
 		"Your Substreams project is ready! Follow the next steps to start streaming:\n\n" +
 			"* Inspect and edit the the `./lib.rs` file\n" +
 			"* Build it: `substreams build`\n" +
@@ -117,17 +116,4 @@ func ReturnBuildMessage() string {
 			"* Build a *Subgraph* from this substreams: `substreams codegen subgraph`\n" +
 			"* Feed your SQL database with this substreams: `substreams codegen sql`\n",
 	))
-=======
-		"Your Substreams project is ready! Now follow the next steps:\n\n" +
-			"Inspect the 'lib.rs' file, and build with:\n\n" +
-			"`substreams build`\n\n" +
-			"Authenticate with:\n\n" +
-			"`substreams auth`\n\n" +
-			"Then start streaming data with:\n\n" +
-			"`substreams gui`\n\n" +
-			"If you want to have a substreams powered subgraph, run:\n\n" +
-			"`substreams codegen subgraph`\n\n" +
-			"If you want to generate an SQL sink, run:\n\n" +
-			"`substreams codegen sql`"))
->>>>>>> 576bb97 (adding starknet-events codegen)
 }
