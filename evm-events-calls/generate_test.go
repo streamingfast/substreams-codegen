@@ -65,7 +65,7 @@ func Test_Generate(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			p := testProjectFromState(t, c.generatorFile)
+			p := LoadProjectFromState(t, c.generatorFile)
 
 			assert.Equal(t, RunDecodeContractABI{}, p.NextStep()())
 			for _, contract := range p.Contracts {
@@ -86,7 +86,7 @@ func Test_Generate(t *testing.T) {
 				}
 			}
 
-			projFiles, err := p.generate()
+			projFiles, err := p.Generate()
 			require.NoError(t, err)
 			assert.NotEmpty(t, len(projFiles))
 
@@ -121,7 +121,7 @@ func Test_Generate(t *testing.T) {
 //
 //	for _, c := range cases {
 //		t.Run(c.name, func(t *testing.T) {
-//			p := testProjectFromState(t, c.generatorFile)
+//			p := LoadProjectFromState(t, c.generatorFile)
 //
 //			for _, contract := range p.Contracts {
 //				res := cmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
@@ -143,7 +143,7 @@ func Test_Generate(t *testing.T) {
 //
 //			p.outputType = outputTypeSubgraph
 //
-//			sourceFiles, projectFiles, err := p.generate(outputTypeSubgraph)
+//			sourceFiles, projectFiles, err := p.Generate(outputTypeSubgraph)
 //			require.NoError(t, err)
 //			assert.NotEmpty(t, len(sourceFiles))
 //			assert.NotEmpty(t, len(projectFiles))
@@ -161,7 +161,7 @@ func Test_Generate(t *testing.T) {
 //}
 
 func TestUniFactory(t *testing.T) {
-	p := testProjectFromState(t, "./testdata/uniswap_factory_v3.json")
+	p := LoadProjectFromState(t, "./testdata/uniswap_factory_v3.json")
 
 	// p.confirmDoCompile = true
 	assert.Equal(t, RunDecodeContractABI{}, p.NextStep()())
@@ -172,7 +172,7 @@ func TestUniFactory(t *testing.T) {
 		contract.abi = res.abi
 	}
 
-	projectFiles, err := p.generate()
+	projectFiles, err := p.Generate()
 	require.NoError(t, err)
 	assert.NotEmpty(t, len(projectFiles))
 	p.projectFiles = projectFiles
@@ -185,7 +185,7 @@ func TestUniFactory(t *testing.T) {
 }
 
 func TestBaycSQL(t *testing.T) {
-	p := testProjectFromState(t, "./testdata/bayc.state.json")
+	p := LoadProjectFromState(t, "./testdata/bayc.state.json")
 
 	// p.confirmDoCompile = true
 	assert.Equal(t, RunDecodeContractABI{}, p.NextStep()())
@@ -196,13 +196,13 @@ func TestBaycSQL(t *testing.T) {
 		contract.abi = res.abi
 	}
 
-	projZip, err := p.generate()
+	projZip, err := p.Generate()
 	require.NoError(t, err)
 	assert.NotEmpty(t, projZip)
 }
 
 func Test_Uniswapv3riggersDynamicDatasources(t *testing.T) {
-	p := testProjectFromState(t, "./testdata/uniswap_v3_dynamic_datasources.state.json")
+	p := LoadProjectFromState(t, "./testdata/uniswap_v3_dynamic_datasources.state.json")
 
 	// p.confirmDoCompile = true
 	assert.Equal(t, RunDecodeContractABI{}, p.NextStep()())
@@ -220,7 +220,7 @@ func Test_Uniswapv3riggersDynamicDatasources(t *testing.T) {
 		contract.parentContract = p.Contracts[0]
 	}
 
-	projectFiles, err := p.generate()
+	projectFiles, err := p.Generate()
 	require.NoError(t, err)
 	assert.NotEmpty(t, projectFiles)
 	p.projectFiles = projectFiles
@@ -235,9 +235,8 @@ func Test_Uniswapv3riggersDynamicDatasources(t *testing.T) {
 	// require.NoError(t, err)
 	// assert.Contains(t, artifacts.logs, "Finished release")
 }
-
 func Test_BaycTriggers(t *testing.T) {
-	p := testProjectFromState(t, "./testdata/bayc.state.json")
+	p := LoadProjectFromState(t, "./testdata/bayc.state.json")
 
 	// p.confirmDoCompile = true
 	assert.Equal(t, RunDecodeContractABI{}, p.NextStep()())
@@ -248,7 +247,7 @@ func Test_BaycTriggers(t *testing.T) {
 		contract.abi = res.abi
 	}
 
-	projectFiles, err := p.generate()
+	projectFiles, err := p.Generate()
 	require.NoError(t, err)
 	assert.NotEmpty(t, len(projectFiles))
 	p.projectFiles = projectFiles
@@ -289,7 +288,7 @@ func TestProtoFieldName(t *testing.T) {
 	}
 }
 
-func testProjectFromState(t *testing.T, stateFile string) *Project {
+func LoadProjectFromState(t *testing.T, stateFile string) *Project {
 	cnt, err := os.ReadFile(stateFile)
 	require.NoError(t, err)
 

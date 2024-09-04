@@ -1033,7 +1033,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		// if msg.Err != nil {
 		// 	return loop.Seq(
 		// 		c.msg().Messagef("Remote build failed with error: %q. See full logs in `{project-path}/logs.txt`", msg.Err).Cmd(),
-		// 		c.msg().Messagef("You will need to unzip the 'substreams-src.zip' file and run `make package` to try and generate the .spkg file.").Cmd(),
+		// 		c.msg().Messagef("You will need to unzip the 'substreams-src.zip' file and run `make package` to try and Generate the .spkg file.").Cmd(),
 		// 		c.action(codegen.PackageDownloaded{}).
 		// 			DownloadFiles().
 		// 			AddFile("logs.txt", []byte(msg.Logs), `text/x-logs`, "").

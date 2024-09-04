@@ -24,7 +24,7 @@ var templatesFS embed.FS
 
 func cmdGenerate(p *Project) loop.Cmd {
 	return func() loop.Msg {
-		projFiles, err := p.generate()
+		projFiles, err := p.Generate()
 		if err != nil {
 			return codegen.ReturnGenerate{Err: err}
 		}
@@ -68,7 +68,7 @@ func cmdBuildCompleted(content *codegen.RemoteBuildState) loop.Cmd {
 	}
 }
 
-func (p *Project) generate() (projFiles map[string][]byte, err error) {
+func (p *Project) Generate() (projFiles map[string][]byte, err error) {
 	// TODO: before doing any generation, we'll want to validate
 	// all data points that are going into source code.
 	// We don't want some weird things getting into `build.rs`
