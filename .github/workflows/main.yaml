@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - develop
-      - "codegen-cmd"
+      - codegen-cmd
   pull_request:
     branches:
       - "**"
