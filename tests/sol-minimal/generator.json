@@ -1,0 +1,8 @@
+{
+  "generator": "sol-minimal",
+  "state": {
+    "name": "my_project",
+    "chainName": "",
+    "initialBlockSet": true
+  }
+}

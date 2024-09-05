@@ -1,0 +1,8 @@
+
+  "generator": "evm-minimal",
+  "state": {
+    "name": "my_project",
+    "chainName": "mainnet",
+    "initialBlockSet": true
+  }
+}

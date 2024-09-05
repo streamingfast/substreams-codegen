@@ -1,0 +1,8 @@
+{
+  "generator": "vara-minimal",
+  "state": {
+    "name": "my_project",
+    "chainName": "vara-mainnet",
+    "initialBlockSet": true
+  }
+}

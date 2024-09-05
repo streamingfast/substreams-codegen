@@ -2,20 +2,37 @@ package tests
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"regexp"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/streamingfast/logging"
+
+	"github.com/streamingfast/dstore"
+
+	"github.com/streamingfast/substreams-codegen/server"
 
 	"golang.org/x/net/context"
 )
 
 func TestIntegration(t *testing.T) {
+	if os.Getenv("RUN_INTEGRATION_TESTS") != "true" {
+		t.Skip()
+	}
+
 	cases := []struct {
-		name      string
-		stateFile string
+		name                  string
+		stateFile             string
+		explorerApiKeyEnvName string
 	}{
 		{
-			name:      "evm-events-calls",
-			stateFile: "./evm-events-calls/generator.json",
+			name:                  "evm-events-calls",
+			stateFile:             "./evm-events-calls/generator.json",
+			explorerApiKeyEnvName: "CODEGEN_MAINNET_API_KEY",
 		},
 		{
 			name:      "evm-minimal",
@@ -25,7 +42,21 @@ func TestIntegration(t *testing.T) {
 			name:      "injective-minimal",
 			stateFile: "./injective-minimal/generator.json",
 		},
+		{
+			name:      "vara-minimal",
+			stateFile: "./vara-minimal/generator.json",
+		},
+		{
+			name:      "sol-minimal",
+			stateFile: "./sol-minimal/generator.json",
+		},
+		{
+			name:      "starknet-minimal",
+			stateFile: "./starknet-minimal/generator.json",
+		},
 	}
+
+	ctx := context.Background()
 
 	buildArgs := []string{
 		"build",
@@ -35,7 +66,32 @@ func TestIntegration(t *testing.T) {
 		"--platform",
 		"linux/amd64",
 	}
-	ctx := context.Background()
+
+	if os.Getenv("TEST_LOCAL_CODEGEN") == "true" {
+		go func() {
+			var cors *regexp.Regexp
+			hostRegex, err := regexp.Compile("^localhost")
+			require.NoError(t, err)
+			cors = hostRegex
+
+			sessionStore, err := dstore.NewStore("", "", "", false)
+			require.NoError(t, err)
+
+			var zlog, _ = logging.RootLogger("test", "test")
+
+			server := server.New(
+				":9000",
+				cors,
+				sessionStore,
+				zlog)
+
+			server.Run()
+		}()
+
+		//Make sure server is running before, `substreams init`
+		time.Sleep(2 * time.Second)
+	}
+
 	buildCmd := exec.CommandContext(ctx, "docker", buildArgs...)
 	buildCmd.Dir = "./"
 
@@ -46,6 +102,11 @@ func TestIntegration(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
+			explorerApiKey := os.Getenv(c.explorerApiKeyEnvName)
+			if explorerApiKey == "" {
+				fmt.Printf("NO %s has been provided, please make sure to provide it to enable code generation...", c.explorerApiKeyEnvName)
+			}
+
 			runArgs := []string{
 				"run",
 				"--rm",
@@ -53,6 +114,8 @@ func TestIntegration(t *testing.T) {
 				"linux/amd64",
 				"-v",
 				fmt.Sprintf("%s:/app/generator.json", c.stateFile),
+				"-e",
+				fmt.Sprintf("TEST_LOCAL_CODEGEN=%s", os.Getenv("TEST_LOCAL_CODEGEN")),
 				"test-image",
 			}
 
