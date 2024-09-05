@@ -28,7 +28,7 @@ substreams gui
 
 ## Understand the Generated Project
 
-Only a `substreams.yaml` file has been generated. This file declares a Substreams module, `map_filtered_transactions`, which uses a Solana Foundational Module (a module built by the team).
+Only a `substreams.yaml` file has been generated. This file declares a Substreams module, `{{ .ModuleName }}`, which uses a Solana Foundational Module (a module built by the team).
 
 ```yaml
 specVersion: v0.1.0
@@ -37,19 +37,23 @@ package:
   version: v0.1.0
 
 imports:
-  solana: https://spkg.io/streamingfast/solana-common-v0.2.0.spkg // 1.
+  solana: https://github.com/enoldev/substreams-foundational-modules/releases/download/v0.2.0/solana-common-v0.2.0.spkg // 1.
 
 modules:
- - name: map_filtered_transactions // 2.
-   use: solana:filtered_transactions_without_votes // 3.
+  - name: {{ .ModuleName }} // 2.
+{{- if .IsTransactionsDataType }}
+    use: solana:filtered_transactions_without_votes // 3.
+{{- else }}
+    use: solana:filtered_instructions // 3.
+{{- end }}
 
 network: solana
 
 params:
-  map_filtered_transactions: {{ .ProgramId }} // 4.
+  {{ .ModuleName}}: {{ .ProgramId }} // 4.
 ```
 1. Import the Solana Foundational Modules.
-2. Declare the `map_filtered_transactions` module, which you will run later.
-3. Use the `filtered_transactions_without_votes` module from the Solana Foundational Modules.
+2. Declare the `{{ .ModuleName }}` module, which you will run later.
+3. Use the {{ if .IsTransactionsDataType }}`filtered_transactions_without_votes`{{ else }}`filtered_instructions`{{ end }} module from the Solana Foundational Modules.
 Essentially, you are _using_ the Solana Foundational Module, which is pre-built for you.
 4. Pass the regular expression to filter the transactions based on the specified Program IDs.

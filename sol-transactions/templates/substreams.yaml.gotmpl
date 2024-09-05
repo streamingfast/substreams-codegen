@@ -4,13 +4,17 @@ package:
   version: v0.1.0
 
 imports:
-  solana: https://spkg.io/streamingfast/solana-common-v0.2.0.spkg
+  solana: https://github.com/enoldev/substreams-foundational-modules/releases/download/v0.2.0/solana-common-0.2.0.spkg
 
 modules:
- - name: map_filtered_transactions
-   use: solana:filtered_transactions_without_votes
+  - name: {{ .ModuleName }}
+{{- if .IsTransactionsDataType }}
+    use: solana:filtered_transactions_without_votes
+{{- else }}
+    use: solana:filtered_instructions
+{{- end }}
 
 network: solana
 
 params:
-  map_filtered_transactions: {{ .ProgramId }}
+  {{ .ModuleName }}: {{ .ProgramId }}

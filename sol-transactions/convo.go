@@ -69,6 +69,10 @@ func (p *Project) NextStep() (out loop.Cmd) {
 		return cmd(codegen.AskInitialStartBlockType{})
 	}
 
+	if p.DataType == "" {
+		return cmd(AskDataType{})
+	}
+
 	if p.ProgramId == "" {
 		return cmd(AskProgramId{})
 	}
@@ -126,6 +130,23 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 		c.state.InitialBlock = initialBlock
 		c.state.InitialBlockSet = true
+		return c.NextStep()
+
+	case AskDataType:
+		labels := []string{
+			"Filtered Transactions",
+			"Filtered Instructions",
+		}
+		values := []string{TRANSACTIONS_TYPE, INSTRUCTIONS_TYPE}
+		return c.action(InputDataType{}).
+			ListSelect(fmt.Sprintf("This codegen will build a Substreams that filters data based one or several Program IDs.\n" +
+				"Do you want to target:")).
+			Labels(labels...).
+			Values(values...).
+			Cmd()
+
+	case InputDataType:
+		c.state.DataType = msg.Value
 		return c.NextStep()
 
 	case AskProgramId:
