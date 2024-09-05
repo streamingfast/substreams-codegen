@@ -23,7 +23,7 @@ type Project struct {
 	DynamicContracts       []*DynamicContract `json:"dynamic_contracts"`
 	Compile                bool               `json:"compile,omitempty"` // optional field to write in state and automatically compile with no confirmation.
 	Download               bool               `json:"download,omitempty"`
-	ConfirmEnoughContracts bool               `json:"confirm_enough_contracts"`
+	ConfirmEnoughContracts bool               `json:"confirm_enough_contracts,omitempty"`
 
 	// Remote build part removed for the moment
 	// confirmDownloadOnly bool
