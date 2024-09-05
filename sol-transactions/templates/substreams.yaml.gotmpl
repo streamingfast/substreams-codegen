@@ -1,6 +1,6 @@
 specVersion: v0.1.0
 package:
-  name: my_project_sol
+  name: {{ .Name }}
   version: v0.1.0
 
 imports:
@@ -9,6 +9,7 @@ imports:
 modules:
  - name: map_filtered_transactions
    use: solana:filtered_transactions_without_votes
+   initialBlock: {{ .InitialBlock }}
 
 network: solana
 

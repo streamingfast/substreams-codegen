@@ -33,7 +33,7 @@ Only a `substreams.yaml` file has been generated. This file declares a Substream
 ```yaml
 specVersion: v0.1.0
 package:
-  name: my_project_sol
+  name: {{ .Name }}
   version: v0.1.0
 
 imports:
@@ -42,6 +42,7 @@ imports:
 modules:
  - name: map_filtered_transactions // 2.
    use: solana:filtered_transactions_without_votes // 3.
+   initialBlock: {{ .InitialBlock }}
 
 network: solana
 
