@@ -24,10 +24,10 @@ type ABI struct {
 	raw string
 }
 
-func cmdDecodeABI(contract *Contract) loop.Cmd {
+func CmdDecodeABI(contract *Contract) loop.Cmd {
 	return func() loop.Msg {
 		abi, err := eth.ParseABIFromBytes([]byte(contract.RawABI))
-		return ReturnRunDecodeContractABI{abi: &ABI{abi, string(contract.RawABI)}, err: err}
+		return ReturnRunDecodeContractABI{Abi: &ABI{abi, string(contract.RawABI)}, Err: err}
 	}
 }
 
@@ -84,7 +84,7 @@ func (a *ABI) BuildEventModels() (out []codegenEvent, err error) {
 			}
 			event.Signature()
 
-			// Sanitize abi struct name base on rust proto-gen sanitizer
+			// Sanitize Abi struct name base on rust proto-gen sanitizer
 			rustABIStructName = sanitizeABIStructName(rustABIStructName)
 
 			protoFieldName := xstrings.ToSnakeCase(pluralizerSingleton.Plural(rustABIStructName))
@@ -154,7 +154,7 @@ func (a *ABI) BuildCallModels() (out []codegenCall, err error) {
 				}
 			}
 
-			// Sanitize abi struct name base on rust proto-gen sanitizer
+			// Sanitize Abi struct name base on rust proto-gen sanitizer
 			rustABIStructName = sanitizeABIStructName(rustABIStructName)
 
 			protoFieldName := "call_" + xstrings.ToSnakeCase(pluralizerSingleton.Plural(rustABIStructName))

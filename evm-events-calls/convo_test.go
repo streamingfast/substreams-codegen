@@ -82,10 +82,10 @@ func TestConvoUpdate(t *testing.T) {
 	next = conv.Update(RunDecodeContractABI{})
 	msg, ok := next().(ReturnRunDecodeContractABI)
 	require.True(t, ok)
-	assert.Nil(t, msg.err)
+	assert.Nil(t, msg.Err)
 
 	next = conv.Update(msg)
-	// TODO: test the output with the given abi methods in there...
+	// TODO: test the output with the given Abi methods in there...
 	assert.Equal(t, FetchContractInitialBlock{}, next())
 
 	next = conv.Update(ReturnFetchContractInitialBlock{Err: fmt.Errorf("failed")})

@@ -13,29 +13,29 @@ import (
 	"github.com/codemodus/kace"
 	"github.com/golang-cz/textcase"
 	"github.com/huandu/xstrings"
-
 	"github.com/streamingfast/eth-go"
 )
 
 type Project struct {
-	Name             string             `json:"name"`
-	ChainName        string             `json:"chainName"`
-	Contracts        []*Contract        `json:"contracts"`
-	DynamicContracts []*DynamicContract `json:"dynamic_contracts"`
-	Compile          bool               `json:"compile,omitempty"` // optional field to write in state and automatically compile with no confirmation.
-	Download         bool               `json:"download,omitempty"`
+	Name                   string             `json:"name"`
+	ChainName              string             `json:"chainName"`
+	Contracts              []*Contract        `json:"contracts"`
+	DynamicContracts       []*DynamicContract `json:"dynamic_contracts"`
+	Compile                bool               `json:"compile,omitempty"` // optional field to write in state and automatically compile with no confirmation.
+	Download               bool               `json:"download,omitempty"`
+	ConfirmEnoughContracts bool               `json:"confirm_enough_contracts"`
 
 	// Remote build part removed for the moment
 	// confirmDownloadOnly bool
 	// confirmDoCompile    bool
 
 	currentContractIdx     int
-	confirmEnoughContracts bool
 	compilingBuild         bool
 	generatedCodeCompleted bool
-	projectFiles           map[string][]byte
+	ProjectFiles           map[string][]byte
 
-	buildStarted time.Time
+	buildStarted    time.Time
+	forceGeneration bool
 }
 
 func dynamicContractNames(contracts []*DynamicContract) (out []string) {
@@ -170,7 +170,7 @@ type BaseContract struct {
 	RawABI      json.RawMessage `json:"rawAbi,omitempty"`
 
 	abiFetchedInThisSession bool
-	abi                     *ABI
+	Abi                     *ABI
 	emptyABI                bool
 }
 
@@ -187,7 +187,7 @@ func (c *BaseContract) EventFields(event string) ([]*eth.LogParameter, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid event ID %q: %w", event, err)
 	}
-	eventDef := c.abi.abi.FindLogByTopic(hash)
+	eventDef := c.Abi.abi.FindLogByTopic(hash)
 	if eventDef == nil {
 		return nil, fmt.Errorf("cannot find event definition for %q", event)
 	}
@@ -195,7 +195,7 @@ func (c *BaseContract) EventFields(event string) ([]*eth.LogParameter, error) {
 }
 
 func (c *BaseContract) CallModels() []codegenCall {
-	calls, err := c.abi.BuildCallModels()
+	calls, err := c.Abi.BuildCallModels()
 	if err != nil {
 		panic(err)
 	}
@@ -203,7 +203,7 @@ func (c *BaseContract) CallModels() []codegenCall {
 }
 
 func (c *BaseContract) EventModels() []codegenEvent {
-	evts, err := c.abi.BuildEventModels()
+	evts, err := c.Abi.BuildEventModels()
 	if err != nil {
 		panic(err)
 	}

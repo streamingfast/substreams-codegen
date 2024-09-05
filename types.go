@@ -84,10 +84,6 @@ type ReturnGenerate struct {
 	ProjectFiles map[string][]byte
 }
 
-type RunBuild struct {
-	pbconvo.UserInput_Confirmation
-}
-
 type MsgGenerateProgress struct {
 	Progress int
 	Logs     []string

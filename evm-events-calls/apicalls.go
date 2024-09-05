@@ -96,12 +96,12 @@ func getContractABIDirect(ctx context.Context, address string, endpoint string) 
 
 	res, err := httpClient.Do(req)
 	if err != nil {
-		return nil, "", fmt.Errorf("getting contract abi: %w", err)
+		return nil, "", fmt.Errorf("getting contract Abi: %w", err)
 	}
 	defer res.Body.Close()
 
 	type Response struct {
-		Abi []byte `json:"abi"`
+		Abi []byte `json:"Abi"`
 	}
 
 	data, err := io.ReadAll(res.Body)
@@ -109,11 +109,11 @@ func getContractABIDirect(ctx context.Context, address string, endpoint string) 
 		panic(err)
 	}
 
-	abiContent := gjson.GetBytes(data, "abi").String()
+	abiContent := gjson.GetBytes(data, "Abi").String()
 
 	ethABI, err := eth.ParseABIFromBytes([]byte(abiContent))
 	if err != nil {
-		return nil, "", fmt.Errorf("parsing abi %q: %w", abiContent, err)
+		return nil, "", fmt.Errorf("parsing Abi %q: %w", abiContent, err)
 	}
 	return ethABI, abiContent, err
 
@@ -130,7 +130,7 @@ func getContractABI(ctx context.Context, address string, endpoint string, apiKey
 
 	res, err := httpClient.Do(req)
 	if err != nil {
-		return nil, "", nil, fmt.Errorf("getting contract abi: %w", err)
+		return nil, "", nil, fmt.Errorf("getting contract Abi: %w", err)
 	}
 	defer res.Body.Close()
 
@@ -153,7 +153,7 @@ func getContractABI(ctx context.Context, address string, endpoint string, apiKey
 
 	ethABI, err := eth.ParseABIFromBytes([]byte(abiContent))
 	if err != nil {
-		return nil, "", timer, fmt.Errorf("parsing abi %q: %w", abiContent, err)
+		return nil, "", timer, fmt.Errorf("parsing Abi %q: %w", abiContent, err)
 	}
 	return ethABI, abiContent, timer, err
 }
@@ -172,7 +172,7 @@ func getProxyContractImplementation(ctx context.Context, address string, endpoin
 
 	res, err := httpClient.Do(req)
 	if err != nil {
-		return "", nil, fmt.Errorf("getting contract abi from etherscan: %w", err)
+		return "", nil, fmt.Errorf("getting contract Abi from etherscan: %w", err)
 	}
 	defer res.Body.Close()
 
@@ -218,14 +218,14 @@ func timerUntilNextCall(msg string) *time.Timer {
 // // Deprecated: use getContractABIFollowingProxy at the right place instead.
 // func getAndSetContractABIs(ctx context.Context, contracts []*Contract, chain *ChainConfig) ([]*Contract, error) {
 // 	for _, contract := range contracts {
-// 		abi, abiContent, err := getContractABIFollowingProxy(ctx, contract.Address, chain)
-// 		if err != nil {
-// 			return nil, fmt.Errorf("getting contract ABI for %s: %w", contract.Address, err)
+// 		Abi, abiContent, Err := getContractABIFollowingProxy(ctx, contract.Address, chain)
+// 		if Err != nil {
+// 			return nil, fmt.Errorf("getting contract ABI for %s: %w", contract.Address, Err)
 // 		}
 
 // 		//fmt.Println("this is the complete abiContent after merge", abiContent)
 // 		contract.abiContent = abiContent
-// 		contract.abi = abi
+// 		contract.Abi = Abi
 
 // 		fmt.Printf("Fetched contract ABI for %s\n", contract.Address)
 // 	}
@@ -285,14 +285,14 @@ func getContractInitialBlock(ctx context.Context, chain *ChainConfig, contractAd
 // 	// TURN this into a SINGLE contract request, and return the start block
 // 	var lowestStartBlock uint64 = math.MaxUint64
 // 	for _, contract := range contracts {
-// 		req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/api?module=account&action=txlist&address=%s&page=1&offset=1&sort=asc&apikey=%s", chain.ApiEndpoint, contract.Address, etherscanAPIKey), nil)
-// 		if err != nil {
-// 			return 0, fmt.Errorf("new request: %w", err)
+// 		req, Err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/api?module=account&action=txlist&address=%s&page=1&offset=1&sort=asc&apikey=%s", chain.ApiEndpoint, contract.Address, etherscanAPIKey), nil)
+// 		if Err != nil {
+// 			return 0, fmt.Errorf("new request: %w", Err)
 // 		}
 
-// 		res, err := httpClient.Do(req)
-// 		if err != nil {
-// 			return 0, fmt.Errorf("failed request to etherscan: %w", err)
+// 		res, Err := httpClient.Do(req)
+// 		if Err != nil {
+// 			return 0, fmt.Errorf("failed request to etherscan: %w", Err)
 // 		}
 // 		defer res.Body.Close()
 
@@ -305,8 +305,8 @@ func getContractInitialBlock(ctx context.Context, chain *ChainConfig, contractAd
 // 		}
 
 // 		var response Response
-// 		if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
-// 			return 0, fmt.Errorf("unmarshaling: %w", err)
+// 		if Err := json.NewDecoder(res.Body).Decode(&response); Err != nil {
+// 			return 0, fmt.Errorf("unmarshaling: %w", Err)
 // 		}
 
 // 		if len(response.Result) == 0 {
@@ -315,9 +315,9 @@ func getContractInitialBlock(ctx context.Context, chain *ChainConfig, contractAd
 
 // 		<-timerUntilNextCall(response.Message).C
 
-// 		blockNum, err := strconv.ParseUint(response.Result[0].BlockNumber, 10, 64)
-// 		if err != nil {
-// 			return 0, fmt.Errorf("parsing block number: %w", err)
+// 		blockNum, Err := strconv.ParseUint(response.Result[0].BlockNumber, 10, 64)
+// 		if Err != nil {
+// 			return 0, fmt.Errorf("parsing block number: %w", Err)
 // 		}
 
 // 		if blockNum < lowestStartBlock {

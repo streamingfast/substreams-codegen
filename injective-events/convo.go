@@ -2,12 +2,10 @@ package injective_events
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	codegen "github.com/streamingfast/substreams-codegen"
 	"github.com/streamingfast/substreams-codegen/loop"
@@ -157,7 +155,7 @@ func (p *Project) NextStep() (out loop.Cmd) {
 		return cmd(codegen.RunGenerate{})
 	}
 
-	return cmd(codegen.RunBuild{})
+	return loop.Quit(nil)
 }
 
 func (c *InjectiveConvo) Update(msg loop.Msg) loop.Cmd {
@@ -389,120 +387,6 @@ func (c *InjectiveConvo) Update(msg loop.Msg) loop.Cmd {
 
 	case codegen.InputSourceDownloaded:
 		return c.NextStep()
-
-	case codegen.RunBuild:
-		// Remote build part removed for the moment
-		// Do not run the build, the user only wants to download the files
-		// if c.state.confirmDownloadOnly {
-		// 	return cmd(codegen.ReturnBuild{
-		// 		Err:       nil,
-		// 		Artifacts: nil,
-		// 	})
-		// }
-
-		return cmd(codegen.ReturnBuild{
-			Err:       nil,
-			Artifacts: nil,
-		})
-
-		// Remote build part removed for the moment
-		// return cmdBuild(c.state)
-
-	case codegen.CompilingBuild:
-		resp, ok := <-msg.RemoteBuildChan
-
-		if !ok {
-			// the channel has been closed, we are done
-			return loop.Seq(
-				c.msg().StopLoading().Cmd(),
-				cmdBuildCompleted(c.remoteBuildState),
-			)
-		}
-
-		if resp == nil {
-			// dont fail the command line yet, go to the return build step
-			return loop.Seq(
-				c.msg().StopLoading().Cmd(),
-				cmdBuildFailed(errors.New("build response is nil")),
-			)
-		}
-
-		if resp.Error != "" {
-			// dont fail the command line yet, go to the return build step
-			return loop.Seq(
-				c.msg().StopLoading().Cmd(),
-				cmdBuildFailed(errors.New(resp.Error)),
-			)
-		}
-
-		c.remoteBuildState.Update(resp)
-
-		// the first time, we want to show a message stating that we have started the build
-		if msg.FirstTime {
-			return loop.Seq(
-				c.msg().Loadingf(true, "Compiling your Substreams, build started at %s. This normally takes around 1 minute...", c.state.buildStarted.Format(time.UnixDate)).Cmd(),
-				cmd(codegen.CompilingBuild{
-					FirstTime:       false,
-					RemoteBuildChan: msg.RemoteBuildChan,
-				}), // keep staying in the CompilingBuild state
-			)
-		}
-
-		if c.remoteBuildState.Error != "" {
-			// dont fail the command line yet, go to the return build step
-			return loop.Seq(
-				c.msg().StopLoading().Cmd(),
-				cmdBuildFailed(errors.New(c.remoteBuildState.Error)),
-			)
-		}
-
-		if len(c.remoteBuildState.Artifacts) == 0 {
-			if len(c.remoteBuildState.Logs) == 0 {
-				// don't accumulate any empty logs, just keep looping
-				return cmd(codegen.CompilingBuild{
-					FirstTime:       false,
-					RemoteBuildChan: msg.RemoteBuildChan,
-				}) // keep staying in the CompilingBuild state
-			}
-
-			return cmd(codegen.CompilingBuild{
-				FirstTime:       false,
-				RemoteBuildChan: msg.RemoteBuildChan,
-			})
-		}
-
-		// done, we have the artifacts
-		return loop.Seq(
-			c.msg().StopLoading().Cmd(),
-			cmdBuildCompleted(c.remoteBuildState),
-		)
-
-	case codegen.ReturnBuild:
-		// Remote build part removed for the moment
-		// if msg.Err != nil {
-		// 	return loop.Seq(
-		// 		c.msg().Messagef("Remote build failed with error: %s\nYou can package your Substreams with \"make package\".", msg.Err).Cmd(),
-		// 		loop.Quit(nil),
-		// 	)
-		// }
-
-		// return loop.Seq(
-		// 	c.msg().Messagef("Build completed successfully, took %s", time.Since(c.state.buildStarted)).Cmd(),
-		// 	c.action(codegen.PackageDownloaded{}).
-		// 		DownloadFiles().
-		// 		// In both AddFile(...) calls, do not show any description, as we already have enough description in the substreams init part of the conversation
-		// 		AddFile(msg.Artifacts[0].Filename, msg.Artifacts[0].Content, `application/x-protobuf+sf.substreams.v1.Package`, "").
-		// 		AddFile("logs.txt", []byte(msg.Logs), `text/x-logs`, "").
-		// 		Cmd(),
-		// )
-		return loop.Seq(
-			c.msg().Message(codegen.ReturnBuildMessage(false)).Cmd(),
-			loop.Quit(nil),
-		)
-
-	case codegen.PackageDownloaded:
-		return loop.Quit(nil)
-
 	}
 
 	return loop.Quit(fmt.Errorf("invalid loop message: %T", msg))

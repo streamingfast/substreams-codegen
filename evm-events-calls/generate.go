@@ -120,7 +120,7 @@ func (p *Project) build(remoteBuildContentChan chan<- *codegen.RemoteBuildState)
 		}
 	}()
 
-	projectZip, err := codegen.ZipFiles(p.projectFiles)
+	projectZip, err := codegen.ZipFiles(p.ProjectFiles)
 	if err != nil {
 		remoteBuildContentChan <- &codegen.RemoteBuildState{
 			Error: err.Error(),
@@ -229,11 +229,11 @@ func (p *Project) Render() (projectFiles map[string][]byte, err error) {
 	}
 
 	for _, contract := range p.Contracts {
-		projectFiles[fmt.Sprintf("abi/%s_contract.abi.json", contract.Name)] = []byte(contract.abi.raw)
+		projectFiles[fmt.Sprintf("Abi/%s_contract.Abi.json", contract.Name)] = []byte(contract.Abi.raw)
 	}
 
 	for _, dds := range p.DynamicContracts {
-		projectFiles[fmt.Sprintf("abi/%s_contract.abi.json", dds.Name)] = []byte(dds.abi.raw)
+		projectFiles[fmt.Sprintf("Abi/%s_contract.Abi.json", dds.Name)] = []byte(dds.Abi.raw)
 	}
 
 	return

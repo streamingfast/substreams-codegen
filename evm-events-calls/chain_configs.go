@@ -181,11 +181,11 @@ func init() {
 func (c *ChainConfig) setTestABI(address string, abiFile string) {
 	raw, err := os.ReadFile(abiFile)
 	if err != nil {
-		panic(fmt.Errorf("reading abi %q: %w", abiFile, err))
+		panic(fmt.Errorf("reading Abi %q: %w", abiFile, err))
 	}
 	abi, err := eth.ParseABIFromBytes(raw)
 	if err != nil {
-		panic(fmt.Errorf("parsing abi %q: %w", abi, err))
+		panic(fmt.Errorf("parsing Abi %q: %w", abi, err))
 	}
 	c.abiCache[address] = &ABI{
 		abi: abi,

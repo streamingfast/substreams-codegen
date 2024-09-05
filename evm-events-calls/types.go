@@ -65,8 +65,8 @@ type InputDynamicContractABI struct{ pbconvo.UserInput_TextInput }
 
 type RunDecodeContractABI struct{}
 type ReturnRunDecodeContractABI struct {
-	abi *ABI
-	err error
+	Abi *ABI
+	Err error
 }
 
 type RunDecodeDynamicContractABI struct{}

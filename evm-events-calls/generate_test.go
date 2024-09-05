@@ -58,7 +58,7 @@ func Test_Generate(t *testing.T) {
 			generatorFile: "./testdata/uniswap_track_calls_clickhouse.json",
 		},
 		{
-			name:          "Complex abi with digits and specific character",
+			name:          "Complex Abi with digits and specific character",
 			generatorFile: "./testdata/complex_abi.json",
 		},
 	}
@@ -69,15 +69,15 @@ func Test_Generate(t *testing.T) {
 
 			assert.Equal(t, RunDecodeContractABI{}, p.NextStep()())
 			for _, contract := range p.Contracts {
-				res := cmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
-				require.NoError(t, res.err)
-				contract.abi = res.abi
+				res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
+				require.NoError(t, res.Err)
+				contract.Abi = res.Abi
 			}
 
 			for _, dynamicContract := range p.DynamicContracts {
 				res := cmdDecodeDynamicABI(dynamicContract)().(ReturnRunDecodeDynamicContractABI)
 				require.NoError(t, res.err)
-				dynamicContract.abi = res.abi
+				dynamicContract.Abi = res.abi
 
 				for _, contract := range p.Contracts {
 					if contract.Name == dynamicContract.ParentContractName {
@@ -124,15 +124,15 @@ func Test_Generate(t *testing.T) {
 //			p := LoadProjectFromState(t, c.generatorFile)
 //
 //			for _, contract := range p.Contracts {
-//				res := cmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
-//				require.NoError(t, res.err)
-//				contract.abi = res.abi
+//				res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
+//				require.NoError(t, res.Err)
+//				contract.Abi = res.Abi
 //			}
 //
 //			for _, dynamicContract := range p.DynamicContracts {
 //				res := cmdDecodeDynamicABI(dynamicContract)().(ReturnRunDecodeDynamicContractABI)
-//				require.NoError(t, res.err)
-//				dynamicContract.abi = res.abi
+//				require.NoError(t, res.Err)
+//				dynamicContract.Abi = res.Abi
 //
 //				for _, contract := range p.Contracts {
 //					if contract.Name == dynamicContract.ParentContractName {
@@ -143,15 +143,15 @@ func Test_Generate(t *testing.T) {
 //
 //			p.outputType = outputTypeSubgraph
 //
-//			sourceFiles, projectFiles, err := p.Generate(outputTypeSubgraph)
-//			require.NoError(t, err)
+//			sourceFiles, projectFiles, Err := p.Generate(outputTypeSubgraph)
+//			require.NoError(t, Err)
 //			assert.NotEmpty(t, len(sourceFiles))
 //			assert.NotEmpty(t, len(projectFiles))
 //
 //			for fileName, fileContent := range projectFiles {
 //				goldenFileName := c.expectedOutput + "/" + strings.TrimPrefix(fileName, "substreams/")
-//				goldenContent, err := os.ReadFile(goldenFileName)
-//				require.NoError(t, err)
+//				goldenContent, Err := os.ReadFile(goldenFileName)
+//				require.NoError(t, Err)
 //
 //				require.Equal(t, goldenContent, fileContent)
 //			}
@@ -167,20 +167,20 @@ func TestUniFactory(t *testing.T) {
 	assert.Equal(t, RunDecodeContractABI{}, p.NextStep()())
 
 	for _, contract := range p.Contracts {
-		res := cmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
-		require.NoError(t, res.err)
-		contract.abi = res.abi
+		res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
+		require.NoError(t, res.Err)
+		contract.Abi = res.Abi
 	}
 
 	projectFiles, err := p.Generate()
 	require.NoError(t, err)
 	assert.NotEmpty(t, len(projectFiles))
-	p.projectFiles = projectFiles
+	p.ProjectFiles = projectFiles
 
 	// requires a build server. Test manually by running `make all` in the unifactory directory
 
-	// artifacts, err := p.build()
-	// require.NoError(t, err)
+	// artifacts, Err := p.build()
+	// require.NoError(t, Err)
 	// assert.Contains(t, artifacts.logs, "Finished release")
 }
 
@@ -191,9 +191,9 @@ func TestBaycSQL(t *testing.T) {
 	assert.Equal(t, RunDecodeContractABI{}, p.NextStep()())
 
 	for _, contract := range p.Contracts {
-		res := cmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
-		require.NoError(t, res.err)
-		contract.abi = res.abi
+		res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
+		require.NoError(t, res.Err)
+		contract.Abi = res.Abi
 	}
 
 	projZip, err := p.Generate()
@@ -208,22 +208,22 @@ func Test_Uniswapv3riggersDynamicDatasources(t *testing.T) {
 	assert.Equal(t, RunDecodeContractABI{}, p.NextStep()())
 
 	for _, contract := range p.Contracts {
-		res := cmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
-		require.NoError(t, res.err)
-		contract.abi = res.abi
+		res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
+		require.NoError(t, res.Err)
+		contract.Abi = res.Abi
 	}
 
 	for _, contract := range p.DynamicContracts {
 		res := cmdDecodeDynamicABI(contract)().(ReturnRunDecodeDynamicContractABI)
 		require.NoError(t, res.err)
-		contract.abi = res.abi
+		contract.Abi = res.abi
 		contract.parentContract = p.Contracts[0]
 	}
 
 	projectFiles, err := p.Generate()
 	require.NoError(t, err)
 	assert.NotEmpty(t, projectFiles)
-	p.projectFiles = projectFiles
+	p.ProjectFiles = projectFiles
 
 	outDir := "testoutput/uniswap_v3_triggers_dynamic_datasources"
 	os.RemoveAll(outDir)
@@ -231,8 +231,8 @@ func Test_Uniswapv3riggersDynamicDatasources(t *testing.T) {
 
 	// requires a build server. Test manually by running `make package` in the bayc directory
 
-	// artifacts, err := p.build()
-	// require.NoError(t, err)
+	// artifacts, Err := p.build()
+	// require.NoError(t, Err)
 	// assert.Contains(t, artifacts.logs, "Finished release")
 }
 func Test_BaycTriggers(t *testing.T) {
@@ -242,15 +242,15 @@ func Test_BaycTriggers(t *testing.T) {
 	assert.Equal(t, RunDecodeContractABI{}, p.NextStep()())
 
 	for _, contract := range p.Contracts {
-		res := cmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
-		require.NoError(t, res.err)
-		contract.abi = res.abi
+		res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
+		require.NoError(t, res.Err)
+		contract.Abi = res.Abi
 	}
 
 	projectFiles, err := p.Generate()
 	require.NoError(t, err)
 	assert.NotEmpty(t, len(projectFiles))
-	p.projectFiles = projectFiles
+	p.ProjectFiles = projectFiles
 
 	outDir := "testoutput/uniswap_v3_triggers_dynamic_datasources"
 	os.RemoveAll(outDir)
@@ -258,8 +258,8 @@ func Test_BaycTriggers(t *testing.T) {
 
 	// requires a build server. Test manually by running `make package` in the bayc directory
 
-	// artifacts, err := p.build()
-	// require.NoError(t, err)
+	// artifacts, Err := p.build()
+	// require.NoError(t, Err)
 	// assert.Contains(t, artifacts.logs, "Finished release")
 }
 
