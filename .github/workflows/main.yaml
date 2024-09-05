@@ -18,10 +18,11 @@ jobs:
       matrix:
         go-version: [ 1.21.x ]
         os: [ubuntu-latest, macos-latest]
+
     env:
-      TEST_LOCAL_CODEGEN: "true",
-      RUN_INTEGRATION_TESTS: "true",
-      CODEGEN_MAINNET_API_KEY: ${{ secrets.CODEGEN_MAINNET_API_KEY }},
+      TEST_LOCAL_CODEGEN: "true"
+      RUN_INTEGRATION_TESTS: "true"
+      CODEGEN_MAINNET_API_KEY: ${{ secrets.CODEGEN_MAINNET_API_KEY }}
     steps:
       - name: Set up Go
         uses: actions/setup-go@v2
