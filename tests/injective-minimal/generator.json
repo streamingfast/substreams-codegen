@@ -1,0 +1,8 @@
+{
+  "generator": "injective-minimal",
+  "state": {
+    "name": "my_project",
+    "chainName": "injective-mainnet",
+    "initialBlockSet": true
+  }
+}
