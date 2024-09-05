@@ -28,11 +28,13 @@ func TestIntegration(t *testing.T) {
 		name                  string
 		stateFile             string
 		explorerApiKeyEnvName string
+		apiKeyNeeded          bool
 	}{
 		{
 			name:                  "evm-events-calls",
 			stateFile:             "./evm-events-calls/generator.json",
 			explorerApiKeyEnvName: "CODEGEN_MAINNET_API_KEY",
+			apiKeyNeeded:          true,
 		},
 		{
 			name:      "evm-minimal",
@@ -103,7 +105,7 @@ func TestIntegration(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			explorerApiKey := os.Getenv(c.explorerApiKeyEnvName)
-			if explorerApiKey == "" {
+			if explorerApiKey == "" && c.apiKeyNeeded {
 				fmt.Printf("NO %s has been provided, please make sure to provide it to enable code generation...", c.explorerApiKeyEnvName)
 			}
 
