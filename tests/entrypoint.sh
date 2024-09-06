@@ -8,4 +8,5 @@ fi
 
 substreams build
 
-
+## To validate the manifest
+substreams info

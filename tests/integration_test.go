@@ -56,6 +56,14 @@ func TestIntegration(t *testing.T) {
 			name:      "starknet-minimal",
 			stateFile: "./starknet-minimal/generator.json",
 		},
+		{
+			name:      "injective-events",
+			stateFile: "./injective-events/generator.json",
+		},
+		{
+			name:      "sol-transactions",
+			stateFile: "./sol-transactions/generator.json",
+		},
 	}
 
 	ctx := context.Background()
