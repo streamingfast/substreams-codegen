@@ -103,7 +103,10 @@ func TestIntegration(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		c := c
 		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+
 			explorerApiKey := os.Getenv(c.explorerApiKeyEnvName)
 			if explorerApiKey == "" && c.apiKeyNeeded {
 				fmt.Printf("NO %s has been provided, please make sure to provide it to enable code generation...", c.explorerApiKeyEnvName)
@@ -129,5 +132,4 @@ func TestIntegration(t *testing.T) {
 
 		})
 	}
-
 }
