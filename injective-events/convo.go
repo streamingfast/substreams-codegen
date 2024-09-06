@@ -147,7 +147,7 @@ func (p *Project) NextStep() (out loop.Cmd) {
 		}
 	}
 
-	if !p.eventsComplete {
+	if !p.EventsComplete {
 		return cmd(AskAnotherEventType{})
 	}
 
@@ -334,7 +334,7 @@ func (c *InjectiveConvo) Update(msg loop.Msg) loop.Cmd {
 			c.state.EventDescs = append(c.state.EventDescs, &eventDesc{Incomplete: true})
 			return c.NextStep()
 		case "no":
-			c.state.eventsComplete = true
+			c.state.EventsComplete = true
 			return c.NextStep()
 		default:
 			return loop.Quit(fmt.Errorf("invalid selection input value %q, expected 'yes', 'more' or 'no'", msg.Value))

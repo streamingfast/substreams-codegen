@@ -27,7 +27,7 @@ type Project struct {
 	DataType        string       `json:"dataType,omitempty"`
 	EventDescs      []*eventDesc `json:"messageTypes,omitempty"`
 	currentEventIdx int
-	eventsComplete  bool
+	EventsComplete  bool `json:"eventsComplete,omitempty"`
 
 	generatedCodeCompleted bool
 	compilingBuild         bool

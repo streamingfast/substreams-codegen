@@ -10,6 +10,7 @@
         "eventType": "wasm",
         "attributes": null
       }
-    ]
+    ],
+    "eventsComplete": true
   }
 }
