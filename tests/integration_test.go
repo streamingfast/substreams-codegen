@@ -115,14 +115,18 @@ func TestIntegration(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
 
-			explorerApiKey := os.Getenv(c.explorerApiKeyEnvName)
-			if explorerApiKey == "" && c.apiKeyNeeded {
-				fmt.Printf("NO %s has been provided, please make sure to provide it to enable code generation...", c.explorerApiKeyEnvName)
+			if os.Getenv("TEST_LOCAL_CODEGEN") == "true" {
+				explorerApiKey := os.Getenv(c.explorerApiKeyEnvName)
+				if explorerApiKey == "" && c.apiKeyNeeded {
+					fmt.Printf("NO %s has been provided, please make sure to provide it to enable code generation...", c.explorerApiKeyEnvName)
+				}
 			}
 
 			runArgs := []string{
 				"run",
 				"--rm",
+				"--name",
+				c.name,
 				"--platform",
 				"linux/amd64",
 				"-v",
