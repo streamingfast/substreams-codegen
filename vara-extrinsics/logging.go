@@ -4,4 +4,4 @@ import (
 	"github.com/streamingfast/logging"
 )
 
-var zlog, tracer = logging.PackageLogger("sol-transactions", "github.com/streamingfast/substreams-codegen/codegen/sol-transactions")
+var zlog, tracer = logging.PackageLogger("vara-extrinsics", "github.com/streamingfast/substreams-codegen/codegen/vara-extrinsics")

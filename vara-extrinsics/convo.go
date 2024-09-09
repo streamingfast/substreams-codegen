@@ -19,10 +19,10 @@ type Convo struct {
 func init() {
 	codegen.RegisterConversation(
 		"vara-extrinsics",
-		"Get Solana transactions filtered by one or several Program IDs.",
-		`Allows you to specified a regex containing the Program IDs used to filter the Solana transactions.`,
+		"Stream Vara Extrinsics",
+		"Allows you to specified a regex containing the Extrinsics used to filter Vara transactions",
 		codegen.ConversationFactory(New),
-		100,
+		40,
 	)
 }
 
@@ -69,8 +69,8 @@ func (p *Project) NextStep() (out loop.Cmd) {
 		return cmd(codegen.AskInitialStartBlockType{})
 	}
 
-	if p.ProgramId == "" {
-		return cmd(AskProgramId{})
+	if p.ExtrinsicId == "" {
+		return cmd(AskExtrinsicId{})
 	}
 
 	if !p.generatedCodeCompleted {
@@ -128,14 +128,14 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		c.state.InitialBlockSet = true
 		return c.NextStep()
 
-	case AskProgramId:
-		return c.action(InputProgramId{}).
-			TextInput(fmt.Sprintf("Filter the extrinsics based on the extrinsic name and/or the event names that it contains\n\nSupported operators are: logical or '||', logical and '&&' and parenthesis: '()'. \n\nExample: to only consume TRANSACTIONS containing Token or ComputeBudget instructions: 'program:TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA || program:ComputeBudget111111111111111111111111111111'. \n\nTransactions containing 'Vote111111111111111111111111111111111111111' instructions are always excluded."), "Submit").
-			DefaultValue("program:TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA").
+	case AskExtrinsicId:
+		return c.action(InputExtrinsicId{}).
+			TextInput("Filter the extrinsics based on the extrinsic name and/or the event names that it contains\n\nSupported operators are: logical or '||', logical and '&&' and parenthesis: '()'. \n\nExample: to only consume TRANSACTIONS containing Timestamp or Gear Event Run: 'extrinsic:Timestamp.set || extrinsic:Gear.run'. \n", "Submit").
+			DefaultValue("extrinsic:Timestamp.set").
 			Cmd()
 
-	case InputProgramId:
-		c.state.ProgramId = msg.Value
+	case InputExtrinsicId:
+		c.state.ExtrinsicId = msg.Value
 		fmt.Printf("%s", msg.Value)
 		return c.NextStep()
 
@@ -182,10 +182,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case ShowInstructions:
 		return loop.Seq(
-			c.msg().Message(codegen.ReturnBuildMessage(c.state.Name)).Cmd(),
+			c.msg().Message(codegen.ReturnBuildMessage(false)).Cmd(),
 			loop.Quit(nil),
 		)
-
 	}
 
 	return loop.Quit(fmt.Errorf("invalid loop message: %T", msg))

@@ -12,7 +12,7 @@ type Project struct {
 	Download        bool   `json:"download,omitempty"`
 	InitialBlock    uint64 `json:"initialBlock,omitempty"`
 	InitialBlockSet bool   `json:"initialBlockSet,omitempty"`
-	ProgramId       string `json:"programId,omitempty"`
+	ExtrinsicId     string `json:"programId,omitempty"`
 
 	// Remote build part removed for the moment
 	// confirmDoCompile       bool

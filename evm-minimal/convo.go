@@ -24,7 +24,7 @@ func init() {
 	}
 	codegen.RegisterConversation(
 		"evm-minimal",
-		"Simplest Substreams to get you started on EVM and compatible chains.",
+		"Simplest Substreams to get you started on EVM and compatible chains",
 		`Supported networks: `+strings.Join(supportedChains, ", "),
 		codegen.ConversationFactory(New),
 		83,

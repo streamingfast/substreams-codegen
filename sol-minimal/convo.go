@@ -20,7 +20,7 @@ func init() {
 	codegen.RegisterConversation(
 		"sol-minimal",
 		"Simplest Substreams to get you started on solana",
-		`This creating the most simple substreams on Solana`,
+		"This creating the most simple substreams on Solana",
 		codegen.ConversationFactory(New),
 		60,
 	)

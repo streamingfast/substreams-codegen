@@ -28,7 +28,7 @@ func init() {
 	codegen.RegisterConversation(
 		"evm-events-calls",
 		"Decode Ethereum events/calls and create a substreams as source",
-		`Given a list of contracts and their ABIs, this will build an Ethereum substreams that decodes events and/or calls`,
+		"Given a list of contracts and their ABIs, this will build an Ethereum substreams that decodes events and/or calls",
 		codegen.ConversationFactory(NewEventsAndCalls),
 		82,
 	)

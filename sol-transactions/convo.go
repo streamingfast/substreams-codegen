@@ -19,8 +19,8 @@ type Convo struct {
 func init() {
 	codegen.RegisterConversation(
 		"sol-transactions",
-		"Get Solana transactions filtered by one or several Program IDs.",
-		`Allows you to specified a regex containing the Program IDs used to filter the Solana transactions.`,
+		"Get Solana transactions filtered by one or several Program IDs",
+		"Allows you to specified a regex containing the Program IDs used to filter the Solana transactions",
 		codegen.ConversationFactory(New),
 		100,
 	)
@@ -184,7 +184,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			c.msg().Message(codegen.ReturnBuildMessage(false)).Cmd(),
 			loop.Quit(nil),
 		)
-
 	}
 
 	return loop.Quit(fmt.Errorf("invalid loop message: %T", msg))

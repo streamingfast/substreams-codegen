@@ -20,9 +20,9 @@ func init() {
 	codegen.RegisterConversation(
 		"vara-minimal",
 		"Simplest Substreams to get you started on Vara Mainnet",
-		`This creating the most simple substreams on Vara Mainnet`,
+		"This creating the most simple substreams on Vara Mainnet",
 		codegen.ConversationFactory(New),
-		40,
+		41,
 	)
 }
 

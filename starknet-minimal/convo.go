@@ -20,7 +20,7 @@ func init() {
 	codegen.RegisterConversation(
 		"starknet-minimal",
 		"Simplest Substreams to get you started on Starknet",
-		`This creating the most simple substreams on Starknet`,
+		"This creating the most simple substreams on Starknet",
 		codegen.ConversationFactory(New),
 		59,
 	)
