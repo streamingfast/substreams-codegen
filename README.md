@@ -2,23 +2,23 @@
 
 ## Usage
 
-In `substreams`:
+Run the `substreams-codegen` backend:
 
 ```bash
-cd devel/inittests
-go install -v ../../cmd/substreams && substreams init --generator ethereum_init_v1
+# remove the DEBUG var if you want info level logs
+DEBUG=.* go run ./cmd/substreams-codegen api --http-listen-addr "*:9000"
 ```
 
-In `substreams-codegen`:
-
-```bash
-DEBUG=* go install -v ./cmd/substreams-codegen && substreams-codegen api --http-listen-addr "*:9000"
-```
-
-In `substreams-codegen`:
+(Optionally) Run the remotebuild server locally:
 
 ```bash
 GENERATOR_KEEP_FILES=true go run -v ./cmd/remotebuild
+```
+
+Use the `substreams` cli to initialize your Substreams.
+
+```bash
+substreams init --discovery-endpoint http://localhost:9000
 ```
 
 ## Principles
@@ -27,8 +27,8 @@ You write a `Conversation` (or `Convo` for short) struct.
 
 - This function embed or has a `state` variable with the state you want to build.
   - This _state_ is what gets serialized to JSON and sent to the client. It must be a usable interface, so pick your names wisely.
-  - Anything that is exported will be shared with the client, and come back during hydration (if a connection gets interrupted, or the user kept its `generator.json` state, and wants to simply rebuild).
-- It has an `Update()` method that is registered into the `loop.EventLoop` by the `codegen` framework
+  - Anything that is exported will be shared with the client, and come back during hydration (if a connection gets interrupted, or the user kept their `generator.json` state, and wants to simply rebuild).
+- It has an `Update()` method that is registered into the `loop.EventLoop` by the `codegen` framework.
   - This function can mutate state, and it is the only method who can mutate state.
   - This function follows the ELM paradigm, and must never do long-running operations, only quick routing.
   - A `NextStep()` function will choose where to go based on the current state, and continue the conversation to make sure it is valid and completely filled in.
@@ -44,6 +44,4 @@ The code generation:
 
 0x1f98431c8ad98523631ae4a59f267346ea31f984 -> Uniswap V3 Factory
 https://api.etherscan.io/api?module=contract&action=getabi&address=0xe592427a0aece92de3edee1f18e0157c05861564 -> Uniswap V3 Router
-https://info.uniswap.org/#/tokens/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48 -> USDC Contract
--> https://etherscan.io/token/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
-->
+https://info.uniswap.org/#/tokens/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48 -> USDC Contract -> https://etherscan.io/token/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
