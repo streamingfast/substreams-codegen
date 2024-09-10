@@ -1,4 +1,4 @@
-package soltransactions
+package varaextrinsics
 
 import (
 	"encoding/json"
@@ -19,7 +19,7 @@ type Convo struct {
 func init() {
 	codegen.RegisterConversation(
 		"vara-extrinsics",
-		"Stream Vara Extrinsics",
+		"Get Vara transactions filtered by specifics Extrinsics",
 		"Allows you to specified a regex containing the Extrinsics used to filter Vara transactions",
 		codegen.ConversationFactory(New),
 		40,
@@ -63,6 +63,14 @@ func (c *Convo) NextStep() loop.Cmd {
 func (p *Project) NextStep() (out loop.Cmd) {
 	if p.Name == "" {
 		return cmd(codegen.AskProjectName{})
+	}
+
+	if p.ChainName == "" {
+		return cmd(codegen.AskChainName{})
+	}
+
+	if !p.IsValidChainName(p.ChainName) {
+		return loop.Seq(cmd(codegen.MsgInvalidChainName{}), cmd(codegen.AskChainName{}))
 	}
 
 	if !p.InitialBlockSet {
@@ -111,6 +119,32 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		c.state.Name = msg.Value
 		return c.NextStep()
 
+	case codegen.AskChainName:
+		var labels, values []string
+		for _, conf := range ChainConfigs {
+			labels = append(labels, conf.DisplayName)
+			values = append(values, conf.ID)
+		}
+		return c.action(codegen.InputChainName{}).ListSelect("Please select the chain").
+			Labels(labels...).
+			Values(values...).
+			Cmd()
+
+	case codegen.MsgInvalidChainName:
+		return c.msg().
+			Messagef(`Hmm, %q seems like an invalid chain name. Maybe it was supported and is not anymore?`, c.state.ChainName).
+			Cmd()
+
+	case codegen.InputChainName:
+		c.state.ChainName = msg.Value
+		if c.state.IsValidChainName(msg.Value) {
+			return loop.Seq(
+				c.msg().Messagef("Got it, will be using chain %q", c.state.ChainConfig().DisplayName).Cmd(),
+				c.NextStep(),
+			)
+		}
+		return c.NextStep()
+
 	case codegen.AskInitialStartBlockType:
 		return c.action(codegen.InputAskInitialStartBlockType{}).
 			TextInput(codegen.InputAskInitialStartBlockTypeTextInput(), "Submit").
@@ -136,7 +170,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case InputExtrinsicId:
 		c.state.ExtrinsicId = msg.Value
-		fmt.Printf("%s", msg.Value)
 		return c.NextStep()
 
 	case codegen.RunGenerate:

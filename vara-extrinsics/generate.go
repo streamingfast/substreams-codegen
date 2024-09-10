@@ -1,4 +1,4 @@
-package soltransactions
+package varaextrinsics
 
 import (
 	"bytes"
@@ -194,9 +194,9 @@ func (p *Project) Render() (projectFiles map[string][]byte, err error) {
 	}
 
 	templateFiles := map[string]string{
-		"substreams.yaml.gotmpl":    "substreams.yaml",
-		"README.md.gotmpl":          "README.md",
-		// "CONTRIBUTING.md":           "CONTRIBUTING.md",
+		"substreams.yaml.gotmpl": "substreams.yaml",
+		"README.md":              "README.md",
+		"CONTRIBUTING.md.gotmpl": "CONTRIBUTING.md",
 	}
 
 	for templateFile, finalFileName := range templateFiles {
