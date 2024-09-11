@@ -205,7 +205,7 @@ func (p *Project) Render() (projectFiles map[string][]byte, err error) {
 		"rust-toolchain.toml":         "rust-toolchain.toml",
 		".gitignore":                  ".gitignore",
 		"substreams.yaml.gotmpl":      "substreams.yaml",
-		"README.md":                   "README.md",
+		"README.md.gotmpl":            "README.md",
 	}
 
 	for templateFile, finalFileName := range templateFiles {

@@ -30,7 +30,7 @@ func (p *Project) Render(outType outputType) (substreamsFiles map[string][]byte,
 
 	templateFiles := map[string]string{
 		".gitignore":             ".gitignore",
-		"README.md":              "README.md",
+		"README.md.gotmpl":       "README.md",
 		"substreams.yaml.gotmpl": "substreams.yaml",
 	}
 

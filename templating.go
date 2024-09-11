@@ -2,12 +2,13 @@ package codegen
 
 import (
 	"fmt"
-	"github.com/huandu/xstrings"
-	"github.com/iancoleman/strcase"
 	"io/fs"
 	"regexp"
 	"strings"
 	"text/template"
+
+	"github.com/huandu/xstrings"
+	"github.com/iancoleman/strcase"
 
 	"github.com/bmatcuk/doublestar/v4"
 	"github.com/golang-cz/textcase"
@@ -27,7 +28,12 @@ var templateFuncs = template.FuncMap{
 
 // ParseFS reads the files from the embedded FS and parses them into named templates.
 func ParseFS(myFuncs template.FuncMap, fsys fs.FS, pattern string) (*template.Template, error) {
-	t := template.New("").Funcs(templateFuncs).Funcs(myFuncs)
+	t, err := commonTemplates.Clone()
+	if err != nil {
+		return nil, err
+	}
+	t.Funcs(myFuncs)
+
 	filenames, err := doublestar.Glob(fsys, pattern)
 	if err != nil {
 		return nil, err
@@ -49,6 +55,7 @@ func ParseFS(myFuncs template.FuncMap, fsys fs.FS, pattern string) (*template.Te
 			return nil, err
 		}
 	}
+
 	return t, nil
 }
 

@@ -16,14 +16,24 @@ func TestTemplates(t *testing.T) {
 	_ = tpls
 }
 
+type match struct {
+	file     string
+	contains string
+}
+
 func Test_Generate(t *testing.T) {
 	cases := []struct {
 		name          string
 		generatorFile string
+		contains      []match
 	}{
 		{
 			name:          "uniswap_factory_track_calls",
 			generatorFile: "./testdata/uniswap_factory_track_calls.json",
+			contains: []match{
+				{"README.md", "## Usage\n\n```bash\nsubstreams build\n"},
+				{"README.md", "INSERT CONTRACT ADDRESS"},
+			},
 		},
 		{
 			name:          "uniswap_factory_track_calls_events",
@@ -90,18 +100,25 @@ func Test_Generate(t *testing.T) {
 			require.NoError(t, err)
 			assert.NotEmpty(t, len(projFiles))
 
-			sourceTmpDir, err := os.MkdirTemp(os.TempDir(), "test_output_src.zip")
-			require.NoError(t, err)
-
-			projectTmpDir, err := os.MkdirTemp(os.TempDir(), "test_output_project.zip")
-			require.NoError(t, err)
-
-			if os.Getenv("TEST_KEEP_TEST_OUTPUT") != "true" {
-				defer func() {
-					_ = os.RemoveAll(sourceTmpDir)
-					_ = os.RemoveAll(projectTmpDir)
-				}()
+			for _, cont := range c.contains {
+				assert.Contains(t, projFiles, cont.file)
+				assert.Contains(t, string(projFiles[cont.file]), cont.contains)
 			}
+
+			// sourceTmpDir, err := os.MkdirTemp(os.TempDir(), "test_output_src.zip")
+			// require.NoError(t, err)
+
+			// projectTmpDir, err := os.MkdirTemp(os.TempDir(), "test_output_project.zip")
+			// require.NoError(t, err)
+
+			// if os.Getenv("TEST_KEEP_TEST_OUTPUT") != "true" {
+			// 	defer func() {
+			// 		_ = os.RemoveAll(sourceTmpDir)
+			// 		_ = os.RemoveAll(projectTmpDir)
+			// 	}()
+			// } else {
+			// 	fmt.Println("Produced", sourceTmpDir, projectTmpDir)
+			// }
 		})
 	}
 }
