@@ -1,6 +1,8 @@
 package codegen
 
 import (
+	"bytes"
+	"embed"
 	"fmt"
 	"io/fs"
 	"regexp"
@@ -9,6 +11,7 @@ import (
 
 	"github.com/huandu/xstrings"
 	"github.com/iancoleman/strcase"
+	"github.com/streamingfast/substreams-codegen/loop"
 
 	"github.com/bmatcuk/doublestar/v4"
 	"github.com/golang-cz/textcase"
@@ -26,13 +29,62 @@ var templateFuncs = template.FuncMap{
 	"sanitizeProtoFieldName": SanitizeProtoFieldName,
 }
 
+type GenerateConfig struct {
+	FS    embed.FS
+	Files map[string]string
+}
+
+func CmdGenerate(f func() ReturnGenerate) loop.Cmd {
+	return func() loop.Msg {
+		return f()
+	}
+}
+
+func GenerateTemplateTree(projectData any, templatesFS embed.FS, templateFiles map[string]string) ReturnGenerate {
+	projFiles, err := generateTemplateTree(projectData, templatesFS, templateFiles)
+	if err != nil {
+		return ReturnGenerate{Err: err}
+	}
+	return ReturnGenerate{ProjectFiles: projFiles}
+}
+
+func generateTemplateTree(projectData any, templatesFS embed.FS, templateFiles map[string]string) (map[string][]byte, error) {
+	projectFiles := map[string][]byte{}
+
+	tpls, err := ParseFS(templatesFS, "**/*.gotmpl") // TODO: close when refactored
+	if err != nil {
+		return nil, fmt.Errorf("parse templates: %w", err)
+	}
+
+	for templateFile, finalFileName := range templateFiles {
+		//zlog.Debug("reading template file", zap.String("filename", templateFile))
+
+		var content []byte
+		if strings.HasSuffix(templateFile, ".gotmpl") {
+			buffer := &bytes.Buffer{}
+			if err := tpls.ExecuteTemplate(buffer, templateFile, projectData); err != nil {
+				return nil, fmt.Errorf("embed render entry template %q: %w", templateFile, err)
+			}
+			content = buffer.Bytes()
+		} else {
+			content, err = templatesFS.ReadFile("templates/" + templateFile)
+			if err != nil {
+				return nil, fmt.Errorf("reading %q: %w", templateFile, err)
+			}
+		}
+
+		projectFiles[finalFileName] = content
+	}
+
+	return projectFiles, nil
+}
+
 // ParseFS reads the files from the embedded FS and parses them into named templates.
-func ParseFS(myFuncs template.FuncMap, fsys fs.FS, pattern string) (*template.Template, error) {
+func ParseFS(fsys fs.FS, pattern string) (*template.Template, error) {
 	t, err := commonTemplates.Clone()
 	if err != nil {
 		return nil, err
 	}
-	t.Funcs(myFuncs)
 
 	filenames, err := doublestar.Glob(fsys, pattern)
 	if err != nil {

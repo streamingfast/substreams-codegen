@@ -13,9 +13,8 @@ import (
 var QuitInvalidContext = loop.Quit(fmt.Errorf("invalid state context: no current contract"))
 
 type Convo struct {
-	factory          *codegen.MsgWrapFactory
-	state            *Project
-	remoteBuildState *codegen.RemoteBuildState
+	factory *codegen.MsgWrapFactory
+	state   *Project
 }
 
 func init() {
@@ -30,9 +29,8 @@ func init() {
 
 func New(factory *codegen.MsgWrapFactory) codegen.Conversation {
 	h := &Convo{
-		state:            &Project{},
-		factory:          factory,
-		remoteBuildState: &codegen.RemoteBuildState{},
+		state:   &Project{},
+		factory: factory,
 	}
 	return h
 }

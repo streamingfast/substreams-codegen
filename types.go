@@ -2,35 +2,10 @@ package codegen
 
 import (
 	"fmt"
-	"time"
 
-	"github.com/streamingfast/cli"
+	"github.com/streamingfast/substreams-codegen/loop"
 	pbconvo "github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1"
-	pbbuild "github.com/streamingfast/substreams-codegen/pb/sf/codegen/remotebuild/v1"
 )
-
-type RemoteBuildState struct {
-	BuildStartedAt time.Time
-
-	Artifacts []*pbbuild.BuildResponse_BuildArtifact
-	Error     string
-	Logs      []string
-}
-
-func (c *RemoteBuildState) Update(resp *RemoteBuildState) bool {
-	c.BuildStartedAt = resp.BuildStartedAt
-	c.Error = resp.Error
-
-	if resp.Logs != nil {
-		c.Logs = append(c.Logs, resp.Logs...)
-	}
-
-	if resp.Artifacts != nil {
-		c.Artifacts = append(c.Artifacts, resp.Artifacts...)
-	}
-
-	return false
-}
 
 type AskProjectName struct{}
 type InputProjectName struct{ pbconvo.UserInput_TextInput }
@@ -80,9 +55,31 @@ type RunGenerate struct{}
 
 type ReturnGenerate struct {
 	Err          error
-	SourceFiles  map[string][]byte
 	ProjectFiles map[string][]byte
 }
+
+func (c ReturnGenerate) Error(msg *MsgWrap) loop.Cmd {
+	return loop.Seq(
+		msg.Messagef("Code generation failed with error: %s", c.Err).Cmd(),
+		loop.Quit(c.Err),
+	)
+}
+
+// func (c ReturnGenerate) AddFiles(state any, action *MsgWrap, msg *MsgWrap) loop.Cmd {
+// 	downloadCmd := action(codegen.InputSourceDownloaded{}).DownloadFiles()
+
+// 	for fileName, fileContent := range c.ProjectFiles {
+// 		fileDescription := ""
+// 		if _, ok := FileDescriptions[fileName]; ok {
+// 			fileDescription = FileDescriptions[fileName]
+// 		}
+
+// 		downloadCmd.AddFile(fileName, fileContent, "text/plain", fileDescription)
+// 	}
+
+// 	return loop.Seq(msg.Messagef("Code generation complete!").Cmd(), downloadCmd.Cmd())
+
+// }
 
 type MsgGenerateProgress struct {
 	Progress int
@@ -91,31 +88,22 @@ type MsgGenerateProgress struct {
 	Continue bool
 }
 
-type CompilingBuild struct {
-	FirstTime       bool
-	RemoteBuildChan chan *RemoteBuildState
-}
-
-type ReturnBuild struct {
-	Err       error
-	Logs      string
-	Artifacts []*pbbuild.BuildResponse_BuildArtifact
-}
-
 func ReturnBuildMessage(isMinimal bool) string {
+	// TODO: this isn't a `Build` message output, it's just a Generate final message.
+	// It's also not standardized.
 	var minimalStr string
 
 	if isMinimal {
 		minimalStr = "* Inspect and edit the the `./src/lib.rs` file\n"
 	}
 
-	return cli.Dedent(fmt.Sprintf(
+	return fmt.Sprintf(
 		"Your Substreams project is ready! Follow the next steps to start streaming:\n\n"+
 			"%s"+
-			"* Build it: `substreams build`\n"+
-			"* Authenticate: `substreams auth`\n"+
-			"* Stream it: `substreams gui`\n\n"+
-			"* Build a *Subgraph* from this substreams: `substreams codegen subgraph`\n"+
-			"* Feed your SQL database with this substreams: `substreams codegen sql`\n",
-		minimalStr))
+			"\n    substreams build\n"+
+			"    substreams auth\n"+
+			"    substreams gui\n\n"+
+			"    substreams codegen subgraph\n"+
+			"    substreams codegen sql\n",
+		minimalStr)
 }

@@ -32,7 +32,6 @@ type Project struct {
 	currentContractIdx     int
 	compilingBuild         bool
 	generatedCodeCompleted bool
-	ProjectFiles           map[string][]byte
 
 	buildStarted    time.Time
 	forceGeneration bool
@@ -65,6 +64,26 @@ func (p *Project) GetContractByName(contractName string) *Contract {
 		}
 	}
 	return nil
+}
+
+func (p *Project) dynamicContractOf(contractName string) (out *DynamicContract) {
+	for _, dynContract := range p.DynamicContracts {
+		if dynContract.ParentContractName == contractName {
+			out = dynContract
+			break
+		}
+	}
+	if out == nil {
+		out = &DynamicContract{
+			ParentContractName: contractName,
+		}
+		p.DynamicContracts = append(p.DynamicContracts, out)
+	}
+	return
+}
+
+func isValidChainName(input string) bool {
+	return ChainConfigByID[input] != nil
 }
 
 func (p *Project) TrackAnyCalls() bool {

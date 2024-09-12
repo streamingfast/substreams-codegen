@@ -52,7 +52,7 @@ func (f *MsgWrapFactory) SetupLoop(updateFunc func(msg loop.Msg) loop.Cmd) {
 }
 
 func (f *MsgWrapFactory) NewMsg(state any) *MsgWrap {
-	w := &MsgWrap{factory: f}
+	w := &MsgWrap{}
 	w.Msg = &pbconvo.SystemOutput{}
 	if state != nil {
 		cnt, err := json.Marshal(state)
@@ -81,8 +81,6 @@ func (f *MsgWrapFactory) LastInput() reflect.Type {
 }
 
 type MsgWrap struct {
-	factory *MsgWrapFactory
-
 	Msg *pbconvo.SystemOutput
 	Err error
 }

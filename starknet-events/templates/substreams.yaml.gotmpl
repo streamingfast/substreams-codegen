@@ -1,6 +1,6 @@
 specVersion: v0.1.0
 package:
-  name: {{ .ModuleName }}
+  name: {{ .Name }}
   version: v0.1.0
 
 protobuf:
@@ -33,4 +33,4 @@ modules:
 network: {{ .ChainName }}
 
 params:
-  {{ .ModuleName }}: {{ .GetEventsQuery }}
+  map_events: {{ .GetEventsQuery }}

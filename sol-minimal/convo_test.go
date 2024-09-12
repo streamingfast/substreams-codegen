@@ -17,7 +17,7 @@ func TestConvoNextStep(t *testing.T) {
 	assert.Equal(t, codegen.AskProjectName{}, next())
 	p.Name = "my-proj"
 
-	projectFiles, err := p.generate()
+	projectFiles, err := p.Generate()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, projectFiles)
 }

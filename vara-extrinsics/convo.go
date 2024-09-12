@@ -11,9 +11,8 @@ import (
 )
 
 type Convo struct {
-	factory          *codegen.MsgWrapFactory
-	state            *Project
-	remoteBuildState *codegen.RemoteBuildState
+	factory *codegen.MsgWrapFactory
+	state   *Project
 }
 
 func init() {
@@ -28,9 +27,8 @@ func init() {
 
 func New(factory *codegen.MsgWrapFactory) codegen.Conversation {
 	h := &Convo{
-		state:            &Project{},
-		factory:          factory,
-		remoteBuildState: &codegen.RemoteBuildState{},
+		state:   &Project{},
+		factory: factory,
 	}
 	return h
 }
@@ -173,9 +171,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.NextStep()
 
 	case codegen.RunGenerate:
-		return loop.Seq(
-			cmdGenerate(c.state),
-		)
+		return c.state.CmdGenerate()
 
 	case codegen.ReturnGenerate:
 		if msg.Err != nil {
@@ -189,15 +185,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		c.state.generatedCodeCompleted = true
 
 		downloadCmd := c.action(codegen.InputSourceDownloaded{}).DownloadFiles()
-
-		for fileName, fileContent := range msg.SourceFiles {
-			fileDescription := ""
-			if _, ok := codegen.FileDescriptions[fileName]; ok {
-				fileDescription = codegen.FileDescriptions[fileName]
-			}
-
-			downloadCmd.AddFile(fileName, fileContent, "text/plain", fileDescription)
-		}
 
 		for fileName, fileContent := range msg.ProjectFiles {
 			fileDescription := ""

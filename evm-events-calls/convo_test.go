@@ -13,10 +13,11 @@ import (
 )
 
 func TestConvoNextStep(t *testing.T) {
-	p := &Project{}
+	convo := New()
 	next := func() loop.Msg {
-		return p.NextStep()()
+		return convo.NextStep()()
 	}
+	p := convo.(*Convo).State
 
 	assert.Equal(t, codegen.AskProjectName{}, next())
 
@@ -36,11 +37,10 @@ func TestConvoNextStep(t *testing.T) {
 
 	assert.Equal(t, FetchContractABI{}, next())
 }
-
 func TestConvoUpdate(t *testing.T) {
-	f := &codegen.MsgWrapFactory{}
-	conv := NewEventsAndCalls(f).(*Convo)
-	p := conv.state
+	conv := New()
+	conv.SetFactory(&codegen.MsgWrapFactory{})
+	p := conv.(*Convo).State
 
 	next := conv.Update(codegen.InputProjectName{pbconvo.UserInput_TextInput{
 		Value: "my-proj",
@@ -150,53 +150,6 @@ func TestConvoUpdate(t *testing.T) {
 	//next = conv.Update(codegen.InputConfirmCompile{UserInput_Confirmation: pbconvo.UserInput_Confirmation{Affirmative: true}})
 	//assert.Equal(t, codegen.RunBuild{}, next())
 
-	//next = conv.Update(codegen.RunBuild{})
-	//assert.IsType(t, codegen.CompilingBuild{}, next())
-	//
-	//respCh := make(chan *codegen.RemoteBuildState)
-	//go func() {
-	//	respCh <- &codegen.RemoteBuildState{
-	//		Logs: []string{"building"},
-	//	}
-	//}()
-	//
-	//next = conv.Update(codegen.CompilingBuild{RemoteBuildChan: respCh, FirstTime: true})
-
-	//seq = next().(loop.SeqMsg)
-	//msg1 = seq[0]().(*pbconvo.SystemOutput)
-	//assert.True(t, strings.HasPrefix(msg1.GetLoading().Label, "Compiling your Substreams"))
-	//assert.IsType(t, codegen.CompilingBuild{}, seq[1]())
-
-	//go func() {
-	//	respCh <- &codegen.RemoteBuildState{
-	//		Logs: []string{"Done"},
-	//		Artifacts: []*pbbuild.BuildResponse_BuildArtifact{
-	//			{
-	//				Filename: "test.spkg",
-	//				Content:  []byte("test"),
-	//			},
-	//		},
-	//	}
-	//}()
-	//
-	//next = conv.Update(codegen.CompilingBuild{RemoteBuildChan: respCh, FirstTime: false})
-
-	//seq = next().(loop.SeqMsg)
-	//assert.Len(t, seq, 2)
-
-	//assert.IsType(t, &pbconvo.SystemOutput{}, seq[0]())
-	//assert.IsType(t, codegen.ReturnBuild{}, seq[1]())
-	//
-	//next = conv.Update(codegen.ReturnBuild{
-	//	Err: fmt.Errorf("failed"),
-	//})
-
-	//seq = next().(loop.SeqMsg)
-	//message := seq[0]().(*pbconvo.SystemOutput).GetMessage().Markdown
-	//assert.True(t, strings.Contains(message, "failed"))
-
-	//next = conv.Update(codegen.PackageDownloaded{})
-	//assert.IsType(t, loop.QuitMsg{}, next())
 }
 
 func unpackSeq(t *testing.T, m loop.Msg, len int) (out []loop.Msg) {
@@ -211,9 +164,8 @@ func unpackSeq(t *testing.T, m loop.Msg, len int) (out []loop.Msg) {
 }
 
 func TestContractNameAlreadyExists(t *testing.T) {
-	f := &codegen.MsgWrapFactory{}
-	conv := NewEventsAndCalls(f).(*Convo)
-	p := conv.state
+	conv := New()
+	p := conv.(*Convo).State
 	p.currentContractIdx = 0
 	p.Contracts = append(p.Contracts, &Contract{
 		BaseContract: BaseContract{
@@ -232,9 +184,8 @@ func TestContractNameAlreadyExists(t *testing.T) {
 }
 
 func TestDynamicContractNameAlreadyExists(t *testing.T) {
-	f := &codegen.MsgWrapFactory{}
-	conv := NewEventsAndCalls(f).(*Convo)
-	p := conv.state
+	conv := New()
+	p := conv.(*Convo).State
 	p.currentContractIdx = 0
 	p.Contracts = append(p.Contracts, &Contract{
 		BaseContract: BaseContract{
@@ -253,9 +204,8 @@ func TestDynamicContractNameAlreadyExists(t *testing.T) {
 }
 
 func TestContractAddressAlreadyExists(t *testing.T) {
-	f := &codegen.MsgWrapFactory{}
-	conv := NewEventsAndCalls(f).(*Convo)
-	p := conv.state
+	conv := New()
+	p := conv.(*Convo).State
 	p.currentContractIdx = 0
 	p.Contracts = append(p.Contracts, &Contract{
 		Address: "0x1f98431c8ad98523631ae4a59f267346ea31f984",
@@ -272,9 +222,8 @@ func TestContractAddressAlreadyExists(t *testing.T) {
 }
 
 func TestDynamicContractAddressAlreadyExists(t *testing.T) {
-	f := &codegen.MsgWrapFactory{}
-	conv := NewEventsAndCalls(f).(*Convo)
-	p := conv.state
+	conv := New()
+	p := conv.(*Convo).State
 	p.currentContractIdx = 0
 	p.Contracts = append(p.Contracts, &Contract{
 		Address: "0x1f98431c8ad98523631ae4a59f267346ea31f984",

@@ -101,7 +101,8 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 	evts.logEvent(fmt.Sprintf("   0┃ [Start, hydrate: %t] %s", start.Start.Hydrate != nil, start.Start.GeneratorId))
 
 	msgWrapFactory := codegen.NewMsgWrapFactory(sendFunc)
-	conversation := convo.Factory(msgWrapFactory)
+	conversation := convo.Factory()
+	conversation.SetFactory(msgWrapFactory)
 
 	readNextCmd := func() loop.Msg {
 		select {

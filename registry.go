@@ -51,8 +51,7 @@ var FileDescriptions = map[string]string{
 	".gitignore": "File containing the gitignore rules which ignores the target/ directory and any spkg package produced",
 
 	// Documentation files
-	"README.md":       "File containing instructions on how to compile and run the project",
-	"CONTRIBUTING.md": "File containing the project contributing guidelines",
+	"README.md": "File containing instructions on how to compile and run the project",
 
 	// Rust files
 	"src/lib.rs":    "This is the main entrypoint file where your modules' code lives. Modify it and run `substreams build` to rebuild your package",

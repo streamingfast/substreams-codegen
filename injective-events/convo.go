@@ -14,17 +14,10 @@ import (
 var QuitInvalidContext = loop.Quit(fmt.Errorf("invalid state context: no current contract"))
 var InjectiveTestnetDefaultStartBlock uint64 = 37368800
 
-type outputType string
-
-const outputTypeSQL = "sql"
-const outputTypeSubgraph = "subgraph"
-
 type InjectiveConvo struct {
-	factory    *codegen.MsgWrapFactory
-	state      *Project
-	outputType outputType
-
-	remoteBuildState *codegen.RemoteBuildState
+	codegen.Conversation[*Project]
+	factory *codegen.MsgWrapFactory
+	state   *Project
 }
 
 func init() {
@@ -32,34 +25,15 @@ func init() {
 		"injective-events",
 		"Stream Injective Events with specific attributes if specified",
 		"Create an Injective Substreams module from specific events",
-		codegen.ConversationFactory(NewWithSubgraph),
+		codegen.ConversationFactory(New),
 		70,
 	)
-	// codegen.RegisterConversation(
-	// 	"injective-sql",
-	// 	"Insert Injective events into PostgreSQL or Clickhouse",
-	// 	"Given a list of events, generate the SQL schema and the Substreams module to insert them into a SQL database",
-	// 	codegen.ConversationFactory(NewWithSQL),
-	// 	71,
-	// )
 }
 
-func NewWithSubgraph(factory *codegen.MsgWrapFactory) codegen.Conversation {
+func New(factory *codegen.MsgWrapFactory) codegen.Conversation {
 	c := &InjectiveConvo{
-		factory:          factory,
-		state:            &Project{},
-		remoteBuildState: &codegen.RemoteBuildState{},
-		outputType:       outputTypeSubgraph,
-	}
-	return c
-}
-
-func NewWithSQL(factory *codegen.MsgWrapFactory) codegen.Conversation {
-	c := &InjectiveConvo{
-		factory:          factory,
-		state:            &Project{},
-		remoteBuildState: &codegen.RemoteBuildState{},
-		outputType:       outputTypeSQL,
+		factory: factory,
+		state:   &Project{},
 	}
 	return c
 }
@@ -356,7 +330,7 @@ func (c *InjectiveConvo) Update(msg loop.Msg) loop.Cmd {
 		return loop.Seq(
 			c.msg().Message("Generating Substreams module code").Cmd(),
 			loop.Batch(
-				cmdGenerate(c.state, c.outputType),
+				cmdGenerate(c.state),
 			),
 		)
 

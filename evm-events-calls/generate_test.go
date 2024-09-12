@@ -11,7 +11,7 @@ import (
 )
 
 func TestTemplates(t *testing.T) {
-	tpls, err := codegen.ParseFS(nil, templatesFS, "**/*.gotmpl")
+	tpls, err := codegen.ParseFS(templatesFS, "**/*.gotmpl")
 	require.NoError(t, err)
 	_ = tpls
 }
@@ -75,9 +75,9 @@ func Test_Generate(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			p := LoadProjectFromState(t, c.generatorFile)
-
-			assert.Equal(t, RunDecodeContractABI{}, p.NextStep()())
+			convo := loadProjectFromState(t, c.generatorFile)
+			p := convo.State
+			assert.Equal(t, RunDecodeContractABI{}, convo.NextStep()(), c.generatorFile)
 			for _, contract := range p.Contracts {
 				res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
 				require.NoError(t, res.Err)
@@ -96,13 +96,13 @@ func Test_Generate(t *testing.T) {
 				}
 			}
 
-			projFiles, err := p.Generate()
-			require.NoError(t, err)
-			assert.NotEmpty(t, len(projFiles))
+			res := p.Generate()
+			require.NoError(t, res.Err)
+			assert.NotEmpty(t, len(res.ProjectFiles))
 
 			for _, cont := range c.contains {
-				assert.Contains(t, projFiles, cont.file)
-				assert.Contains(t, string(projFiles[cont.file]), cont.contains)
+				assert.Contains(t, res.ProjectFiles, cont.file)
+				assert.Contains(t, string(res.ProjectFiles[cont.file]), cont.contains)
 			}
 
 			// sourceTmpDir, err := os.MkdirTemp(os.TempDir(), "test_output_src.zip")
@@ -178,10 +178,11 @@ func Test_Generate(t *testing.T) {
 //}
 
 func TestUniFactory(t *testing.T) {
-	p := LoadProjectFromState(t, "./testdata/uniswap_factory_v3.json")
+	convo := loadProjectFromState(t, "./testdata/uniswap_factory_v3.json")
+	p := convo.State
 
 	// p.confirmDoCompile = true
-	assert.Equal(t, RunDecodeContractABI{}, p.NextStep()())
+	assert.Equal(t, RunDecodeContractABI{}, convo.NextStep()())
 
 	for _, contract := range p.Contracts {
 		res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
@@ -189,10 +190,9 @@ func TestUniFactory(t *testing.T) {
 		contract.Abi = res.Abi
 	}
 
-	projectFiles, err := p.Generate()
-	require.NoError(t, err)
-	assert.NotEmpty(t, len(projectFiles))
-	p.ProjectFiles = projectFiles
+	res := p.Generate()
+	require.NoError(t, res.Err)
+	assert.NotEmpty(t, len(res.ProjectFiles))
 
 	// requires a build server. Test manually by running `make all` in the unifactory directory
 
@@ -202,10 +202,11 @@ func TestUniFactory(t *testing.T) {
 }
 
 func TestBaycSQL(t *testing.T) {
-	p := LoadProjectFromState(t, "./testdata/bayc.state.json")
+	convo := loadProjectFromState(t, "./testdata/bayc.state.json")
+	p := convo.State
 
 	// p.confirmDoCompile = true
-	assert.Equal(t, RunDecodeContractABI{}, p.NextStep()())
+	assert.Equal(t, RunDecodeContractABI{}, convo.NextStep()())
 
 	for _, contract := range p.Contracts {
 		res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
@@ -213,16 +214,17 @@ func TestBaycSQL(t *testing.T) {
 		contract.Abi = res.Abi
 	}
 
-	projZip, err := p.Generate()
-	require.NoError(t, err)
-	assert.NotEmpty(t, projZip)
+	res := p.Generate()
+	require.NoError(t, res.Err)
+	assert.NotEmpty(t, len(res.ProjectFiles))
 }
 
 func Test_Uniswapv3riggersDynamicDatasources(t *testing.T) {
-	p := LoadProjectFromState(t, "./testdata/uniswap_v3_dynamic_datasources.state.json")
+	convo := loadProjectFromState(t, "./testdata/uniswap_v3_dynamic_datasources.state.json")
+	p := convo.State
 
 	// p.confirmDoCompile = true
-	assert.Equal(t, RunDecodeContractABI{}, p.NextStep()())
+	assert.Equal(t, RunDecodeContractABI{}, convo.NextStep()())
 
 	for _, contract := range p.Contracts {
 		res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
@@ -237,10 +239,9 @@ func Test_Uniswapv3riggersDynamicDatasources(t *testing.T) {
 		contract.parentContract = p.Contracts[0]
 	}
 
-	projectFiles, err := p.Generate()
-	require.NoError(t, err)
-	assert.NotEmpty(t, projectFiles)
-	p.ProjectFiles = projectFiles
+	res := p.Generate()
+	require.NoError(t, res.Err)
+	assert.NotEmpty(t, len(res.ProjectFiles))
 
 	outDir := "testoutput/uniswap_v3_triggers_dynamic_datasources"
 	os.RemoveAll(outDir)
@@ -253,10 +254,11 @@ func Test_Uniswapv3riggersDynamicDatasources(t *testing.T) {
 	// assert.Contains(t, artifacts.logs, "Finished release")
 }
 func Test_BaycTriggers(t *testing.T) {
-	p := LoadProjectFromState(t, "./testdata/bayc.state.json")
+	convo := loadProjectFromState(t, "./testdata/bayc.state.json")
+	p := convo.State
 
 	// p.confirmDoCompile = true
-	assert.Equal(t, RunDecodeContractABI{}, p.NextStep()())
+	assert.Equal(t, RunDecodeContractABI{}, convo.NextStep()())
 
 	for _, contract := range p.Contracts {
 		res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
@@ -264,10 +266,9 @@ func Test_BaycTriggers(t *testing.T) {
 		contract.Abi = res.Abi
 	}
 
-	projectFiles, err := p.Generate()
-	require.NoError(t, err)
-	assert.NotEmpty(t, len(projectFiles))
-	p.ProjectFiles = projectFiles
+	res := p.Generate()
+	require.NoError(t, res.Err)
+	assert.NotEmpty(t, len(res.ProjectFiles))
 
 	outDir := "testoutput/uniswap_v3_triggers_dynamic_datasources"
 	os.RemoveAll(outDir)
@@ -305,12 +306,14 @@ func TestProtoFieldName(t *testing.T) {
 	}
 }
 
-func LoadProjectFromState(t *testing.T, stateFile string) *Project {
+func loadProjectFromState(t *testing.T, stateFile string) *Convo {
 	cnt, err := os.ReadFile(stateFile)
 	require.NoError(t, err)
 
-	p := &Project{}
+	convo := New().(*Convo)
+	p := convo.State
+	p.currentContractIdx = 0
 	require.NoError(t, json.Unmarshal(cnt, p))
 
-	return p
+	return convo
 }

@@ -20,7 +20,7 @@ func TestConvoNextStep(t *testing.T) {
 	assert.Equal(t, codegen.AskChainName{}, next())
 	p.ChainName = "vara-mainnet"
 
-	projectFiles, err := p.generate()
+	projectFiles, err := p.CmdGenerate()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, projectFiles)
 }

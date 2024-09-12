@@ -17,35 +17,24 @@ import (
 var QuitInvalidContext = loop.Quit(fmt.Errorf("invalid state context: no current contract"))
 var AbiFilepathPrefix = "file://"
 
-type Convo struct {
-	factory *codegen.MsgWrapFactory
-	state   *Project
-
-	remoteBuildState *codegen.RemoteBuildState
-}
-
 func init() {
 	codegen.RegisterConversation(
 		"evm-events-calls",
 		"Decode Ethereum events/calls and create a substreams as source",
 		"Given a list of contracts and their ABIs, this will build an Ethereum substreams that decodes events and/or calls",
-		codegen.ConversationFactory(NewEventsAndCalls),
+		codegen.ConversationFactory(New),
 		82,
 	)
 }
 
-func NewEventsAndCalls(factory *codegen.MsgWrapFactory) codegen.Conversation {
-	h := &Convo{
-		state:            &Project{currentContractIdx: -1},
-		factory:          factory,
-		remoteBuildState: &codegen.RemoteBuildState{},
-	}
-	return h
+type Convo struct {
+	*codegen.Conversation[*Project]
 }
 
-func (h *Convo) msg() *codegen.MsgWrap { return h.factory.NewMsg(h.state) }
-func (h *Convo) action(element any) *codegen.MsgWrap {
-	return h.factory.NewInput(element, h.state)
+func New() codegen.Converser {
+	return &Convo{&codegen.Conversation[*Project]{
+		State: &Project{currentContractIdx: -1},
+	}}
 }
 
 func cmd(msg any) loop.Cmd {
@@ -55,27 +44,15 @@ func cmd(msg any) loop.Cmd {
 }
 
 func (c *Convo) contextContract() *Contract {
-	if c.state.currentContractIdx == -1 || c.state.currentContractIdx > len(c.state.Contracts)-1 {
+	p := c.State
+	if p.currentContractIdx == -1 || p.currentContractIdx > len(p.Contracts)-1 {
 		return nil
 	}
-	return c.state.Contracts[c.state.currentContractIdx]
+	return p.Contracts[p.currentContractIdx]
 }
 
-func (c *Convo) validate() error {
-	if _, err := json.Marshal(c.state); err != nil {
-		return fmt.Errorf("validating state format: %w", err)
-	}
-	return nil
-}
-
-func (c *Convo) NextStep() loop.Cmd {
-	if err := c.validate(); err != nil {
-		return loop.Quit(err)
-	}
-	return c.state.NextStep()
-}
-
-func (p *Project) NextStep() (out loop.Cmd) {
+func (c *Convo) NextStep() (out loop.Cmd) {
+	p := c.State
 	if p.Name == "" {
 		return cmd(codegen.AskProjectName{})
 	}
@@ -194,51 +171,31 @@ func (p *Project) NextStep() (out loop.Cmd) {
 	return loop.Quit(nil)
 }
 
-func (p *Project) dynamicContractOf(contractName string) (out *DynamicContract) {
-	for _, dynContract := range p.DynamicContracts {
-		if dynContract.ParentContractName == contractName {
-			out = dynContract
-			break
-		}
-	}
-	if out == nil {
-		out = &DynamicContract{
-			ParentContractName: contractName,
-		}
-		p.DynamicContracts = append(p.DynamicContracts, out)
-	}
-	return
-}
-
-func isValidChainName(input string) bool {
-	return ChainConfigByID[input] != nil
-}
-
 func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 	if os.Getenv("SUBSTREAMS_DEV_DEBUG_CONVERSATION") == "true" {
-		fmt.Printf("convo Update message: %T %#v\n-> state: %#v\n\n", msg, msg, c.state)
+		fmt.Printf("convo Update message: %T %#v\n-> state: %#v\n\n", msg, msg, c.State)
 	}
 
 	switch msg := msg.(type) {
 	case codegen.MsgStart:
 		var msgCmd loop.Cmd
 		if msg.Hydrate != nil {
-			if err := json.Unmarshal([]byte(msg.Hydrate.SavedState), &c.state); err != nil {
+			if err := json.Unmarshal([]byte(msg.Hydrate.SavedState), &c.State); err != nil {
 				return loop.Quit(fmt.Errorf(`something went wrong, here's an error message to share with our devs (%s); we've notified them already`, err))
 			}
 
-			if err := validateIncomingState(c.state); err != nil {
+			if err := validateIncomingState(c.State); err != nil {
 				return loop.Quit(fmt.Errorf(`something went wrong, the initial state has not been validated: %w`, err))
 			}
 
-			msgCmd = c.msg().Message("Ok, I reloaded your state.").Cmd()
+			msgCmd = c.Msg().Message("Ok, I reloaded your state.").Cmd()
 		} else {
-			msgCmd = c.msg().Message("Ok, let's start a new package.").Cmd()
+			msgCmd = c.Msg().Message("Ok, let's start a new package.").Cmd()
 		}
 		return loop.Seq(msgCmd, c.NextStep())
 
 	case codegen.AskProjectName:
-		return c.action(codegen.InputProjectName{}).
+		return c.Action(codegen.InputProjectName{}).
 			TextInput(codegen.InputProjectNameTextInput(), "Submit").
 			Description(codegen.InputProjectNameDescription()).
 			DefaultValue("my_project").
@@ -246,7 +203,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			Cmd()
 
 	case codegen.InputProjectName:
-		c.state.Name = msg.Value
+		c.State.Name = msg.Value
 		return c.NextStep()
 
 	case codegen.AskChainName:
@@ -255,28 +212,28 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			labels = append(labels, conf.DisplayName)
 			values = append(values, conf.ID)
 		}
-		return c.action(codegen.InputChainName{}).ListSelect("Please select the chain").
+		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain").
 			Labels(labels...).
 			Values(values...).
 			Cmd()
 
 	case codegen.MsgInvalidChainName:
-		return c.msg().
-			Messagef(`Hmm, %q seems like an invalid chain name. Maybe it was supported and is not anymore?`, c.state.ChainName).
+		return c.Msg().
+			Messagef(`Hmm, %q seems like an invalid chain name. Maybe it was supported and is not anymore?`, c.State.ChainName).
 			Cmd()
 
 	case codegen.InputChainName:
-		c.state.ChainName = msg.Value
+		c.State.ChainName = msg.Value
 		if isValidChainName(msg.Value) {
 			return loop.Seq(
-				c.msg().Messagef("Got it, will be using chain %q", c.state.ChainConfig().DisplayName).Cmd(),
+				c.Msg().Messagef("Got it, will be using chain %q", c.State.ChainConfig().DisplayName).Cmd(),
 				c.NextStep(),
 			)
 		}
 		return c.NextStep()
 
 	case StartFirstContract:
-		c.state.Contracts = append(c.state.Contracts, &Contract{})
+		c.State.Contracts = append(c.State.Contracts, &Contract{})
 		return c.NextStep()
 
 	case MsgContractSwitch:
@@ -286,25 +243,25 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 		switch {
 		case contract.Name != "":
-			return c.msg().Messagef("Ok, now let's talk about contract %q (%s)",
+			return c.Msg().Messagef("Ok, now let's talk about contract %q (%s)",
 				contract.Name,
 				contract.Address,
 			).Cmd()
 		case contract.Address != "":
-			return c.msg().Messagef("Ok, now let's talk about contract at address %s",
+			return c.Msg().Messagef("Ok, now let's talk about contract at address %s",
 				contract.Address,
 			).Cmd()
 		default:
 			// TODO: humanize ordinal "1st", etc..
-			return c.msg().Messagef("Ok, so there's missing info for the %s contract. Let's fill that in.",
-				humanize.Ordinal(c.state.currentContractIdx+1),
+			return c.Msg().Messagef("Ok, so there's missing info for the %s contract. Let's fill that in.",
+				humanize.Ordinal(c.State.currentContractIdx+1),
 			).Cmd()
 		}
 
 	case AskContractAddress:
 		return loop.Seq(
-			c.msg().Messagef("We're tackling the %s contract.", humanize.Ordinal(c.state.currentContractIdx+1)).Cmd(),
-			c.action(InputContractAddress{}).TextInput("Please enter the contract address", "Submit").
+			c.Msg().Messagef("We're tackling the %s contract.", humanize.Ordinal(c.State.currentContractIdx+1)).Cmd(),
+			c.Action(InputContractAddress{}).TextInput("Please enter the contract address", "Submit").
 				Description("Format it with 0x prefix and make sure it's a valid Ethereum address.\nFor example, the Uniswap v3 factory address: 0x1f98431c8ad98523631ae4a59f267346ea31f984").
 				DefaultValue("0x1f98431c8ad98523631ae4a59f267346ea31f984").
 				Validation("^0x[a-fA-F0-9]{40}$", "Please enter a valid Ethereum address").Cmd(),
@@ -315,7 +272,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		if factory == nil {
 			return QuitInvalidContext
 		}
-		return c.action(InputDynamicContractAddress{}).TextInput(fmt.Sprintf("Please enter an example contract created by the %q factory", factory.Name), "Submit").
+		return c.Action(InputDynamicContractAddress{}).TextInput(fmt.Sprintf("Please enter an example contract created by the %q factory", factory.Name), "Submit").
 			Description("Format it with 0x prefix and make sure it's a valid Ethereum address.\nFor example, the USDC/ETH pool at: 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640").
 			Validation("^0x[a-fA-F0-9]{40}$", "Please enter a valid Ethereum address").Cmd()
 
@@ -326,17 +283,17 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 
 		inputAddress := strings.ToLower(msg.Value)
-		if err := validateContractAddress(c.state, inputAddress); err != nil {
+		if err := validateContractAddress(c.State, inputAddress); err != nil {
 			return loop.Seq(cmd(MsgInvalidContractAddress{err}), cmd(AskDynamicContractAddress{}))
 		}
 
-		contract := c.state.dynamicContractOf(factory.Name)
+		contract := c.State.dynamicContractOf(factory.Name)
 		contract.referenceContractAddress = inputAddress
 
 		return c.NextStep()
 
 	case AskContractABI:
-		return c.action(InputContractABI{}).TextInput(fmt.Sprintf("Please paste the contract ABI or the full JSON ABI file path starting with %sfullpath/to/Abi.json", AbiFilepathPrefix), "Submit").
+		return c.Action(InputContractABI{}).TextInput(fmt.Sprintf("Please paste the contract ABI or the full JSON ABI file path starting with %sfullpath/to/Abi.json", AbiFilepathPrefix), "Submit").
 			Cmd()
 
 	case AskDynamicContractABI:
@@ -345,7 +302,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			return QuitInvalidContext
 		}
 
-		return c.action(InputDynamicContractABI{}).TextInput(fmt.Sprintf("Please paste the ABI for contracts that will be created by the event %q", contract.FactoryCreationEventName()), "Submit").
+		return c.Action(InputDynamicContractABI{}).TextInput(fmt.Sprintf("Please paste the ABI for contracts that will be created by the event %q", contract.FactoryCreationEventName()), "Submit").
 			Cmd()
 
 	case InputContractABI:
@@ -369,7 +326,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 			fileBytes, err := os.ReadFile(abiPath)
 			if err != nil {
-				return loop.Seq(c.msg().Messagef("Cannot read the ABI file %q: %s", abiPath, err).Cmd(), cmd(AskContractABI{}))
+				return loop.Seq(c.Msg().Messagef("Cannot read the ABI file %q: %s", abiPath, err).Cmd(), cmd(AskContractABI{}))
 			}
 
 			rawMessage = json.RawMessage(fileBytes)
@@ -378,7 +335,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 
 		if _, err := json.Marshal(rawMessage); err != nil {
-			return loop.Seq(c.msg().Messagef("ABI %q isn't valid: %q", msg.Value, err).Cmd(), cmd(AskContractABI{}))
+			return loop.Seq(c.Msg().Messagef("ABI %q isn't valid: %q", msg.Value, err).Cmd(), cmd(AskContractABI{}))
 		}
 
 		contract.RawABI = rawMessage
@@ -391,11 +348,11 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			return QuitInvalidContext
 		}
 
-		contract := c.state.dynamicContractOf(factory.Name)
+		contract := c.State.dynamicContractOf(factory.Name)
 
 		rawMessage := json.RawMessage(msg.Value)
 		if _, err := json.Marshal(rawMessage); err != nil {
-			return loop.Seq(c.msg().Messagef("ABI %q isn't valid: %q", msg.Value, err).Cmd(), cmd(AskContractABI{}))
+			return loop.Seq(c.Msg().Messagef("ABI %q isn't valid: %q", msg.Value, err).Cmd(), cmd(AskContractABI{}))
 		}
 
 		contract.RawABI = rawMessage
@@ -408,7 +365,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 
 		inputAddress := strings.ToLower(msg.Value)
-		if err := validateContractAddress(c.state, inputAddress); err != nil {
+		if err := validateContractAddress(c.State, inputAddress); err != nil {
 			return loop.Seq(cmd(MsgInvalidContractAddress{err}), cmd(AskContractAddress{}))
 		}
 
@@ -421,7 +378,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		if contract == nil {
 			return QuitInvalidContext
 		}
-		return c.msg().
+		return c.Msg().
 			Messagef("Input address isn't valid : %q", msg.Err).
 			Cmd()
 
@@ -431,7 +388,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			return QuitInvalidContext
 		}
 
-		config := c.state.ChainConfig()
+		config := c.State.ChainConfig()
 		if config.ApiEndpoint == "" {
 			return cmd(AskContractABI{})
 		}
@@ -448,7 +405,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 		if msg.err != nil {
 			return loop.Seq(
-				c.msg().Messagef("Cannot fetch the ABI for contract %q (%s)", contract.Address, msg.err).Cmd(),
+				c.Msg().Messagef("Cannot fetch the ABI for contract %q (%s)", contract.Address, msg.err).Cmd(),
 				cmd(AskContractABI{}),
 			)
 		}
@@ -461,13 +418,13 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		if factory == nil {
 			return QuitInvalidContext
 		}
-		contract := c.state.dynamicContractOf(factory.Name)
-		config := c.state.ChainConfig()
+		contract := c.State.dynamicContractOf(factory.Name)
+		config := c.State.ChainConfig()
 		if config.ApiEndpoint == "" {
 			return cmd(AskDynamicContractABI{})
 		}
 		return func() loop.Msg {
-			abi, err := contract.FetchABI(c.state.ChainConfig())
+			abi, err := contract.FetchABI(c.State.ChainConfig())
 			return ReturnFetchDynamicContractABI{abi: abi, err: err}
 		}
 
@@ -476,10 +433,10 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		if factory == nil {
 			return QuitInvalidContext
 		}
-		contract := c.state.dynamicContractOf(factory.Name)
+		contract := c.State.dynamicContractOf(factory.Name)
 		if msg.err != nil {
 			return loop.Seq(
-				c.msg().Messagef("Cannot fetch the ABI for contract %q (%s)", contract.referenceContractAddress, msg.err).Cmd(),
+				c.Msg().Messagef("Cannot fetch the ABI for contract %q (%s)", contract.referenceContractAddress, msg.err).Cmd(),
 				cmd(AskDynamicContractABI{}),
 			)
 		}
@@ -512,7 +469,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 		// the 'printf' is a hack because we can't do arithmetics in the template
 		// it means '+1'
-		peekABI := c.msg().MessageTpl(`Ok, here's what the ABI would produce:
+		peekABI := c.Msg().MessageTpl(`Ok, here's what the ABI would produce:
 
 `+"```"+`protobuf
 // Events
@@ -537,7 +494,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		return loop.Seq(peekABI, cmd(AskConfirmContractABI{}))
 
 	case AskConfirmContractABI:
-		return c.action(InputConfirmContractABI{}).
+		return c.Action(InputConfirmContractABI{}).
 			Confirm("Do you want to proceed with this ABI?", "Yes", "No").
 			Cmd()
 
@@ -558,7 +515,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		if factory == nil {
 			return QuitInvalidContext
 		}
-		contract := c.state.dynamicContractOf(factory.Name)
+		contract := c.State.dynamicContractOf(factory.Name)
 		return cmdDecodeDynamicABI(contract)
 
 	case ReturnRunDecodeDynamicContractABI:
@@ -569,7 +526,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		if msg.err != nil {
 			return loop.Quit(fmt.Errorf("decoding ABI for dynamic contract of %q: %w", factory.Name, msg.err))
 		}
-		contract := c.state.dynamicContractOf(factory.Name)
+		contract := c.State.dynamicContractOf(factory.Name)
 		contract.Abi = msg.abi
 		evt := contract.EventModels()
 		calls := contract.CallModels()
@@ -579,7 +536,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		}
 		// the 'printf' is a hack because we can't do arithmetics in the template
 		// it means '+1'
-		peekABI := c.msg().MessageTpl(`Ok, here's what the ABI would produce:
+		peekABI := c.Msg().MessageTpl(`Ok, here's what the ABI would produce:
 
 `+"```"+`protobuf
 // Events
@@ -608,7 +565,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		if contract == nil {
 			return QuitInvalidContext
 		}
-		config := c.state.ChainConfig()
+		config := c.State.ChainConfig()
 		if config.ApiEndpoint == "" {
 			return cmd(AskContractInitialBlock{})
 		}
@@ -618,7 +575,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		}
 
 	case AskContractInitialBlock:
-		return c.action(InputContractInitialBlock{}).TextInput("Please enter the contract initial block number", "Submit").
+		return c.Action(InputContractInitialBlock{}).TextInput("Please enter the contract initial block number", "Submit").
 			Validation(`^\d+$`, "Please enter a valid block number").
 			Cmd()
 
@@ -630,7 +587,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		blk, err := strconv.ParseUint(msg.Value, 10, 64)
 		if err != nil {
 			return loop.Seq(
-				c.msg().Messagef("Cannot parse the block number %q: %s", msg.Value, err).Cmd(),
+				c.Msg().Messagef("Cannot parse the block number %q: %s", msg.Value, err).Cmd(),
 				cmd(AskContractInitialBlock{}),
 			)
 		}
@@ -643,7 +600,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 			return QuitInvalidContext
 		}
 
-		return c.action(InputContractInitialBlock{}).TextInput("Please enter the contract initial block number", "Submit").
+		return c.Action(InputContractInitialBlock{}).TextInput("Please enter the contract initial block number", "Submit").
 			DefaultValue(fmt.Sprintf("%d", msg.InitialBlock)).
 			Validation(`^\d+$`, "Please enter a valid block number").
 			Cmd()
@@ -653,7 +610,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		if contract == nil {
 			return QuitInvalidContext
 		}
-		return c.action(InputContractName{}).TextInput(fmt.Sprintf("Choose a short name for the contract at address %q (lowercase and numbers only)", contract.Address), "Submit").
+		return c.Action(InputContractName{}).TextInput(fmt.Sprintf("Choose a short name for the contract at address %q (lowercase and numbers only)", contract.Address), "Submit").
 			Description("Lowercase and numbers only").
 			Validation(`^([a-z][a-z0-9_]{0,63})$`, "The name should be short, and contain only lowercase characters and numbers, and not start with a number.").Cmd()
 
@@ -663,14 +620,14 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 			return QuitInvalidContext
 		}
 
-		if err := validateContractName(c.state, msg.Value); err != nil {
+		if err := validateContractName(c.State, msg.Value); err != nil {
 			return loop.Seq(cmd(MsgInvalidContractName{err}), cmd(AskContractName{}))
 		}
 		contract.Name = msg.Value
 		return c.NextStep()
 
 	case MsgInvalidContractName:
-		return c.msg().
+		return c.Msg().
 			Messagef("Invalid contract name: %q", msg.Err).
 			Cmd()
 
@@ -679,7 +636,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		if factory == nil {
 			return QuitInvalidContext
 		}
-		return c.action(InputDynamicContractName{}).TextInput(fmt.Sprintf("Choose a short name for the contract that will be created by the factory %q (lowercase and numbers only)", factory.Name), "Submit").
+		return c.Action(InputDynamicContractName{}).TextInput(fmt.Sprintf("Choose a short name for the contract that will be created by the factory %q (lowercase and numbers only)", factory.Name), "Submit").
 			Description("Lowercase and numbers only").
 			Validation(`^([a-z][a-z0-9_]{0,63})$`, "The name should be short, and contain only lowercase characters and numbers, and not start with a number.").Cmd()
 
@@ -689,11 +646,11 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 			return QuitInvalidContext
 		}
 
-		if err := validateContractName(c.state, msg.Value); err != nil {
+		if err := validateContractName(c.State, msg.Value); err != nil {
 			return loop.Seq(cmd(MsgInvalidDynamicContractName{err}), cmd(AskDynamicContractName{}))
 		}
 
-		contract := c.state.dynamicContractOf(factory.Name)
+		contract := c.State.dynamicContractOf(factory.Name)
 		contract.Name = msg.Value
 		return c.NextStep()
 
@@ -703,7 +660,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 			return QuitInvalidContext
 		}
 
-		return c.msg().
+		return c.Msg().
 			Messagef("Invalid dynamic contract name: %q", msg.Err).
 			Cmd()
 
@@ -712,13 +669,13 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		if contract == nil {
 			return QuitInvalidContext
 		}
-		if !c.state.ChainConfig().SupportsCalls {
+		if !c.State.ChainConfig().SupportsCalls {
 			contract.TrackEvents = true
 			contract.TrackCalls = false
 			return c.NextStep()
 		}
 
-		return c.action(InputContractTrackWhat{}).
+		return c.Action(InputContractTrackWhat{}).
 			ListSelect("What do you want to track for this contract?").
 			Labels("Events", "Calls", "Both events and calls").
 			Values("events", "calls", "both").
@@ -743,7 +700,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		return c.NextStep()
 
 	case AskDynamicContractTrackWhat:
-		return c.action(InputDynamicContractTrackWhat{}).
+		return c.Action(InputDynamicContractTrackWhat{}).
 			ListSelect("What do you want to track for the contracts that will be created by this factory ?").
 			Labels("Events", "Calls", "Both events and calls").
 			Values("events", "calls", "both").
@@ -754,7 +711,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		if factory == nil {
 			return QuitInvalidContext
 		}
-		contract := c.state.dynamicContractOf(factory.Name)
+		contract := c.State.dynamicContractOf(factory.Name)
 		switch msg.Value {
 		case "events":
 			contract.TrackEvents = true
@@ -774,7 +731,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 			return loop.Seq(cmd(InputContractIsFactory{}))
 		}
 
-		return c.action(InputContractIsFactory{}).
+		return c.Action(InputContractIsFactory{}).
 			Confirm("Is this contract a factory that will create more contracts that you want to track ?", "Yes", "No").
 			Cmd()
 
@@ -807,14 +764,14 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 			values = append(values, events[k])
 		}
 
-		return c.action(InputFactoryCreationEvent{}).
+		return c.Action(InputFactoryCreationEvent{}).
 			ListSelect("Choose the event signaling a new contract deployment").
 			Labels(values...).
 			Values(keys...).
 			Cmd()
 
 	case InputFactoryCreationEvent:
-		contract := c.state.Contracts[c.state.currentContractIdx]
+		contract := c.State.Contracts[c.State.currentContractIdx]
 
 		contract.FactoryCreationEvent = msg.Value
 		return c.NextStep()
@@ -838,10 +795,10 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		}
 
 		return loop.Seq(
-			c.msg().
+			c.Msg().
 				Message("Great, now which field in the event payload contains the address of the newly created contract?").
 				Cmd(),
-			c.action(InputFactoryCreationEventField{}).
+			c.Action(InputFactoryCreationEventField{}).
 				ListSelect("Choose the field containing the contract address").
 				Labels(params...).
 				Values(indexes...).
@@ -849,7 +806,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		)
 
 	case InputFactoryCreationEventField:
-		contract := c.state.Contracts[c.state.currentContractIdx]
+		contract := c.State.Contracts[c.State.currentContractIdx]
 		idx, err := strconv.ParseInt(msg.Value, 10, 64)
 		if err != nil {
 			return loop.Quit(fmt.Errorf("invalid field index %q: %w", msg.Value, err))
@@ -859,15 +816,15 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 
 	case AskAddContract:
 		out := []loop.Cmd{
-			c.msg().Message("Current contracts: [" + strings.Join(contractNames(c.state.Contracts), ", ") + "]").Cmd(),
+			c.Msg().Message("Current contracts: [" + strings.Join(contractNames(c.State.Contracts), ", ") + "]").Cmd(),
 		}
 
-		if len(c.state.DynamicContracts) != 0 {
-			out = append(out, c.msg().Message("Dynamic contracts: ["+strings.Join(dynamicContractNames(c.state.DynamicContracts), ", ")+"]").Cmd())
+		if len(c.State.DynamicContracts) != 0 {
+			out = append(out, c.Msg().Message("Dynamic contracts: ["+strings.Join(dynamicContractNames(c.State.DynamicContracts), ", ")+"]").Cmd())
 		}
 
 		out = append(out,
-			c.action(InputAddContract{}).
+			c.Action(InputAddContract{}).
 				Confirm("Add another contract ?", "Yes", "No").
 				Cmd())
 
@@ -875,39 +832,27 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 
 	case InputAddContract:
 		if msg.Affirmative {
-			c.state.Contracts = append(c.state.Contracts, &Contract{})
-			c.state.currentContractIdx = len(c.state.Contracts) - 1
+			c.State.Contracts = append(c.State.Contracts, &Contract{})
+			c.State.currentContractIdx = len(c.State.Contracts) - 1
 		} else {
-			c.state.ConfirmEnoughContracts = true
+			c.State.ConfirmEnoughContracts = true
 		}
 		return c.NextStep()
 
 	case codegen.RunGenerate:
-		return loop.Seq(
-			cmdGenerate(c.state),
-		)
+		return codegen.CmdGenerate(c.State.Generate)
 
 	case codegen.ReturnGenerate:
 		if msg.Err != nil {
 			return loop.Seq(
-				c.msg().Messagef("Code generation failed with error: %s", msg.Err).Cmd(),
+				c.Msg().Messagef("Code generation failed with error: %s", msg.Err).Cmd(),
 				loop.Quit(msg.Err),
 			)
 		}
 
-		c.state.ProjectFiles = msg.ProjectFiles
-		c.state.generatedCodeCompleted = true
+		c.State.generatedCodeCompleted = true
 
-		downloadCmd := c.action(codegen.InputSourceDownloaded{}).DownloadFiles()
-
-		for fileName, fileContent := range msg.SourceFiles {
-			fileDescription := ""
-			if _, ok := codegen.FileDescriptions[fileName]; ok {
-				fileDescription = codegen.FileDescriptions[fileName]
-			}
-
-			downloadCmd.AddFile(fileName, fileContent, "text/plain", fileDescription)
-		}
+		downloadCmd := c.Action(codegen.InputSourceDownloaded{}).DownloadFiles()
 
 		for fileName, fileContent := range msg.ProjectFiles {
 			fileDescription := ""
@@ -918,7 +863,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 			downloadCmd.AddFile(fileName, fileContent, "text/plain", fileDescription)
 		}
 
-		return loop.Seq(c.msg().Messagef("Code generation complete!").Cmd(), downloadCmd.Cmd())
+		return loop.Seq(c.Msg().Messagef("Code generation complete!").Cmd(), downloadCmd.Cmd())
 
 	case codegen.InputSourceDownloaded:
 		return c.NextStep()
