@@ -1,0 +1,30 @@
+# {{ .Name }} Substreams modules
+
+This package was initialized via `substreams init`, using the `evm-events-calls` template.
+
+{{ template "readme_usage" }}
+
+## Modules
+
+All of these modules filter by `[INSERT CONTRACT ADDRESS, and write a paragraph
+explaining what the module does]`.
+
+{{- if and $.TrackAnyEvents $.TrackAnyCalls }}
+### `map_events_calls`
+
+This module gets you events _and_ calls
+
+{{ end -}}
+{{- if .TrackAnyEvents }}
+### `map_events`
+
+This module gets you only events that matched.
+
+{{ end }}
+{{- if .TrackAnyCalls }}
+
+### `map_calls`
+
+This module gets you only calls that matched.
+
+{{ end }}

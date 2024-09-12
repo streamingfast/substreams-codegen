@@ -15,6 +15,10 @@ func (c *Conversation[X]) SetFactory(f *MsgWrapFactory) {
 	c.factory = f
 }
 
+func (c *Conversation[X]) GetState() any {
+	return c.State
+}
+
 func (c *Conversation[X]) Msg() *MsgWrap { return c.factory.NewMsg(c.State) }
 
 func (c *Conversation[X]) Action(element any) *MsgWrap {

@@ -37,12 +37,6 @@ func New() codegen.Converser {
 	}}
 }
 
-func cmd(msg any) loop.Cmd {
-	return func() loop.Msg {
-		return msg
-	}
-}
-
 func (c *Convo) contextContract() *Contract {
 	p := c.State
 	if p.currentContractIdx == -1 || p.currentContractIdx > len(p.Contracts)-1 {
@@ -172,10 +166,6 @@ func (c *Convo) NextStep() (out loop.Cmd) {
 }
 
 func (c *Convo) Update(msg loop.Msg) loop.Cmd {
-	if os.Getenv("SUBSTREAMS_DEV_DEBUG_CONVERSATION") == "true" {
-		fmt.Printf("convo Update message: %T %#v\n-> state: %#v\n\n", msg, msg, c.State)
-	}
-
 	switch msg := msg.(type) {
 	case codegen.MsgStart:
 		var msgCmd loop.Cmd
@@ -870,4 +860,10 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 	}
 
 	return loop.Quit(fmt.Errorf("invalid loop message: %T", msg))
+}
+
+func cmd(msg any) loop.Cmd {
+	return func() loop.Msg {
+		return msg
+	}
 }

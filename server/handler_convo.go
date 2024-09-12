@@ -208,6 +208,10 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 		}
 
 		s.logger.Debug("updating")
+		if os.Getenv("SUBSTREAMS_DEV_DEBUG_CONVERSATION") == "true" {
+			fmt.Printf("convo Update message: %T %#v\n-> state: %#v\n\n", msg, msg, conversation.State)
+		}
+
 		cmd := conversation.Update(msg)
 		return cmd
 	})
