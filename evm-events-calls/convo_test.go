@@ -140,7 +140,7 @@ func TestConvoUpdate(t *testing.T) {
 
 	//cmds := next()
 	msg1 := seq[0]().(*pbconvo.SystemOutput)
-	assert.Equal(t, msg1.GetMessage().Markdown, "Code generation complete!")
+	assert.Contains(t, msg1.GetMessage().Markdown, "substreams build\nsubstreams auth\nsubstreams gui")
 	//msg2 := seq[1]().(*pbconvo.SystemOutput)
 	//assert.NotNil(t, msg2.GetDownloadFiles())
 	//

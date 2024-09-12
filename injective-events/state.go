@@ -27,8 +27,6 @@ type Project struct {
 	EventDescs      []*eventDesc `json:"messageTypes,omitempty"`
 	currentEventIdx int
 	EventsComplete  bool `json:"eventsComplete,omitempty"`
-
-	generatedCodeCompleted bool
 }
 
 func (p *Project) ChainConfig() *ChainConfig { return ChainConfigByID[p.ChainName] }

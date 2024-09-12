@@ -8,7 +8,6 @@ import (
 	"math"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/codemodus/kace"
 	"github.com/golang-cz/textcase"
@@ -25,16 +24,7 @@ type Project struct {
 	Download               bool               `json:"download,omitempty"`
 	ConfirmEnoughContracts bool               `json:"confirm_enough_contracts,omitempty"`
 
-	// Remote build part removed for the moment
-	// confirmDownloadOnly bool
-	// confirmDoCompile    bool
-
-	currentContractIdx     int
-	compilingBuild         bool
-	generatedCodeCompleted bool
-
-	buildStarted    time.Time
-	forceGeneration bool
+	currentContractIdx int
 }
 
 func dynamicContractNames(contracts []*DynamicContract) (out []string) {

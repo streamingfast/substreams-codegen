@@ -49,22 +49,6 @@ func (c ReturnGenerate) Error(msg *MsgWrap) loop.Cmd {
 	)
 }
 
-// func (c ReturnGenerate) AddFiles(state any, action *MsgWrap, msg *MsgWrap) loop.Cmd {
-// 	downloadCmd := action(codegen.InputSourceDownloaded{}).DownloadFiles()
-
-// 	for fileName, fileContent := range c.ProjectFiles {
-// 		fileDescription := ""
-// 		if _, ok := FileDescriptions[fileName]; ok {
-// 			fileDescription = FileDescriptions[fileName]
-// 		}
-
-// 		downloadCmd.AddFile(fileName, fileContent, "text/plain", fileDescription)
-// 	}
-
-// 	return loop.Seq(msg.Messagef("Code generation complete!").Cmd(), downloadCmd.Cmd())
-
-// }
-
 type MsgGenerateProgress struct {
 	Progress int
 	Logs     []string

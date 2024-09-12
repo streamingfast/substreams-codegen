@@ -3,24 +3,17 @@ package starknet_events
 import (
 	"fmt"
 	"strings"
-	"time"
 )
 
 type Project struct {
-	Name            string    `json:"name"`
-	ChainName       string    `json:"chainName"`
-	Compile         bool      `json:"compile,omitempty"` // optional field to write in state and automatically compile with no confirmation.
-	Download        bool      `json:"download,omitempty"`
-	InitialBlock    uint64    `json:"initialBlock,omitempty"`
-	InitialBlockSet bool      `json:"initialBlockSet,omitempty"`
-	Contract        *Contract `json:"contract"`
-
-	generatedCodeCompleted bool
-	compilingBuild         bool
-	projectFiles           map[string][]byte
-	EventsTrackCompleted   bool
-
-	buildStarted time.Time
+	Name                 string    `json:"name"`
+	ChainName            string    `json:"chainName"`
+	Compile              bool      `json:"compile,omitempty"` // optional field to write in state and automatically compile with no confirmation.
+	Download             bool      `json:"download,omitempty"`
+	InitialBlock         uint64    `json:"initialBlock,omitempty"`
+	InitialBlockSet      bool      `json:"initialBlockSet,omitempty"`
+	Contract             *Contract `json:"contract"`
+	EventsTrackCompleted bool
 }
 
 func (p *Project) ModuleName() string { return strings.ReplaceAll(p.Name, "-", "_") }

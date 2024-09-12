@@ -47,11 +47,7 @@ func (c *Convo) NextStep() (out loop.Cmd) {
 		return loop.Seq(cmd(codegen.MsgInvalidChainName{}), cmd(codegen.AskChainName{}))
 	}
 
-	if !p.generatedCodeCompleted {
-		return cmd(codegen.RunGenerate{})
-	}
-
-	return loop.Quit(nil)
+	return cmd(codegen.RunGenerate{})
 }
 
 func isValidChainName(input string) bool {
@@ -110,30 +106,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.CmdGenerate(c.State.Generate)
 
 	case codegen.ReturnGenerate:
-		if msg.Err != nil {
-			return loop.Seq(
-				c.Msg().Messagef("Code generation failed with error: %s", msg.Err).Cmd(),
-				loop.Quit(msg.Err),
-			)
-		}
-
-		c.State.generatedCodeCompleted = true
-
-		downloadCmd := c.Action(codegen.InputSourceDownloaded{}).DownloadFiles()
-
-		for fileName, fileContent := range msg.ProjectFiles {
-			fileDescription := ""
-			if _, ok := codegen.FileDescriptions[fileName]; ok {
-				fileDescription = codegen.FileDescriptions[fileName]
-			}
-
-			downloadCmd.AddFile(fileName, fileContent, "text/plain", fileDescription)
-		}
-
-		return loop.Seq(c.Msg().Messagef("Code generation complete!").Cmd(), downloadCmd.Cmd())
-
-	case codegen.InputSourceDownloaded:
-		return c.NextStep()
+		return c.CmdDownloadFiles(msg)
 	}
 
 	return loop.Quit(fmt.Errorf("invalid loop message: %T", msg))

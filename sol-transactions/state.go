@@ -12,8 +12,6 @@ type Project struct {
 	InitialBlock    uint64 `json:"initialBlock,omitempty"`
 	InitialBlockSet bool   `json:"initialBlockSet,omitempty"`
 	ProgramId       string `json:"programId,omitempty"`
-
-	generatedCodeCompleted bool
 }
 
 func (p *Project) ModuleName() string { return strings.ReplaceAll(p.Name, "-", "_") }

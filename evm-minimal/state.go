@@ -9,8 +9,6 @@ type Project struct {
 	ChainName string `json:"chainName"`
 	Compile   bool   `json:"compile,omitempty"` // optional field to write in state and automatically compile with no confirmation.
 	Download  bool   `json:"download,omitempty"`
-
-	generatedCodeCompleted bool
 }
 
 func (p *Project) ChainConfig() *ChainConfig { return ChainConfigByID[p.ChainName] }
