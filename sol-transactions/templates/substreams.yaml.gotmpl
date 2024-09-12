@@ -4,14 +4,18 @@ package:
   version: v0.1.0
 
 imports:
-  solana: https://spkg.io/streamingfast/solana-common-v0.2.0.spkg
+  solana: https://spkg.io/streamingfast/solana-common-v0.3.0.spkg
 
 modules:
- - name: map_filtered_transactions
-   use: solana:filtered_transactions_without_votes
-   initialBlock: {{ .InitialBlock }}
+  - name: map_filtered_transactions
+{{- if .FilterContainsAccount }}
+    use: solana:transactions_by_programid_and_account_without_votes
+{{- else }}
+    use: solana:transactions_by_programid_without_votes
+{{- end }}
+    initialBlock: {{ .InitialBlock }}
 
 network: solana-mainnet-beta
 
 params:
-  map_filtered_transactions: {{ .ProgramId }}
+  map_filtered_transactions: {{ .Filter }}

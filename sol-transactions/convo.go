@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	codegen "github.com/streamingfast/substreams-codegen"
 	"github.com/streamingfast/substreams-codegen/loop"
@@ -41,8 +42,8 @@ func (c *Convo) NextStep() loop.Cmd {
 		return cmd(codegen.AskInitialStartBlockType{})
 	}
 
-	if p.ProgramId == "" {
-		return cmd(AskProgramId{})
+	if p.Filter == "" {
+		return cmd(AskFilter{})
 	}
 
 	return cmd(codegen.RunGenerate{})
@@ -87,14 +88,15 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		c.State.InitialBlockSet = true
 		return c.NextStep()
 
-	case AskProgramId:
-		return c.Action(InputProgramId{}).
-			TextInput(fmt.Sprintf("Filter the transactions based on one or several Program IDs.\nSupported operators are: logical or '||', logical and '&&' and parenthesis: '()'. \nExample: to only consume TRANSACTIONS containing Token or ComputeBudget instructions: 'program:TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA || program:ComputeBudget111111111111111111111111111111'."), "Submit").
-			DefaultValue("program:TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA").
+	case AskFilter:
+		return c.Action(InputFilter{}).
+			TextInput(fmt.Sprintf("Filter the transaction by Program IDs and/or accounts.\nSupported operators are: logical or '||', logical and '&&' and parenthesis: '()'. \n\nEXAMPLE: to only consume TRANSACTIONS containing:\n   - ComputeBudget instructions\n        OR\n   - Token Instructions where the account '3MQw72oGrizUDEcD9gZYMgqo1pc364y5GnnJHcGpvurK' is included\n'program:ComputeBudget111111111111111111111111111111 || (program:TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA && account:3MQw72oGrizUDEcD9gZYMgqo1pc364y5GnnJHcGpvurK)'\n"), "Submit").
+			DefaultValue("program:ComputeBudget111111111111111111111111111111 || (program:TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA && account:3MQw72oGrizUDEcD9gZYMgqo1pc364y5GnnJHcGpvurK)").
 			Cmd()
 
-	case InputProgramId:
-		c.State.ProgramId = msg.Value
+	case InputFilter:
+		c.State.Filter = msg.Value
+		c.State.FilterContainsAccount = strings.Contains(c.State.Filter, "account:")
 		return c.NextStep()
 
 	case codegen.RunGenerate:

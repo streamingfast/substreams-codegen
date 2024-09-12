@@ -5,13 +5,16 @@ import (
 )
 
 type Project struct {
-	Name            string `json:"name"`
-	ChainName       string `json:"chainName"`
-	Compile         bool   `json:"compile,omitempty"` // optional field to write in state and automatically compile with no confirmation.
-	Download        bool   `json:"download,omitempty"`
-	InitialBlock    uint64 `json:"initialBlock,omitempty"`
-	InitialBlockSet bool   `json:"initialBlockSet,omitempty"`
-	ProgramId       string `json:"programId,omitempty"`
+	Name                  string `json:"name"`
+	ChainName             string `json:"chainName"`
+	Compile               bool   `json:"compile,omitempty"` // optional field to write in state and automatically compile with no confirmation.
+	Download              bool   `json:"download,omitempty"`
+	InitialBlock          uint64 `json:"initialBlock,omitempty"`
+	InitialBlockSet       bool   `json:"initialBlockSet,omitempty"`
+	Filter                string `json:"filter,omitempty"`
+	FilterContainsAccount bool   `json:"filterContainsAccount,omitempty"`
+
+	generatedCodeCompleted bool
 }
 
 func (p *Project) ModuleName() string { return strings.ReplaceAll(p.Name, "-", "_") }
