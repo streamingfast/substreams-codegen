@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 )
 
 const EVENTS_DATA_TYPE = "events"
@@ -30,17 +29,6 @@ type Project struct {
 	EventsComplete  bool `json:"eventsComplete,omitempty"`
 
 	generatedCodeCompleted bool
-	compilingBuild         bool
-	projectFiles           map[string][]byte
-	sourceFiles            map[string][]byte
-
-	buildStarted time.Time
-
-	// always set by the server
-	outputType outputType
-
-	SqlOutputFlavor      string `json:"sql_output_flavor,omitempty"`      // either "clickhouse" or "sql"
-	SubgraphOutputFlavor string `json:"subgraph_output_flavor,omitempty"` // either "trigger" or "entity"
 }
 
 func (p *Project) ChainConfig() *ChainConfig { return ChainConfigByID[p.ChainName] }
