@@ -2,7 +2,6 @@ package injectiveminimal
 
 import (
 	"strings"
-	"time"
 )
 
 type Project struct {
@@ -13,21 +12,7 @@ type Project struct {
 	InitialBlock    uint64 `json:"initialBlock,omitempty"`
 	InitialBlockSet bool   `json:"initialBlockSet,omitempty"`
 
-	// Remote build part removed for the moment
-	// confirmDoCompile       bool
-	// confirmDownloadOnly    bool
-
 	generatedCodeCompleted bool
-	compilingBuild         bool
-	projectFiles           map[string][]byte
-
-	buildStarted time.Time
-
-	// always set by the server
-	// only for SQL projects
-
-	SqlOutputFlavor      string `json:"sql_output_flavor,omitempty"`      // either "clickhouse" or "sql"
-	SubgraphOutputFlavor string `json:"subgraph_output_flavor,omitempty"` // either "trigger" or "entity"
 }
 
 func (p *Project) ModuleName() string { return strings.ReplaceAll(p.Name, "-", "_") }

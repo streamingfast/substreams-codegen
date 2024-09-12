@@ -3,7 +3,6 @@ package injectiveminimal
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 
 	codegen "github.com/streamingfast/substreams-codegen"
@@ -13,8 +12,7 @@ import (
 var InjectiveTestnetDefaultStartBlock uint64 = 37368800
 
 type Convo struct {
-	factory *codegen.MsgWrapFactory
-	state   *Project
+	*codegen.Conversation[*Project]
 }
 
 func init() {
@@ -27,40 +25,15 @@ func init() {
 	)
 }
 
-func New(factory *codegen.MsgWrapFactory) codegen.Conversation {
-	h := &Convo{
-		state:   &Project{},
-		factory: factory,
-	}
-	return h
-}
-
-func (h *Convo) msg() *codegen.MsgWrap { return h.factory.NewMsg(h.state) }
-func (h *Convo) action(element any) *codegen.MsgWrap {
-	return h.factory.NewInput(element, h.state)
-}
-
-func cmd(msg any) loop.Cmd {
-	return func() loop.Msg {
-		return msg
-	}
-}
-
-func (c *Convo) validate() error {
-	if _, err := json.Marshal(c.state); err != nil {
-		return fmt.Errorf("validating state format: %w", err)
-	}
-	return nil
+func New() codegen.Converser {
+	return &Convo{&codegen.Conversation[*Project]{
+		State: &Project{},
+	}}
 }
 
 func (c *Convo) NextStep() loop.Cmd {
-	if err := c.validate(); err != nil {
-		return loop.Quit(err)
-	}
-	return c.state.NextStep()
-}
+	p := c.State
 
-func (p *Project) NextStep() (out loop.Cmd) {
 	if p.Name == "" {
 		return cmd(codegen.AskProjectName{})
 	}
@@ -90,26 +63,22 @@ func (p *Project) NextStep() (out loop.Cmd) {
 }
 
 func (c *Convo) Update(msg loop.Msg) loop.Cmd {
-	if os.Getenv("SUBSTREAMS_DEV_DEBUG_CONVERSATION") == "true" {
-		fmt.Printf("convo Update message: %T %#v\n-> state: %#v\n\n", msg, msg, c.state)
-	}
-
 	switch msg := msg.(type) {
 	case codegen.MsgStart:
 		var msgCmd loop.Cmd
 		if msg.Hydrate != nil {
-			if err := json.Unmarshal([]byte(msg.Hydrate.SavedState), &c.state); err != nil {
+			if err := json.Unmarshal([]byte(msg.Hydrate.SavedState), &c.State); err != nil {
 				return loop.Quit(fmt.Errorf(`something went wrong, here's an error message to share with our devs (%s); we've notified them already`, err))
 			}
 
-			msgCmd = c.msg().Message("Ok, I reloaded your state.").Cmd()
+			msgCmd = c.Msg().Message("Ok, I reloaded your state.").Cmd()
 		} else {
-			msgCmd = c.msg().Message("Ok, let's start a new package.").Cmd()
+			msgCmd = c.Msg().Message("Ok, let's start a new package.").Cmd()
 		}
 		return loop.Seq(msgCmd, c.NextStep())
 
 	case codegen.AskProjectName:
-		return c.action(codegen.InputProjectName{}).
+		return c.Action(codegen.InputProjectName{}).
 			TextInput(codegen.InputProjectNameTextInput(), "Submit").
 			Description(codegen.InputProjectNameDescription()).
 			DefaultValue("my_project").
@@ -117,7 +86,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			Cmd()
 
 	case codegen.InputProjectName:
-		c.state.Name = msg.Value
+		c.State.Name = msg.Value
 		return c.NextStep()
 
 	case codegen.AskChainName:
@@ -126,21 +95,21 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			labels = append(labels, conf.DisplayName)
 			values = append(values, conf.ID)
 		}
-		return c.action(codegen.InputChainName{}).ListSelect("Please select the chain").
+		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain").
 			Labels(labels...).
 			Values(values...).
 			Cmd()
 
 	case codegen.MsgInvalidChainName:
-		return c.msg().
-			Messagef(`Hmm, %q seems like an invalid chain name. Maybe it was supported and is not anymore?`, c.state.ChainName).
+		return c.Msg().
+			Messagef(`Hmm, %q seems like an invalid chain name. Maybe it was supported and is not anymore?`, c.State.ChainName).
 			Cmd()
 
 	case codegen.InputChainName:
-		c.state.ChainName = msg.Value
-		if c.state.IsValidChainName(msg.Value) {
+		c.State.ChainName = msg.Value
+		if c.State.IsValidChainName(msg.Value) {
 			return loop.Seq(
-				c.msg().Messagef("Got it, will be using chain %q", c.state.ChainConfig().DisplayName).Cmd(),
+				c.Msg().Messagef("Got it, will be using chain %q", c.State.ChainConfig().DisplayName).Cmd(),
 				c.NextStep(),
 			)
 		}
@@ -149,11 +118,11 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 	case codegen.AskInitialStartBlockType:
 		textInputMessage := "At what block do you want to start indexing data?"
 		defaultValue := "0"
-		if c.state.IsTestnet(c.state.ChainName) {
+		if c.State.IsTestnet(c.State.ChainName) {
 			defaultValue = fmt.Sprintf("%d", InjectiveTestnetDefaultStartBlock)
-			textInputMessage = fmt.Sprintf("At what block do you want to start indexing data? (the first available block on %s is: %s)", c.state.ChainName, defaultValue)
+			textInputMessage = fmt.Sprintf("At what block do you want to start indexing data? (the first available block on %s is: %s)", c.State.ChainName, defaultValue)
 		}
-		return c.action(codegen.InputAskInitialStartBlockType{}).
+		return c.Action(codegen.InputAskInitialStartBlockType{}).
 			TextInput(textInputMessage, "Submit").
 			DefaultValue(defaultValue).
 			Validation(codegen.InputAskInitialStartBlockTypeRegex(), codegen.InputAskInitialStartBlockTypeValidation()).
@@ -164,45 +133,44 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		if err != nil {
 			return loop.Quit(fmt.Errorf("invalid start block input value %q, expected a number", msg.Value))
 		}
-		if c.state.IsTestnet(c.state.ChainName) && initialBlock < InjectiveTestnetDefaultStartBlock {
+		if c.State.IsTestnet(c.State.ChainName) && initialBlock < InjectiveTestnetDefaultStartBlock {
 			initialBlock = InjectiveTestnetDefaultStartBlock
 		}
 
-		c.state.InitialBlock = initialBlock
-		c.state.InitialBlockSet = true
+		c.State.InitialBlock = initialBlock
+		c.State.InitialBlockSet = true
 		return c.NextStep()
 
 	// case codegen.InputConfirmCompile:
 	// 	if msg.Affirmative {
-	// 		c.state.confirmDoCompile = true
+	// 		c.State.confirmDoCompile = true
 	// 	} else {
-	// 		c.state.confirmDownloadOnly = true
+	// 		c.State.confirmDownloadOnly = true
 	// 	}
 	// 	return c.NextStep()
 
 	case codegen.RunGenerate:
 		return loop.Seq(
-			cmdGenerate(c.state),
+			codegen.CmdGenerate(c.State.Generate),
 		)
 
 	// Remote build part removed for the moment
 	// case codegen.AskConfirmCompile:
-	// 	return c.action(codegen.InputConfirmCompile{}).
+	// 	return c.Action(codegen.InputConfirmCompile{}).
 	// 		Confirm("Should we build the Substreams package for you?", "Yes, build it", "No").
 	// 		Cmd()
 
 	case codegen.ReturnGenerate:
 		if msg.Err != nil {
 			return loop.Seq(
-				c.msg().Messagef("Code generation failed with error: %s", msg.Err).Cmd(),
+				c.Msg().Messagef("Code generation failed with error: %s", msg.Err).Cmd(),
 				loop.Quit(msg.Err),
 			)
 		}
 
-		c.state.projectFiles = msg.ProjectFiles
-		c.state.generatedCodeCompleted = true
+		c.State.generatedCodeCompleted = true
 
-		downloadCmd := c.action(codegen.InputSourceDownloaded{}).DownloadFiles()
+		downloadCmd := c.Action(codegen.InputSourceDownloaded{}).DownloadFiles()
 
 		for fileName, fileContent := range msg.ProjectFiles {
 			fileDescription := ""
@@ -213,11 +181,17 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			downloadCmd.AddFile(fileName, fileContent, "text/plain", fileDescription)
 		}
 
-		return loop.Seq(c.msg().Messagef("Code generation complete!").Cmd(), downloadCmd.Cmd())
+		return loop.Seq(c.Msg().Messagef("Code generation complete!").Cmd(), downloadCmd.Cmd())
 
 	case codegen.InputSourceDownloaded:
 		return c.NextStep()
 	}
 
 	return loop.Quit(fmt.Errorf("invalid loop message: %T", msg))
+}
+
+func cmd(msg any) loop.Cmd {
+	return func() loop.Msg {
+		return msg
+	}
 }
