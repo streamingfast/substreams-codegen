@@ -112,7 +112,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			)
 		}
 
-		c.State.projectFiles = msg.ProjectFiles
 		c.State.generatedCodeCompleted = true
 
 		downloadCmd := c.Action(codegen.InputSourceDownloaded{}).DownloadFiles()

@@ -19,7 +19,6 @@ func (p *Project) ModuleName() string { return strings.ReplaceAll(p.Name, "-", "
 func (p *Project) KebabName() string  { return strings.ReplaceAll(p.Name, "_", "-") }
 
 func (p *Project) ChainConfig() *ChainConfig          { return ChainConfigByID[p.ChainName] }
-func (p *Project) ChainEndpoint() string              { return ChainConfigByID[p.ChainName].FirehoseEndpoint }
 func (p *Project) ChainNetwork() string               { return ChainConfigByID[p.ChainName].Network }
 func (p *Project) IsValidChainName(input string) bool { return ChainConfigByID[input] != nil }
 func (p *Project) IsTestnet(input string) bool {

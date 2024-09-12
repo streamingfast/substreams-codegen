@@ -3,31 +3,21 @@ package starknet_events
 import "sort"
 
 type ChainConfig struct {
-	ID               string // Public
-	DisplayName      string // Public
-	ExplorerLink     string
-	FirehoseEndpoint string
-	Network          string
-
-	initialBlockCache map[string]uint64
+	ID          string // Public
+	DisplayName string // Public
+	Network     string
 }
 
 var ChainConfigs []*ChainConfig
 
 var ChainConfigByID = map[string]*ChainConfig{
 	"starknet-mainnet": {
-		DisplayName:       "Starknet Mainnet",
-		ExplorerLink:      "https://starkscan.co/",
-		FirehoseEndpoint:  "mainnet.starknet.streamingfast.io:443",
-		Network:           "starknet-mainnet",
-		initialBlockCache: make(map[string]uint64),
+		DisplayName: "Starknet Mainnet",
+		Network:     "starknet-mainnet",
 	},
 	"starknet-testnet": {
-		DisplayName:       "Starknet Testnet",
-		ExplorerLink:      "",
-		FirehoseEndpoint:  "testnet.starknet.streamingfast.io:443",
-		Network:           "starknet-testnet",
-		initialBlockCache: make(map[string]uint64),
+		DisplayName: "Starknet Testnet",
+		Network:     "starknet-testnet",
 	},
 }
 

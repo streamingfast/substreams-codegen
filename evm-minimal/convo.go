@@ -3,7 +3,6 @@ package ethminimal
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 
 	codegen "github.com/streamingfast/substreams-codegen"
@@ -46,10 +45,6 @@ func (c *Convo) NextStep() (out loop.Cmd) {
 
 	if !isValidChainName(p.ChainName) {
 		return loop.Seq(cmd(codegen.MsgInvalidChainName{}), cmd(codegen.AskChainName{}))
-	}
-
-	if !p.InitialBlockSet {
-		return cmd(codegen.AskInitialStartBlockType{})
 	}
 
 	if !p.generatedCodeCompleted {
@@ -109,23 +104,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 				c.NextStep(),
 			)
 		}
-		return c.NextStep()
-
-	case codegen.AskInitialStartBlockType:
-		return c.Action(codegen.InputAskInitialStartBlockType{}).
-			TextInput(codegen.InputAskInitialStartBlockTypeTextInput(), "Submit").
-			DefaultValue("0").
-			Validation(codegen.InputAskInitialStartBlockTypeRegex(), codegen.InputAskInitialStartBlockTypeValidation()).
-			Cmd()
-
-	case codegen.InputAskInitialStartBlockType:
-		initialBlock, err := strconv.ParseUint(msg.Value, 10, 64)
-		if err != nil {
-			return loop.Quit(fmt.Errorf("invalid start block input value %q, expected a number", msg.Value))
-		}
-
-		c.State.InitialBlock = initialBlock
-		c.State.InitialBlockSet = true
 		return c.NextStep()
 
 	case codegen.RunGenerate:

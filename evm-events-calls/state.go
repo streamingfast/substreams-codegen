@@ -52,7 +52,6 @@ func contractNames(contracts []*Contract) (out []string) {
 }
 
 func (p *Project) ChainConfig() *ChainConfig { return ChainConfigByID[p.ChainName] }
-func (p *Project) ChainEndpoint() string     { return ChainConfigByID[p.ChainName].FirehoseEndpoint }
 
 func (p *Project) ModuleName() string { return strings.ReplaceAll(p.Name, "-", "_") }
 func (p *Project) KebabName() string  { return strings.ReplaceAll(p.Name, "_", "-") }

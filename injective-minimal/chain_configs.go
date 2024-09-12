@@ -3,31 +3,21 @@ package injectiveminimal
 import "sort"
 
 type ChainConfig struct {
-	ID               string // Public
-	DisplayName      string // Public
-	ExplorerLink     string
-	FirehoseEndpoint string
-	Network          string
-
-	initialBlockCache map[string]uint64
+	ID          string // Public
+	DisplayName string // Public
+	Network     string
 }
 
 var ChainConfigs []*ChainConfig
 
 var ChainConfigByID = map[string]*ChainConfig{
 	"injective-mainnet": {
-		DisplayName:       "Injective Mainnet",
-		ExplorerLink:      "https://explorer.injective.network/",
-		FirehoseEndpoint:  "mainnet.injective.streamingfast.io:443",
-		Network:           "injective-mainnet",
-		initialBlockCache: make(map[string]uint64),
+		DisplayName: "Injective Mainnet",
+		Network:     "injective-mainnet",
 	},
 	"injective-testnet": {
-		DisplayName:       "Injective Testnet",
-		ExplorerLink:      "https://testnet.explorer.injective.network/",
-		FirehoseEndpoint:  "testnet.injective.streamingfast.io:443",
-		Network:           "injective-testnet",
-		initialBlockCache: make(map[string]uint64),
+		DisplayName: "Injective Testnet",
+		Network:     "injective-testnet",
 	},
 }
 

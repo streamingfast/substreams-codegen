@@ -10,7 +10,6 @@ type ChainConfig struct {
 	ExplorerLink         string
 	ApiEndpoint          string
 	ApiEndpointDirect    bool
-	FirehoseEndpoint     string
 	FirstStreamableBlock uint64
 	Network              string
 	SupportsCalls        bool

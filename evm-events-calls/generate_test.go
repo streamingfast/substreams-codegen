@@ -32,7 +32,6 @@ func Test_Generate(t *testing.T) {
 			generatorFile: "./testdata/uniswap_factory_track_calls.json",
 			contains: []match{
 				{"README.md", "## Usage\n\n```bash\nsubstreams build\n"},
-				{"README.md", "INSERT CONTRACT ADDRESS"},
 			},
 		},
 		{
@@ -46,6 +45,9 @@ func Test_Generate(t *testing.T) {
 		{
 			name:          "multiple_contract_with_factory",
 			generatorFile: "./testdata/multiple_contract_with_factory.json",
+			contains: []match{
+				{"README.md", "_unifac_ at **0x1f98431c8ad98523631ae4a59f267346ea31f984**\n- _bayc_ at **0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d**"},
+			},
 		},
 		{
 			name:          "multiple_factories",
@@ -104,21 +106,6 @@ func Test_Generate(t *testing.T) {
 				assert.Contains(t, res.ProjectFiles, cont.file)
 				assert.Contains(t, string(res.ProjectFiles[cont.file]), cont.contains)
 			}
-
-			// sourceTmpDir, err := os.MkdirTemp(os.TempDir(), "test_output_src.zip")
-			// require.NoError(t, err)
-
-			// projectTmpDir, err := os.MkdirTemp(os.TempDir(), "test_output_project.zip")
-			// require.NoError(t, err)
-
-			// if os.Getenv("TEST_KEEP_TEST_OUTPUT") != "true" {
-			// 	defer func() {
-			// 		_ = os.RemoveAll(sourceTmpDir)
-			// 		_ = os.RemoveAll(projectTmpDir)
-			// 	}()
-			// } else {
-			// 	fmt.Println("Produced", sourceTmpDir, projectTmpDir)
-			// }
 		})
 	}
 }
@@ -246,12 +233,6 @@ func Test_Uniswapv3riggersDynamicDatasources(t *testing.T) {
 	outDir := "testoutput/uniswap_v3_triggers_dynamic_datasources"
 	os.RemoveAll(outDir)
 	os.MkdirAll(outDir, 0755)
-
-	// requires a build server. Test manually by running `make package` in the bayc directory
-
-	// artifacts, Err := p.build()
-	// require.NoError(t, Err)
-	// assert.Contains(t, artifacts.logs, "Finished release")
 }
 func Test_BaycTriggers(t *testing.T) {
 	convo := loadProjectFromState(t, "./testdata/bayc.state.json")
@@ -273,12 +254,6 @@ func Test_BaycTriggers(t *testing.T) {
 	outDir := "testoutput/uniswap_v3_triggers_dynamic_datasources"
 	os.RemoveAll(outDir)
 	os.MkdirAll(outDir, 0755)
-
-	// requires a build server. Test manually by running `make package` in the bayc directory
-
-	// artifacts, Err := p.build()
-	// require.NoError(t, Err)
-	// assert.Contains(t, artifacts.logs, "Finished release")
 }
 
 func TestProtoFieldName(t *testing.T) {

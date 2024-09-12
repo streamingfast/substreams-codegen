@@ -10,22 +10,6 @@ import (
 type AskProjectName struct{}
 type InputProjectName struct{ pbconvo.UserInput_TextInput }
 
-func InputProjectNameTextInput() string {
-	return "Please enter the project name"
-}
-
-func InputProjectNameDescription() string {
-	return "Identifier with only lowercase letters, numbers and underscores, up to 64 characters."
-}
-
-func InputProjectNameRegex() string {
-	return "^([a-z][a-z0-9_]{0,63})$"
-}
-
-func InputProjectNameValidation() string {
-	return "The project name must be a valid identifier with only lowercase letters, numbers and underscores, up to 64 characters."
-}
-
 type AskChainName struct{}
 type MsgInvalidChainName struct{}
 type InputChainName struct{ pbconvo.UserInput_Selection }

@@ -2,7 +2,6 @@ package soltransactions
 
 import (
 	"strings"
-	"time"
 )
 
 type Project struct {
@@ -14,15 +13,7 @@ type Project struct {
 	InitialBlockSet bool   `json:"initialBlockSet,omitempty"`
 	ProgramId       string `json:"programId,omitempty"`
 
-	// Remote build part removed for the moment
-	// confirmDoCompile       bool
-	// confirmDownloadOnly    bool
-
 	generatedCodeCompleted bool
-	compilingBuild         bool
-	projectFiles           map[string][]byte
-
-	buildStarted time.Time
 }
 
 func (p *Project) ModuleName() string { return strings.ReplaceAll(p.Name, "-", "_") }

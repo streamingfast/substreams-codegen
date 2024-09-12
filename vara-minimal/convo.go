@@ -3,7 +3,6 @@ package varaminimal
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	codegen "github.com/streamingfast/substreams-codegen"
 	"github.com/streamingfast/substreams-codegen/loop"
@@ -42,10 +41,6 @@ func (c *Convo) NextStep() loop.Cmd {
 		return loop.Seq(cmd(codegen.MsgInvalidChainName{}), cmd(codegen.AskChainName{}))
 	}
 
-	if !p.InitialBlockSet {
-		return cmd(codegen.AskInitialStartBlockType{})
-	}
-
 	if !p.generatedCodeCompleted {
 		return cmd(codegen.RunGenerate{})
 	}
@@ -74,12 +69,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return loop.Seq(msgCmd, c.NextStep())
 
 	case codegen.AskProjectName:
-		return c.Action(codegen.InputProjectName{}).
-			TextInput(codegen.InputProjectNameTextInput(), "Submit").
-			Description(codegen.InputProjectNameDescription()).
-			DefaultValue("my_project").
-			Validation(codegen.InputProjectNameRegex(), codegen.InputProjectNameValidation()).
-			Cmd()
+		return c.CmdAskProjectName()
 
 	case codegen.InputProjectName:
 		c.State.Name = msg.Value
@@ -109,23 +99,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 				c.NextStep(),
 			)
 		}
-		return c.NextStep()
-
-	case codegen.AskInitialStartBlockType:
-		return c.Action(codegen.InputAskInitialStartBlockType{}).
-			TextInput(codegen.InputAskInitialStartBlockTypeTextInput(), "Submit").
-			DefaultValue("0").
-			Validation(codegen.InputAskInitialStartBlockTypeRegex(), codegen.InputAskInitialStartBlockTypeValidation()).
-			Cmd()
-
-	case codegen.InputAskInitialStartBlockType:
-		initialBlock, err := strconv.ParseUint(msg.Value, 10, 64)
-		if err != nil {
-			return loop.Quit(fmt.Errorf("invalid start block input value %q, expected a number", msg.Value))
-		}
-
-		c.State.InitialBlock = initialBlock
-		c.State.InitialBlockSet = true
 		return c.NextStep()
 
 	case codegen.RunGenerate:

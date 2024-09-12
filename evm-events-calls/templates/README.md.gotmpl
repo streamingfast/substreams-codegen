@@ -6,8 +6,13 @@ This package was initialized via `substreams init`, using the `evm-events-calls`
 
 ## Modules
 
-All of these modules filter by `[INSERT CONTRACT ADDRESS, and write a paragraph
-explaining what the module does]`.
+All of these modules produce data filtered by these contracts:
+{{- range $i, $contract := .Contracts }}
+- _{{ $contract.Identifier }}_ at **{{ $contract.Address }}**
+{{- end }}
+{{- range $ddsContract := .DynamicContracts }}
+- {{ $ddsContract.Identifier }} contracts created from _{{ $ddsContract.ParentContract.Identifier }}_
+{{- end }}
 
 {{- if and $.TrackAnyEvents $.TrackAnyCalls }}
 ### `map_events_calls`

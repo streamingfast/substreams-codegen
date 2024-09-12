@@ -34,11 +34,11 @@ modules:
     initialBlock: {{ .MustLowestStartBlock }}
     inputs:
       - source: sf.ethereum.type.v2.Block
-{{- range $index, $ddsContract := .DynamicContracts }}
+    {{- range $index, $ddsContract := .DynamicContracts }}
       {{- if $ddsContract.TrackEvents }}
       - store: store_{{ $ddsContract.Identifier }}_created
       {{- end }}
-{{- end }}
+    {{- end }}
     output:
       type: proto:contract.v1.Events
 {{- end }}
@@ -48,14 +48,15 @@ modules:
     initialBlock: {{ .MustLowestStartBlock }}
     inputs:
       - source: sf.ethereum.type.v2.Block
-{{- range $index, $ddsContract := .DynamicContracts }}
+  {{- range $index, $ddsContract := .DynamicContracts }}
     {{- if $ddsContract.TrackCalls }}
       - store: store_{{ $ddsContract.Identifier }}_created
     {{- end }}
-{{- end }}
+  {{- end }}
     output:
       type: proto:contract.v1.Calls
 {{- end }}{{/* if TrackAnyCalls */}}
+
 {{- if and $.TrackAnyEvents $.TrackAnyCalls }}
   - name: map_events_calls
     kind: map

@@ -3,7 +3,6 @@ package solminimal
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	codegen "github.com/streamingfast/substreams-codegen"
 	"github.com/streamingfast/substreams-codegen/loop"
@@ -35,18 +34,9 @@ func (c *Convo) NextStep() loop.Cmd {
 		return cmd(codegen.AskProjectName{})
 	}
 
-	if !p.InitialBlockSet {
-		return cmd(codegen.AskInitialStartBlockType{})
-	}
-
 	if !p.generatedCodeCompleted {
 		return cmd(codegen.RunGenerate{})
 	}
-
-	// Remote build part removed for the moment
-	// if !p.confirmDoCompile && !p.confirmDownloadOnly {
-	// 	return cmd(codegen.AskConfirmCompile{})
-	// }
 
 	return loop.Quit(nil)
 }
@@ -73,23 +63,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		c.State.Name = msg.Value
 		return c.NextStep()
 
-	case codegen.AskInitialStartBlockType:
-		return c.Action(codegen.InputAskInitialStartBlockType{}).
-			TextInput(codegen.InputAskInitialStartBlockTypeTextInput(), "Submit").
-			DefaultValue("0").
-			Validation(codegen.InputAskInitialStartBlockTypeRegex(), codegen.InputAskInitialStartBlockTypeValidation()).
-			Cmd()
-
-	case codegen.InputAskInitialStartBlockType:
-		initialBlock, err := strconv.ParseUint(msg.Value, 10, 64)
-		if err != nil {
-			return loop.Quit(fmt.Errorf("invalid start block input value %q, expected a number", msg.Value))
-		}
-
-		c.State.InitialBlock = initialBlock
-		c.State.InitialBlockSet = true
-		return c.NextStep()
-
 	case codegen.RunGenerate:
 		return c.CmdGenerate(c.State.Generate)
 
@@ -101,7 +74,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			)
 		}
 
-		c.State.projectFiles = msg.ProjectFiles
 		c.State.generatedCodeCompleted = true
 
 		downloadCmd := c.Action(codegen.InputSourceDownloaded{}).DownloadFiles()

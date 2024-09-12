@@ -14,7 +14,6 @@ type ChainConfig struct {
 	ExplorerLink         string
 	ApiEndpoint          string
 	ApiEndpointDirect    bool
-	FirehoseEndpoint     string
 	FirstStreamableBlock uint64
 	Network              string
 	SupportsCalls        bool
@@ -31,7 +30,6 @@ var ChainConfigByID = map[string]*ChainConfig{
 		DisplayName:          "Ethereum Mainnet",
 		ExplorerLink:         "https://etherscan.io",
 		ApiEndpoint:          "https://api.etherscan.io",
-		FirehoseEndpoint:     "mainnet.eth.streamingfast.io:443",
 		FirstStreamableBlock: 0,
 		Network:              "mainnet",
 		abiCache:             make(map[string]*ABI),
@@ -43,7 +41,6 @@ var ChainConfigByID = map[string]*ChainConfig{
 		DisplayName:          "BNB",
 		ExplorerLink:         "https://bscscan.com",
 		ApiEndpoint:          "https://api.bscscan.com",
-		FirehoseEndpoint:     "bnb.streamingfast.io:443",
 		FirstStreamableBlock: 0,
 		Network:              "bsc",
 		abiCache:             make(map[string]*ABI),
@@ -55,7 +52,6 @@ var ChainConfigByID = map[string]*ChainConfig{
 		DisplayName:          "Polygon",
 		ExplorerLink:         "https://polygonscan.com",
 		ApiEndpoint:          "https://api.polygonscan.com",
-		FirehoseEndpoint:     "polygon.streamingfast.io:443",
 		FirstStreamableBlock: 0,
 		Network:              "polygon",
 		abiCache:             make(map[string]*ABI),
@@ -67,7 +63,6 @@ var ChainConfigByID = map[string]*ChainConfig{
 		DisplayName:          "Polygon Amoy Testnet",
 		ExplorerLink:         "https://www.okx.com/web3/explorer/amoy",
 		ApiEndpoint:          "",
-		FirehoseEndpoint:     "amoy.substreams.pinax.network:443",
 		FirstStreamableBlock: 0,
 		Network:              "amoy",
 		abiCache:             make(map[string]*ABI),
@@ -78,7 +73,6 @@ var ChainConfigByID = map[string]*ChainConfig{
 		DisplayName:          "Arbitrum",
 		ExplorerLink:         "https://arbiscan.io",
 		ApiEndpoint:          "https://api.arbiscan.io",
-		FirehoseEndpoint:     "arb-one.streamingfast.io:443",
 		Network:              "arbitrum",
 		FirstStreamableBlock: 0,
 		abiCache:             make(map[string]*ABI),
@@ -89,7 +83,6 @@ var ChainConfigByID = map[string]*ChainConfig{
 		DisplayName:          "Holesky",
 		ExplorerLink:         "https://holesky.etherscan.io/",
 		ApiEndpoint:          "https://api-holesky.etherscan.io",
-		FirehoseEndpoint:     "holesky.eth.streamingfast.io:443",
 		FirstStreamableBlock: 0,
 		Network:              "holesky",
 		abiCache:             make(map[string]*ABI),
@@ -100,7 +93,6 @@ var ChainConfigByID = map[string]*ChainConfig{
 		DisplayName:          "Sepolia Testnet",
 		ExplorerLink:         "https://sepolia.etherscan.io",
 		ApiEndpoint:          "https://api-sepolia.etherscan.io",
-		FirehoseEndpoint:     "sepolia.streamingfast.io:443",
 		FirstStreamableBlock: 0,
 		Network:              "sepolia",
 		abiCache:             make(map[string]*ABI),
@@ -111,7 +103,6 @@ var ChainConfigByID = map[string]*ChainConfig{
 		DisplayName:          "Optimism Mainnet",
 		ExplorerLink:         "https://optimistic.etherscan.io",
 		ApiEndpoint:          "https://api-optimistic.etherscan.io",
-		FirehoseEndpoint:     "opt-mainnet.streamingfast.io:443",
 		FirstStreamableBlock: 0,
 		Network:              "optimism",
 		abiCache:             make(map[string]*ABI),
@@ -123,7 +114,6 @@ var ChainConfigByID = map[string]*ChainConfig{
 		DisplayName:          "Avalanche C-chain",
 		ExplorerLink:         "https://subnets.avax.network/c-chain",
 		ApiEndpoint:          "",
-		FirehoseEndpoint:     "avalanche-mainnet.streamingfast.io:443",
 		FirstStreamableBlock: 0,
 		Network:              "avalanche",
 		abiCache:             make(map[string]*ABI),
@@ -134,7 +124,6 @@ var ChainConfigByID = map[string]*ChainConfig{
 		DisplayName:          "BNB Chapel Testnet",
 		ExplorerLink:         "https://testnet.bscscan.com/",
 		ApiEndpoint:          "",
-		FirehoseEndpoint:     "chapel.substreams.pinax.network:443",
 		FirstStreamableBlock: 0,
 		Network:              "chapel",
 		abiCache:             make(map[string]*ABI),
@@ -146,7 +135,6 @@ var ChainConfigByID = map[string]*ChainConfig{
 		ExplorerLink:         "https://testnet.bscscan.com/",
 		ApiEndpoint:          "https://seitrace.com/pacific-1/api/v2/smart-contracts",
 		ApiEndpointDirect:    true,
-		FirehoseEndpoint:     "evm-mainnet.sei.streamingfast.io:443",
 		FirstStreamableBlock: 79123881,
 		Network:              "sei-mainnet",
 		abiCache:             make(map[string]*ABI),
@@ -157,7 +145,6 @@ var ChainConfigByID = map[string]*ChainConfig{
 		DisplayName:          "Base Mainnet",
 		ExplorerLink:         "https://basescan.org",
 		ApiEndpoint:          "https://api.basescan.org",
-		FirehoseEndpoint:     "base-mainnet.streamingfast.io",
 		FirstStreamableBlock: 0,
 		Network:              "base",
 		abiCache:             make(map[string]*ABI),
