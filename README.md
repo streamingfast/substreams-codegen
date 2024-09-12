@@ -2,6 +2,16 @@
 
 ## Usage
 
+Use the codegen.substreams.dev and codegen-staging.substreams.dev endpoints.
+
+Invoke with:
+
+```bash
+substreams init --discovery-endpoint http://localhost:9000
+```
+
+## Develop
+
 Run the `substreams-codegen` backend:
 
 ```bash
@@ -9,24 +19,13 @@ Run the `substreams-codegen` backend:
 DEBUG=.* go run ./cmd/substreams-codegen api --http-listen-addr "*:9000"
 ```
 
-(Optionally) Run the remotebuild server locally:
-
-```bash
-GENERATOR_KEEP_FILES=true go run -v ./cmd/remotebuild
-```
-
-Use the `substreams` cli to initialize your Substreams.
-
-```bash
-substreams init --discovery-endpoint http://localhost:9000
-```
 
 ## Principles
 
 You write a `Conversation` (or `Convo` for short) struct.
 
-- This function embed or has a `state` variable with the state you want to build.
-  - This _state_ is what gets serialized to JSON and sent to the client. It must be a usable interface, so pick your names wisely.
+- This function embed or has a `State` variable with the state you want to build.
+  - This _State_ is what gets serialized to JSON and sent to the client. It must be a usable interface, so pick your names wisely.
   - Anything that is exported will be shared with the client, and come back during hydration (if a connection gets interrupted, or the user kept their `generator.json` state, and wants to simply rebuild).
 - It has an `Update()` method that is registered into the `loop.EventLoop` by the `codegen` framework.
   - This function can mutate state, and it is the only method who can mutate state.
@@ -37,8 +36,8 @@ You write a `Conversation` (or `Convo` for short) struct.
 
 The code generation:
 
-- Any `gotmpl` files will go through templating, and be passed the _state_ struct as a single parameter.
-- The _state_ struct should have helper methods to allow getting data from the state
+- Any `gotmpl` files will go through templating, and be passed the _State_ struct as a single parameter.
+- The _State_ struct should have helper methods to allow getting data from the state
 
 ## Some notes on popular contracts
 

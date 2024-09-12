@@ -79,12 +79,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return loop.Seq(msgCmd, c.NextStep())
 
 	case codegen.AskProjectName:
-		return c.Action(codegen.InputProjectName{}).
-			TextInput(codegen.InputProjectNameTextInput(), "Submit").
-			Description(codegen.InputProjectNameDescription()).
-			DefaultValue("my_project").
-			Validation(codegen.InputProjectNameRegex(), codegen.InputProjectNameValidation()).
-			Cmd()
+		return c.CmdAskProjectName()
 
 	case codegen.InputProjectName:
 		c.State.Name = msg.Value
