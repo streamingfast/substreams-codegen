@@ -116,6 +116,26 @@ func (w *MsgWrap) Confirm(prompt string, acceptLabel, declineLabel string) *MsgW
 	return w
 }
 
+func (w *MsgWrap) DefaultAccept() *MsgWrap {
+	switch entry := w.Msg.Entry.(type) {
+	case *pbconvo.SystemOutput_Confirm_:
+		entry.Confirm.DefaultButton = pbconvo.SystemOutput_Confirm_CONFIRM
+	default:
+		panic("unsupported message type for this method")
+	}
+	return w
+}
+
+func (w *MsgWrap) DefaultDecline() *MsgWrap {
+	switch entry := w.Msg.Entry.(type) {
+	case *pbconvo.SystemOutput_Confirm_:
+		entry.Confirm.DefaultButton = pbconvo.SystemOutput_Confirm_DECLINE
+	default:
+		panic("unsupported message type for this method")
+	}
+	return w
+}
+
 func (w *MsgWrap) DownloadFiles() *MsgWrap {
 	// TODO: to a type assertion on the `lastType`, to make sure it matches what we're asking here..
 	w.Msg.Entry = &pbconvo.SystemOutput_DownloadFiles_{

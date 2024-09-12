@@ -243,9 +243,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return loop.Seq(
 			c.Msg().Messagef("We're tackling the %s contract.", humanize.Ordinal(c.State.currentContractIdx+1)).Cmd(),
 			c.Action(InputContractAddress{}).TextInput("Please enter the contract address", "Submit").
-				Description("Format it with 0x prefix and make sure it's a valid Ethereum address.\nFor example, the Uniswap v3 factory address: 0x1f98431c8ad98523631ae4a59f267346ea31f984").
+				Description("Format it with 0x prefix and make sure it's a valid Ethereum address.\nThe default value is the Uniswap v3 factory address.").
 				DefaultValue("0x1f98431c8ad98523631ae4a59f267346ea31f984").
-				Validation("^0x[a-fA-F0-9]{40}$", "Please enter a valid Ethereum address").Cmd(),
+				Validation("^0x[a-fA-F0-9]{40}$", "Please enter a valid Ethereum address: 0x followed by 40 hex characters.").Cmd(),
 		)
 
 	case AskDynamicContractAddress:
@@ -254,8 +254,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			return QuitInvalidContext
 		}
 		return c.Action(InputDynamicContractAddress{}).TextInput(fmt.Sprintf("Please enter an example contract created by the %q factory", factory.Name), "Submit").
-			Description("Format it with 0x prefix and make sure it's a valid Ethereum address.\nFor example, the USDC/ETH pool at: 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640").
-			Validation("^0x[a-fA-F0-9]{40}$", "Please enter a valid Ethereum address").Cmd()
+			Description("Format it with 0x prefix and make sure it's a valid Ethereum address.\nThe default value is the USDC/ETH pool address.").
+			DefaultValue("0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640").
+			Validation("^0x[a-fA-F0-9]{40}$", "Please enter a valid Ethereum address: 0x followed by 40 hex characters.").Cmd()
 
 	case InputDynamicContractAddress:
 		factory := c.contextContract()
@@ -471,7 +472,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 }
 {{- end}}
 `+"```"+`
-		`, map[string]any{"events": evt, "calls": calls}).Cmd()
+`, map[string]any{"events": evt, "calls": calls}).Cmd()
 		return loop.Seq(peekABI, cmd(AskConfirmContractABI{}))
 
 	case AskConfirmContractABI:
@@ -591,9 +592,13 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		if contract == nil {
 			return QuitInvalidContext
 		}
-		return c.Action(InputContractName{}).TextInput(fmt.Sprintf("Choose a short name for the contract at address %q (lowercase and numbers only)", contract.Address), "Submit").
+		act := c.Action(InputContractName{}).TextInput(fmt.Sprintf("Choose a short name for the contract at address %q (lowercase and numbers only)", contract.Address), "Submit").
 			Description("Lowercase and numbers only").
-			Validation(`^([a-z][a-z0-9_]{0,63})$`, "The name should be short, and contain only lowercase characters and numbers, and not start with a number.").Cmd()
+			Validation(`^([a-z][a-z0-9_]{0,63})$`, "The name should be short, and contain only lowercase characters and numbers, and not start with a number.")
+		if contract.Address == "0x1f98431c8ad98523631ae4a59f267346ea31f984" {
+			act = act.DefaultValue("factory")
+		}
+		return act.Cmd()
 
 	case InputContractName:
 		contract := c.contextContract()
@@ -617,9 +622,13 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		if factory == nil {
 			return QuitInvalidContext
 		}
-		return c.Action(InputDynamicContractName{}).TextInput(fmt.Sprintf("Choose a short name for the contract that will be created by the factory %q (lowercase and numbers only)", factory.Name), "Submit").
+		act := c.Action(InputDynamicContractName{}).TextInput(fmt.Sprintf("Choose a short name for the contract that will be created by the factory %q (lowercase and numbers only)", factory.Name), "Submit").
 			Description("Lowercase and numbers only").
-			Validation(`^([a-z][a-z0-9_]{0,63})$`, "The name should be short, and contain only lowercase characters and numbers, and not start with a number.").Cmd()
+			Validation(`^([a-z][a-z0-9_]{0,63})$`, "The name should be short, and contain only lowercase characters and numbers, and not start with a number.")
+		if factory.Address == "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640" {
+			act = act.DefaultValue("pool")
+		}
+		return act.Cmd()
 
 	case InputDynamicContractName:
 		factory := c.contextContract()

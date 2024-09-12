@@ -131,6 +131,12 @@ message SystemOutput {
     string description = 4;
     string accept_button_label = 2;
     string decline_button_label = 3;
+    Button default_button = 5;
+    enum Button {
+      UNSET = 0;
+      CONFIRM = 1;
+      DECLINE = 2;
+    }
   }
 }
 
