@@ -47,28 +47,13 @@ func ListConversationHandlers() []*ConversationHandler {
 }
 
 var FileDescriptions = map[string]string{
-	// Git files
-	".gitignore": "File containing the gitignore rules which ignores the target/ directory and any spkg package produced",
+	// do NOT document files like `.gitignore`, `README.md`, or things towards which it is not ESSENTIAL that we drag attention to.
+	// do NOT document files like `COnfig.toml` or other Rust artifacts. A Rust developer will know. It's not our job HERE to introduce them to these concepts.
 
-	// Documentation files
-	"README.md": "File containing instructions on how to compile and run the project",
+	"src/lib.rs": "Modify this file to reflect your needs. This is the main entrypoint.",
 
-	// Rust files
-	"src/lib.rs":    "This is the main entrypoint file where your modules' code lives. Modify it and run `substreams build` to rebuild your package",
-	"src/pb/mod.rs": "Rust module definitions file",
-	"src/build.rs":  "This file contains any build step needed to compile the project, think abi generation",
-
-	// Proto files
 	"proto/contract.proto": "This file contains the data models used by your Substreams modules",
-	"proto/mydata.proto":   "This file contains the data models used by your Substreams modules",
+	"proto/mydata.proto":   "Modify this file to reflect your needs. It contains protobuf models.",
 
-	// Toml files
-	"Cargo.toml":          "Cargo manifest file, a configuration file which defines the project and it's dependencies",
-	"rust-toolchain.toml": "File containing the rust toolchain version and what build target to use",
-
-	// Substreams yaml files
 	"substreams.yaml": "Substreams manifest, a configuration file which defines the different modules",
-
-	// ABI JSON files
-	"abi/contract.abi.json": "File containing the contract ABI definition",
 }
