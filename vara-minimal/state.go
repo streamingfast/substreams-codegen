@@ -2,7 +2,6 @@ package varaminimal
 
 import (
 	"strings"
-	"time"
 )
 
 type Project struct {
@@ -13,15 +12,7 @@ type Project struct {
 	InitialBlock    uint64 `json:"initialBlock,omitempty"`
 	InitialBlockSet bool   `json:"initialBlockSet,omitempty"`
 
-	// Remote build part removed for the moment
-	// confirmDoCompile bool
-	// confirmDownloadOnly    bool
-
-	compilingBuild         bool
 	generatedCodeCompleted bool
-	projectFiles           map[string][]byte
-
-	buildStarted time.Time
 }
 
 func (p *Project) ModuleName() string { return strings.ReplaceAll(p.Name, "-", "_") }

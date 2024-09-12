@@ -11,7 +11,6 @@ import (
 
 	"github.com/huandu/xstrings"
 	"github.com/iancoleman/strcase"
-	"github.com/streamingfast/substreams-codegen/loop"
 
 	"github.com/bmatcuk/doublestar/v4"
 	"github.com/golang-cz/textcase"
@@ -32,12 +31,6 @@ var templateFuncs = template.FuncMap{
 type GenerateConfig struct {
 	FS    embed.FS
 	Files map[string]string
-}
-
-func CmdGenerate(f func() ReturnGenerate) loop.Cmd {
-	return func() loop.Msg {
-		return f()
-	}
 }
 
 func GenerateTemplateTree(projectData any, templatesFS embed.FS, templateFiles map[string]string) ReturnGenerate {

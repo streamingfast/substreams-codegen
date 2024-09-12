@@ -830,7 +830,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		return c.NextStep()
 
 	case codegen.RunGenerate:
-		return codegen.CmdGenerate(c.State.Generate)
+		return c.CmdGenerate(c.State.Generate)
 
 	case codegen.ReturnGenerate:
 		if msg.Err != nil {
@@ -862,8 +862,4 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 	return loop.Quit(fmt.Errorf("invalid loop message: %T", msg))
 }
 
-func cmd(msg any) loop.Cmd {
-	return func() loop.Msg {
-		return msg
-	}
-}
+var cmd = codegen.Cmd

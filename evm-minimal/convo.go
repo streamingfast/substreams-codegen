@@ -133,25 +133,8 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		c.State.InitialBlockSet = true
 		return c.NextStep()
 
-	// Remote build part removed for the moment
-	// case codegen.InputConfirmCompile:
-	// 	if msg.Affirmative {
-	// 		c.State.confirmDoCompile = true
-	// 	} else {
-	// 		c.State.confirmDownloadOnly = true
-	// 	}
-	// 	return c.NextStep()
-
 	case codegen.RunGenerate:
-		return loop.Seq(
-			codegen.CmdGenerate(c.State.Generate),
-		)
-
-		// Remote build part removed for the moment
-	// case codegen.AskConfirmCompile:
-	// 	return c.Action(codegen.InputConfirmCompile{}).
-	// 		Confirm("Should we build the Substreams package for you?", "Yes, build it", "No").
-	// 		Cmd()
+		return c.CmdGenerate(c.State.Generate)
 
 	case codegen.ReturnGenerate:
 		if msg.Err != nil {
@@ -183,8 +166,4 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 	return loop.Quit(fmt.Errorf("invalid loop message: %T", msg))
 }
 
-func cmd(msg any) loop.Cmd {
-	return func() loop.Msg {
-		return msg
-	}
-}
+var cmd = codegen.Cmd

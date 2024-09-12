@@ -293,12 +293,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return nil
 
 	case codegen.RunGenerate:
-		return loop.Seq(
-			c.Msg().Message("Generating Substreams module code").Cmd(),
-			loop.Batch(
-				codegen.CmdGenerate(c.State.Generate),
-			),
-		)
+		return c.CmdGenerate(c.State.Generate)
 
 	case codegen.ReturnGenerate:
 		if msg.Err != nil {
@@ -339,8 +334,4 @@ func isTestnet(input string) bool {
 	return ChainConfigByID[input].Network == "injective-testnet"
 }
 
-func cmd(msg any) loop.Cmd {
-	return func() loop.Msg {
-		return msg
-	}
-}
+var cmd = codegen.Cmd

@@ -9,15 +9,16 @@ import (
 )
 
 func TestConvoNextStep(t *testing.T) {
-	p := &Project{}
+	convo := New()
 	next := func() loop.Msg {
-		return p.NextStep()()
+		return convo.NextStep()()
 	}
+	p := convo.(*Convo).State
 
 	assert.Equal(t, codegen.AskProjectName{}, next())
 	p.Name = "my-proj"
 
-	projectFiles, err := p.Generate()
-	assert.NoError(t, err)
-	assert.NotEmpty(t, projectFiles)
+	res := p.Generate()
+	assert.NoError(t, res.Err)
+	assert.NotEmpty(t, res.ProjectFiles)
 }

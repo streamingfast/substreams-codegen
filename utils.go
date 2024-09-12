@@ -6,7 +6,15 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/streamingfast/substreams-codegen/loop"
 )
+
+func Cmd(msg any) loop.Cmd {
+	return func() loop.Msg {
+		return msg
+	}
+}
 
 func ZipFiles(files map[string][]byte) ([]byte, error) {
 	tempDir, err := os.MkdirTemp(os.TempDir(), "zipper")

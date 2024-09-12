@@ -10,7 +10,7 @@ import (
 var templatesFS embed.FS
 
 // use the output type form the Project to render the templates
-func (p *Project) Generate() (codegen.ReturnGenerate, error) {
+func (p *Project) Generate() codegen.ReturnGenerate {
 	return codegen.GenerateTemplateTree(p, templatesFS, map[string]string{
 		"proto/mydata.proto.gotmpl": "proto/mydata.proto",
 		"src/pb/mod.rs.gotmpl":      "src/pb/mod.rs",
