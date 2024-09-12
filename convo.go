@@ -64,6 +64,7 @@ func (c *Conversation[X]) CmdDownloadFiles(msg ReturnGenerate) loop.Cmd {
 	}
 
 	return loop.Seq(
+		downloadCmd.Cmd(),
 		c.Msg().Messagef(`Your Substreams project is ready! Start streaming with:
 
 `+"```"+`bash
@@ -78,7 +79,7 @@ Build Subgraphs and other sinks with:
 substreams codegen subgraph
 substreams codegen sql
 `+"```"+`
-`).Cmd(), downloadCmd.Cmd(),
+`).Cmd(),
 		loop.Quit(nil),
 	)
 }
