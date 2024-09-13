@@ -139,7 +139,8 @@ func TestConvoUpdate(t *testing.T) {
 	seq = next().(loop.SeqMsg)
 
 	//cmds := next()
-	msg1 := seq[0]().(*pbconvo.SystemOutput)
+	msg1 := seq[1]().(*pbconvo.SystemOutput)
+
 	assert.Contains(t, msg1.GetMessage().Markdown, "substreams build\nsubstreams auth\nsubstreams gui")
 	//msg2 := seq[1]().(*pbconvo.SystemOutput)
 	//assert.NotNil(t, msg2.GetDownloadFiles())
