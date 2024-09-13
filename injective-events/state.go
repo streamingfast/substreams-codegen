@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 )
 
 const EVENTS_DATA_TYPE = "events"
@@ -27,24 +26,10 @@ type Project struct {
 	DataType        string       `json:"dataType,omitempty"`
 	EventDescs      []*eventDesc `json:"messageTypes,omitempty"`
 	currentEventIdx int
-	eventsComplete  bool
-
-	generatedCodeCompleted bool
-	compilingBuild         bool
-	projectZip             []byte
-	sourceZip              []byte
-
-	buildStarted time.Time
-
-	// always set by the server
-	outputType outputType
-
-	SqlOutputFlavor      string `json:"sql_output_flavor,omitempty"`      // either "clickhouse" or "sql"
-	SubgraphOutputFlavor string `json:"subgraph_output_flavor,omitempty"` // either "trigger" or "entity"
+	EventsComplete  bool `json:"eventsComplete,omitempty"`
 }
 
 func (p *Project) ChainConfig() *ChainConfig { return ChainConfigByID[p.ChainName] }
-func (p *Project) ChainEndpoint() string     { return ChainConfigByID[p.ChainName].FirehoseEndpoint }
 func (p *Project) KebabName() string         { return strings.ReplaceAll(p.Name, "_", "-") }
 
 func (e eventDesc) GetEventQuery() string {

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"path/filepath"
 	"reflect"
 
 	"github.com/streamingfast/substreams-codegen/loop"
@@ -53,7 +52,7 @@ func (f *MsgWrapFactory) SetupLoop(updateFunc func(msg loop.Msg) loop.Cmd) {
 }
 
 func (f *MsgWrapFactory) NewMsg(state any) *MsgWrap {
-	w := &MsgWrap{factory: f}
+	w := &MsgWrap{}
 	w.Msg = &pbconvo.SystemOutput{}
 	if state != nil {
 		cnt, err := json.Marshal(state)
@@ -82,8 +81,6 @@ func (f *MsgWrapFactory) LastInput() reflect.Type {
 }
 
 type MsgWrap struct {
-	factory *MsgWrapFactory
-
 	Msg *pbconvo.SystemOutput
 	Err error
 }
@@ -119,6 +116,26 @@ func (w *MsgWrap) Confirm(prompt string, acceptLabel, declineLabel string) *MsgW
 	return w
 }
 
+func (w *MsgWrap) DefaultAccept() *MsgWrap {
+	switch entry := w.Msg.Entry.(type) {
+	case *pbconvo.SystemOutput_Confirm_:
+		entry.Confirm.DefaultButton = pbconvo.SystemOutput_Confirm_CONFIRM
+	default:
+		panic("unsupported message type for this method")
+	}
+	return w
+}
+
+func (w *MsgWrap) DefaultDecline() *MsgWrap {
+	switch entry := w.Msg.Entry.(type) {
+	case *pbconvo.SystemOutput_Confirm_:
+		entry.Confirm.DefaultButton = pbconvo.SystemOutput_Confirm_DECLINE
+	default:
+		panic("unsupported message type for this method")
+	}
+	return w
+}
+
 func (w *MsgWrap) DownloadFiles() *MsgWrap {
 	// TODO: to a type assertion on the `lastType`, to make sure it matches what we're asking here..
 	w.Msg.Entry = &pbconvo.SystemOutput_DownloadFiles_{
@@ -127,12 +144,11 @@ func (w *MsgWrap) DownloadFiles() *MsgWrap {
 	return w
 }
 
-func (w *MsgWrap) AddFile(localFilename string, cnt []byte, fileType string, description string) *MsgWrap {
+func (w *MsgWrap) AddFile(filename string, cnt []byte, fileType string, description string) *MsgWrap {
 	switch entry := w.Msg.Entry.(type) {
 	case *pbconvo.SystemOutput_DownloadFiles_:
 		input := entry.DownloadFiles
 
-		filename := filepath.Base(localFilename)
 		input.Files = append(input.Files, &pbconvo.SystemOutput_DownloadFile{
 			Filename:    filename,
 			Content:     cnt,
@@ -189,6 +205,8 @@ func (w *MsgWrap) DefaultValue(value string) *MsgWrap {
 	switch entry := w.Msg.Entry.(type) {
 	case *pbconvo.SystemOutput_TextInput_:
 		entry.TextInput.DefaultValue = value
+	case *pbconvo.SystemOutput_ListSelect_:
+		entry.ListSelect.DefaultValue = value
 	default:
 		panic("unsupported message type for this method")
 	}

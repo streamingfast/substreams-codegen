@@ -3,31 +3,24 @@ package injective_events
 import "sort"
 
 type ChainConfig struct {
-	ID               string // Public
-	DisplayName      string // Public
-	ExplorerLink     string
-	FirehoseEndpoint string
-	Network          string
-
-	initialBlockCache map[string]uint64
+	ExplorerLink string
+	ID           string // Public
+	DisplayName  string // Public
+	Network      string
 }
 
 var ChainConfigs []*ChainConfig
 
 var ChainConfigByID = map[string]*ChainConfig{
 	"injective-mainnet": {
-		DisplayName:       "Injective Mainnet",
-		ExplorerLink:      "https://explorer.injective.network/",
-		FirehoseEndpoint:  "mainnet.injective.streamingfast.io:443",
-		Network:           "injective-mainnet",
-		initialBlockCache: make(map[string]uint64),
+		ExplorerLink: "https://explorer.injective.network/",
+		DisplayName:  "Injective Mainnet",
+		Network:      "injective-mainnet",
 	},
 	"injective-testnet": {
-		DisplayName:       "Injective Testnet",
-		ExplorerLink:      "https://testnet.explorer.injective.network/",
-		FirehoseEndpoint:  "testnet.injective.streamingfast.io:443",
-		Network:           "injective-testnet",
-		initialBlockCache: make(map[string]uint64),
+		ExplorerLink: "https://testnet.explorer.injective.network/",
+		DisplayName:  "Injective Testnet",
+		Network:      "injective-testnet",
 	},
 }
 

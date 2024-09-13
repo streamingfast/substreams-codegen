@@ -1,34 +1,11 @@
 package codegen
 
 import (
-	"time"
+	"fmt"
 
+	"github.com/streamingfast/substreams-codegen/loop"
 	pbconvo "github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1"
-	pbbuild "github.com/streamingfast/substreams-codegen/pb/sf/codegen/remotebuild/v1"
 )
-
-type RemoteBuildState struct {
-	BuildStartedAt time.Time
-
-	Artifacts []*pbbuild.BuildResponse_BuildArtifact
-	Error     string
-	Logs      []string
-}
-
-func (c *RemoteBuildState) Update(resp *RemoteBuildState) bool {
-	c.BuildStartedAt = resp.BuildStartedAt
-	c.Error = resp.Error
-
-	if resp.Logs != nil {
-		c.Logs = append(c.Logs, resp.Logs...)
-	}
-
-	if resp.Artifacts != nil {
-		c.Artifacts = append(c.Artifacts, resp.Artifacts...)
-	}
-
-	return false
-}
 
 type AskProjectName struct{}
 type InputProjectName struct{ pbconvo.UserInput_TextInput }
@@ -43,24 +20,33 @@ type PackageDownloaded struct{ pbconvo.UserInput_Confirmation }
 type AskConfirmCompile struct{}
 type InputConfirmCompile struct{ pbconvo.UserInput_Confirmation } // SQL specific
 
-// SQL specific
-type AskSqlOutputFlavor struct{}
-type InputSQLOutputFlavor struct{ pbconvo.UserInput_Selection }
+type AskInitialStartBlockType struct{}
+type InputAskInitialStartBlockType struct{ pbconvo.UserInput_TextInput }
 
-// Subgraph specific
-type AskSubgraphOutputFlavor struct{}
-type InputSubgraphOutputFlavor struct{ pbconvo.UserInput_Selection }
+func InputAskInitialStartBlockTypeTextInput() string {
+	return "At what block do you want to start indexing data?"
+}
+
+func InputAskInitialStartBlockTypeRegex() string {
+	return `^\d+$`
+}
+
+func InputAskInitialStartBlockTypeValidation() string {
+	return "The start block cannot be empty and must be a number"
+}
 
 type RunGenerate struct{}
 
 type ReturnGenerate struct {
-	Err                 error
-	SubstreamsSourceZip []byte
-	ProjectZip          []byte
+	Err          error
+	ProjectFiles map[string][]byte
 }
 
-type RunBuild struct {
-	pbconvo.UserInput_Confirmation
+func (c ReturnGenerate) Error(msg *MsgWrap) loop.Cmd {
+	return loop.Seq(
+		msg.Messagef("Code generation failed with error: %s", c.Err).Cmd(),
+		loop.Quit(c.Err),
+	)
 }
 
 type MsgGenerateProgress struct {
@@ -70,13 +56,22 @@ type MsgGenerateProgress struct {
 	Continue bool
 }
 
-type CompilingBuild struct {
-	FirstTime       bool
-	RemoteBuildChan chan *RemoteBuildState
-}
+func ReturnBuildMessage(isMinimal bool) string {
+	// TODO: this isn't a `Build` message output, it's just a Generate final message.
+	// It's also not standardized.
+	var minimalStr string
 
-type ReturnBuild struct {
-	Err       error
-	Logs      string
-	Artifacts []*pbbuild.BuildResponse_BuildArtifact
+	if isMinimal {
+		minimalStr = "* Inspect and edit the the `./src/lib.rs` file\n"
+	}
+
+	return fmt.Sprintf(
+		"Your Substreams project is ready! Follow the next steps to start streaming:\n\n"+
+			"%s"+
+			"\n    substreams build\n"+
+			"    substreams auth\n"+
+			"    substreams gui\n\n"+
+			"    substreams codegen subgraph\n"+
+			"    substreams codegen sql\n",
+		minimalStr)
 }

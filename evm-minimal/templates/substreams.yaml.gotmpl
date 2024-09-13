@@ -1,0 +1,28 @@
+specVersion: v0.1.0
+package:
+  name: {{ .ModuleName }}
+  version: v0.1.0
+
+protobuf:
+  files:
+    - mydata.proto
+  importPaths:
+    - ./proto
+  excludePaths:
+    - sf/substreams
+    - google
+
+binaries:
+  default:
+    type: wasm/rust-v1
+    file: ./target/wasm32-unknown-unknown/release/substreams.wasm
+
+modules:
+ - name: map_my_data
+   kind: map
+   inputs:
+   - source: sf.ethereum.type.v2.Block
+   output :
+    type: proto:mydata.v1.MyData
+
+network: {{ .ChainName }}

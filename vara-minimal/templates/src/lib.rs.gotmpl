@@ -1,0 +1,19 @@
+mod pb;
+
+use crate::pb::sf::gear::r#type::v1::Block;
+use pb::mydata::v1 as mydata;
+use substreams::Hex;
+
+#[allow(unused_imports)]
+use num_traits::cast::ToPrimitive;
+
+#[substreams::handlers::map]
+fn map_my_data(blk: Block) -> mydata::MyData {
+    let mut my_data = mydata::MyData::default();
+    my_data.block_hash = Hex(blk.hash).to_string();
+    my_data.block_number = blk.number;
+    my_data.block_timestamp = blk.timestamp;
+    my_data.extrinsics_len = blk.extrinsics.len() as u64;
+    my_data.events_len = blk.events.len() as u64;
+    my_data
+}

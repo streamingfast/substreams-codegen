@@ -1,0 +1,16 @@
+specVersion: v0.1.0
+package:
+  name: {{ .Name }}
+  version: v0.1.0
+
+imports:
+  vara: https://github.com/streamingfast/substreams-foundational-modules/releases/download/vara-foundational-v0.1.4/foundational-modules-vara-common-v0.1.4.spkg
+
+modules:
+ - name: map_filtered_extrinsics
+   use: vara:filtered_extrinsics
+
+params:
+  map_filtered_extrinsics: {{ .ExtrinsicId }}
+
+network: {{ .ChainNetwork }}

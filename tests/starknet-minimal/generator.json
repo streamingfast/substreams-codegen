@@ -1,0 +1,8 @@
+{
+  "generator": "starknet-minimal",
+  "state": {
+    "name": "my_project",
+    "chainName": "starknet-mainnet",
+    "initialBlockSet": true
+  }
+}

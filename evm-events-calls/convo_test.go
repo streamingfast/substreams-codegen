@@ -1,0 +1,241 @@
+package evm_events_calls
+
+import (
+	"fmt"
+	"testing"
+
+	"github.com/streamingfast/eth-go"
+	codegen "github.com/streamingfast/substreams-codegen"
+	"github.com/streamingfast/substreams-codegen/loop"
+	pbconvo "github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestConvoNextStep(t *testing.T) {
+	convo := New()
+	next := func() loop.Msg {
+		return convo.NextStep()()
+	}
+	p := convo.(*Convo).State
+
+	assert.Equal(t, codegen.AskProjectName{}, next())
+
+	p.Name = "my-proj"
+
+	assert.Equal(t, codegen.AskChainName{}, next())
+
+	p.ChainName = "arbitrum"
+
+	assert.Equal(t, StartFirstContract{}, next())
+
+	p.Contracts = append(p.Contracts, &Contract{})
+
+	assert.Equal(t, AskContractAddress{}, next())
+
+	p.Contracts[0].Address = "0x1231231230123123123012312312301231231230"
+
+	assert.Equal(t, FetchContractABI{}, next())
+}
+func TestConvoUpdate(t *testing.T) {
+	conv := New()
+	conv.SetFactory(&codegen.MsgWrapFactory{})
+	p := conv.(*Convo).State
+
+	next := conv.Update(codegen.InputProjectName{pbconvo.UserInput_TextInput{
+		Value: "my-proj",
+	}})
+	assert.Equal(t, "my-proj", p.Name)
+
+	assert.Equal(t, codegen.AskChainName{}, next())
+	next = conv.Update(codegen.InputChainName{pbconvo.UserInput_Selection{
+		Value: "mainnet",
+	}})
+	assert.Equal(t, "mainnet", p.ChainName)
+
+	seq := next().(loop.SeqMsg)
+	assert.Contains(t, seq[0]().(*pbconvo.SystemOutput).Entry.(*pbconvo.SystemOutput_Message_).Message.String(), "Ethereum Mainnet")
+	assert.Equal(t, StartFirstContract{}, seq[1]())
+
+	assert.Len(t, p.Contracts, 0)
+	next = conv.Update(StartFirstContract{})
+	assert.Len(t, p.Contracts, 1)
+
+	assert.Equal(t, AskContractAddress{}, next())
+
+	next = conv.Update(InputContractAddress{UserInput_TextInput: pbconvo.UserInput_TextInput{Value: "0x1231231230123123123012312312301231231230"}})
+	assert.Equal(t, FetchContractABI{}, next())
+
+	next = conv.Update(FetchContractABI{})
+	decode := next().(ReturnFetchContractABI)
+
+	assert.NotNil(t, decode.err)
+
+	next = conv.Update(decode)
+	seq = next().(loop.SeqMsg)
+	assert.Contains(t, seq[0]().(*pbconvo.SystemOutput).Entry.(*pbconvo.SystemOutput_Message_).Message.String(), "ABI")
+	assert.Equal(t, AskContractABI{}, seq[1]())
+
+	next = conv.Update(InputContractABI{UserInput_TextInput: pbconvo.UserInput_TextInput{Value: "[]"}})
+	assert.Equal(t, RunDecodeContractABI{}, next())
+
+	next = conv.Update(RunDecodeContractABI{})
+	msg, ok := next().(ReturnRunDecodeContractABI)
+	require.True(t, ok)
+	assert.Nil(t, msg.Err)
+
+	next = conv.Update(msg)
+	// TODO: test the output with the given Abi methods in there...
+	assert.Equal(t, FetchContractInitialBlock{}, next())
+
+	next = conv.Update(ReturnFetchContractInitialBlock{Err: fmt.Errorf("failed")})
+	assert.Contains(t, next().(*pbconvo.SystemOutput).Entry.(*pbconvo.SystemOutput_TextInput_).TextInput.String(), "Please enter the contract initial block number")
+
+	next = conv.Update(InputContractInitialBlock{UserInput_TextInput: pbconvo.UserInput_TextInput{Value: "123"}})
+	assert.Equal(t, AskContractName{}, next())
+
+	next = conv.Update(InputContractName{UserInput_TextInput: pbconvo.UserInput_TextInput{Value: "my_contract"}})
+	assert.Equal(t, AskContractTrackWhat{}, next())
+
+	next = conv.Update(InputContractTrackWhat{UserInput_Selection: pbconvo.UserInput_Selection{Value: "calls"}})
+	assert.Equal(t, AskContractIsFactory{}, next())
+
+	next = conv.Update(InputContractIsFactory{UserInput_Confirmation: pbconvo.UserInput_Confirmation{Affirmative: true}})
+	assert.Equal(t, AskFactoryCreationEvent{}, next())
+
+	next = conv.Update(InputFactoryCreationEvent{UserInput_Selection: pbconvo.UserInput_Selection{Value: "Transfer()"}})
+	assert.Equal(t, AskFactoryCreationEventField{}, next())
+
+	next = conv.Update(InputFactoryCreationEventField{UserInput_Selection: pbconvo.UserInput_Selection{Value: "0"}})
+	assert.Equal(t, AskDynamicContractName{}, next())
+
+	next = conv.Update(InputDynamicContractName{UserInput_TextInput: pbconvo.UserInput_TextInput{Value: "dyncontract"}})
+	assert.Equal(t, AskDynamicContractTrackWhat{}, next())
+
+	next = conv.Update(InputDynamicContractTrackWhat{UserInput_Selection: pbconvo.UserInput_Selection{Value: "events"}})
+	assert.Equal(t, AskDynamicContractAddress{}, next())
+
+	next = conv.Update(InputDynamicContractAddress{UserInput_TextInput: pbconvo.UserInput_TextInput{Value: "0x1231231230123123123012312312301231231232"}})
+	assert.Equal(t, FetchDynamicContractABI{}, next())
+
+	next = conv.Update(ReturnFetchDynamicContractABI{err: fmt.Errorf("failed")})
+	seq = next().(loop.SeqMsg)
+	assert.Equal(t, AskDynamicContractABI{}, seq[1]())
+
+	next = conv.Update(InputDynamicContractABI{UserInput_TextInput: pbconvo.UserInput_TextInput{Value: "[]"}})
+	assert.Equal(t, RunDecodeDynamicContractABI{}, next())
+
+	next = conv.Update(ReturnRunDecodeDynamicContractABI{abi: &ABI{
+		abi: &eth.ABI{},
+		raw: "[]",
+	}, err: nil})
+
+	assert.Equal(t, AskAddContract{}, next())
+
+	next = conv.Update(InputAddContract{UserInput_Confirmation: pbconvo.UserInput_Confirmation{Affirmative: false}})
+	assert.Equal(t, codegen.RunGenerate{}, next())
+
+	next = conv.Update(codegen.ReturnGenerate{ProjectFiles: nil})
+	seq = next().(loop.SeqMsg)
+
+	//cmds := next()
+	msg1 := seq[1]().(*pbconvo.SystemOutput)
+
+	assert.Contains(t, msg1.GetMessage().Markdown, "substreams build\nsubstreams auth\nsubstreams gui")
+	//msg2 := seq[1]().(*pbconvo.SystemOutput)
+	//assert.NotNil(t, msg2.GetDownloadFiles())
+	//
+	//next = conv.Update(codegen.InputSourceDownloaded{})
+	//assert.Equal(t, codegen.AskConfirmCompile{}, next())
+	//
+	//next = conv.Update(codegen.InputConfirmCompile{UserInput_Confirmation: pbconvo.UserInput_Confirmation{Affirmative: true}})
+	//assert.Equal(t, codegen.RunBuild{}, next())
+
+}
+
+func unpackSeq(t *testing.T, m loop.Msg, len int) (out []loop.Msg) {
+	t.Helper()
+	seq, ok := m.(loop.SeqMsg)
+	assert.True(t, ok)
+	assert.Len(t, seq, len)
+	for _, s := range seq {
+		out = append(out, s())
+	}
+	return out
+}
+
+func TestContractNameAlreadyExists(t *testing.T) {
+	conv := New()
+	p := conv.(*Convo).State
+	p.currentContractIdx = 0
+	p.Contracts = append(p.Contracts, &Contract{
+		BaseContract: BaseContract{
+			Name: "test",
+		},
+	})
+
+	next := conv.Update(InputContractName{pbconvo.UserInput_TextInput{Value: "test"}})
+
+	seq := unpackSeq(t, next(), 2)
+
+	assert.Equal(t, MsgInvalidContractName{
+		Err: fmt.Errorf("contract with name test already exists in the project"),
+	}, seq[0])
+	assert.IsType(t, AskContractName{}, seq[1])
+}
+
+func TestDynamicContractNameAlreadyExists(t *testing.T) {
+	conv := New()
+	p := conv.(*Convo).State
+	p.currentContractIdx = 0
+	p.Contracts = append(p.Contracts, &Contract{
+		BaseContract: BaseContract{
+			Name: "test",
+		},
+	})
+
+	next := conv.Update(InputDynamicContractName{pbconvo.UserInput_TextInput{Value: "test"}})
+	seq := unpackSeq(t, next(), 2)
+
+	assert.Equal(t, MsgInvalidDynamicContractName{
+		Err: fmt.Errorf("contract with name test already exists in the project"),
+	}, seq[0])
+
+	assert.IsType(t, AskDynamicContractName{}, seq[1])
+}
+
+func TestContractAddressAlreadyExists(t *testing.T) {
+	conv := New()
+	p := conv.(*Convo).State
+	p.currentContractIdx = 0
+	p.Contracts = append(p.Contracts, &Contract{
+		Address: "0x1f98431c8ad98523631ae4a59f267346ea31f984",
+	})
+
+	next := conv.Update(InputContractAddress{pbconvo.UserInput_TextInput{Value: "0x1f98431c8ad98523631ae4a59f267346ea31f984"}})
+	seq := unpackSeq(t, next(), 2)
+
+	assert.Equal(t, MsgInvalidContractAddress{
+		Err: fmt.Errorf("contract address 0x1f98431c8ad98523631ae4a59f267346ea31f984 already exists in the project"),
+	}, seq[0])
+
+	assert.IsType(t, AskContractAddress{}, seq[1])
+}
+
+func TestDynamicContractAddressAlreadyExists(t *testing.T) {
+	conv := New()
+	p := conv.(*Convo).State
+	p.currentContractIdx = 0
+	p.Contracts = append(p.Contracts, &Contract{
+		Address: "0x1f98431c8ad98523631ae4a59f267346ea31f984",
+	})
+
+	next := conv.Update(InputDynamicContractAddress{pbconvo.UserInput_TextInput{Value: "0x1f98431c8ad98523631ae4a59f267346ea31f984"}})
+	seq := unpackSeq(t, next(), 2)
+
+	assert.Equal(t, MsgInvalidContractAddress{
+		Err: fmt.Errorf("contract address 0x1f98431c8ad98523631ae4a59f267346ea31f984 already exists in the project"),
+	}, seq[0])
+
+	assert.IsType(t, AskDynamicContractAddress{}, seq[1])
+}

@@ -1,0 +1,17 @@
+specVersion: v0.1.0
+package:
+  name: {{ .Name }}
+  version: v0.1.0
+
+imports:
+  solana: https://spkg.io/streamingfast/solana-common-v0.2.0.spkg
+
+modules:
+ - name: map_filtered_transactions
+   use: solana:filtered_transactions_without_votes
+   initialBlock: {{ .InitialBlock }}
+
+network: solana-mainnet-beta
+
+params:
+  map_filtered_transactions: {{ .ProgramId }}

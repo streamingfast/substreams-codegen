@@ -39,7 +39,7 @@ type StoreSessionLogger struct {
 }
 
 func (s StoreSessionLogger) SaveSession(codegen string, events []string, lastState string) error {
-	filename := fmt.Sprintf("session-%s-%d.log", codegen, time.Now().Unix())
+	filename := fmt.Sprintf("session-%s-%s.log", codegen, time.Now().Format(time.RFC3339))
 
 	var buf bytes.Buffer
 	w := bufio.NewWriter(&buf)

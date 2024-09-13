@@ -14,7 +14,7 @@ plugins:
       - Msf/codegen/conversation/v1/conversation.proto=github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1;pbconvo
       - Msf/codegen/remotebuild/v1/remotebuild.proto=github.com/streamingfast/substreams-codegen/pb/sf/codegen/remotebuild/v1;pbbuild
 
-  - plugin: buf.build/grpc/go
+  - plugin: buf.build/grpc/go:v1.4.0
     out: pb
     opt:
       - paths=source_relative

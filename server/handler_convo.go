@@ -21,9 +21,16 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
-	_ "github.com/streamingfast/substreams-codegen/ethfull"
+	_ "github.com/streamingfast/substreams-codegen/evm-events-calls"
+	_ "github.com/streamingfast/substreams-codegen/evm-minimal"
 	_ "github.com/streamingfast/substreams-codegen/injective-events"
-	_ "github.com/streamingfast/substreams-codegen/starknet"
+	_ "github.com/streamingfast/substreams-codegen/injective-minimal"
+	_ "github.com/streamingfast/substreams-codegen/sol-minimal"
+	_ "github.com/streamingfast/substreams-codegen/sol-transactions"
+	_ "github.com/streamingfast/substreams-codegen/starknet-events"
+	_ "github.com/streamingfast/substreams-codegen/starknet-minimal"
+	_ "github.com/streamingfast/substreams-codegen/vara-extrinsics"
+	_ "github.com/streamingfast/substreams-codegen/vara-minimal"
 )
 
 func (s *server) Discover(ctx context.Context, req *connect.Request[pbconvo.DiscoveryRequest]) (*connect.Response[pbconvo.DiscoveryResponse], error) {
@@ -34,7 +41,7 @@ func (s *server) Discover(ctx context.Context, req *connect.Request[pbconvo.Disc
 			Title:       conv.Title,
 			Description: conv.Description,
 		})
-		// TODO: add generators from an extra config file or flags, from different endpoints
+
 	}
 	return connect.NewResponse(&pbconvo.DiscoveryResponse{
 		Generators: generators,
@@ -82,6 +89,9 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 	if !ok {
 		return fmt.Errorf("begin with UserInput_Start message")
 	}
+	if start.Start.Version < 1 {
+		return fmt.Errorf("unsupported protocol version %d, please upgrade your `substreams` client", start.Start.Version)
+	}
 
 	convo := codegen.Registry[start.Start.GeneratorId]
 	if convo == nil {
@@ -94,7 +104,8 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 	evts.logEvent(fmt.Sprintf("   0┃ [Start, hydrate: %t] %s", start.Start.Hydrate != nil, start.Start.GeneratorId))
 
 	msgWrapFactory := codegen.NewMsgWrapFactory(sendFunc)
-	conversation := convo.Factory(msgWrapFactory)
+	conversation := convo.Factory()
+	conversation.SetFactory(msgWrapFactory)
 
 	readNextCmd := func() loop.Msg {
 		select {
@@ -200,6 +211,10 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 		}
 
 		s.logger.Debug("updating")
+		if os.Getenv("SUBSTREAMS_DEV_DEBUG_CONVERSATION") == "true" {
+			fmt.Printf("convo Update message: %T %#v\n-> state: %#v\n\n", msg, msg, conversation.GetState())
+		}
+
 		cmd := conversation.Update(msg)
 		return cmd
 	})

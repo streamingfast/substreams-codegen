@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package mydata.v1;
+
+message MyData {
+  string block_hash = 1;
+  uint64 block_slot = 2;
+  uint64 block_timestamp = 3;
+  uint64 transactions_len = 4;
+  uint64 instructions_len = 5;
+}

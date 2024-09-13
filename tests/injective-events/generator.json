@@ -1,0 +1,16 @@
+{
+  "generator": "injective-events",
+  "state": {
+    "name": "my_project",
+    "chainName": "injective-mainnet",
+    "initialBlockSet": true,
+    "dataType": "events",
+    "messageTypes": [
+      {
+        "eventType": "wasm",
+        "attributes": null
+      }
+    ],
+    "eventsComplete": true
+  }
+}

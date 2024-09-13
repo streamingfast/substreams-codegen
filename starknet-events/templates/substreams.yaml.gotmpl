@@ -1,0 +1,42 @@
+specVersion: v0.1.0
+package:
+  name: {{ .Name }}
+  version: v0.1.0
+
+imports:
+  starknet: https://spkg.io/streamingfast/starknet-foundational-v0.1.3.spkg
+
+protobuf:
+  files:
+    - events.proto
+  importPaths:
+    - ./proto
+
+  excludePaths:
+    - sf/substreams/index
+    - sf/substreams/intern
+    - sf/substreams/rpc
+    - sf/substreams/sink
+    - sf/substreams/v1
+    - google
+
+binaries:
+  default:
+    type: wasm/rust-v1+wasm-bindgen-shims
+    file: ./target/wasm32-unknown-unknown/release/substreams.wasm
+
+modules:
+{{- range $i, $contract := .Contracts }}
+- name: map_{{ $contract.Identifier }}_events
+  kind: map
+  initialBlock: {{ $contract.InitialBlock }}
+  inputs:
+    - map: starknet:filtered_transactions
+  output:
+   type: proto:starknet.v1.Events
+{{- end }}
+
+network: {{ .ChainName }}
+
+params:
+  starknet:filtered_transactions: {{ .GetEventsQuery }}

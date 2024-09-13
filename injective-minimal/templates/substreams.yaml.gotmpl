@@ -1,0 +1,32 @@
+specVersion: v0.1.0
+package:
+  name: {{ .ModuleName }}
+  version: v0.1.0
+
+imports:
+  cosmos: https://github.com/streamingfast/substreams-cosmos/releases/download/v0.1.5/cosmos-v0.1.5.spkg
+
+protobuf:
+  files:
+    - mydata.proto
+  importPaths:
+    - ./proto
+  excludePaths:
+    - sf/substreams
+    - google
+
+binaries:
+  default:
+    type: wasm/rust-v1
+    file: ./target/wasm32-unknown-unknown/release/substreams.wasm
+
+modules:
+ - name: map_my_data
+   kind: map
+   initialBlock: {{ .InitialBlock }}
+   inputs:
+   - source: sf.cosmos.type.v2.Block
+   output:
+    type: proto:mydata.v1.MyData
+
+network: {{ .ChainNetwork }}

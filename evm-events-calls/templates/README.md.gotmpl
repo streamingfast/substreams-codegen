@@ -1,0 +1,35 @@
+# {{ .Name }} Substreams modules
+
+This package was initialized via `substreams init`, using the `evm-events-calls` template.
+
+{{ template "readme_usage" }}
+
+## Modules
+
+All of these modules produce data filtered by these contracts:
+{{- range $i, $contract := .Contracts }}
+- _{{ $contract.Identifier }}_ at **{{ $contract.Address }}**
+{{- end }}
+{{- range $ddsContract := .DynamicContracts }}
+- {{ $ddsContract.Identifier }} contracts created from _{{ $ddsContract.ParentContract.Identifier }}_
+{{- end }}
+
+{{- if and $.TrackAnyEvents $.TrackAnyCalls }}
+### `map_events_calls`
+
+This module gets you events _and_ calls
+
+{{ end -}}
+{{- if .TrackAnyEvents }}
+### `map_events`
+
+This module gets you only events that matched.
+
+{{ end }}
+{{- if .TrackAnyCalls }}
+
+### `map_calls`
+
+This module gets you only calls that matched.
+
+{{ end }}
