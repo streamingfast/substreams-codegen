@@ -1,8 +1,6 @@
 package codegen
 
 import (
-	"fmt"
-
 	"github.com/streamingfast/substreams-codegen/loop"
 	pbconvo "github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1"
 )
@@ -54,24 +52,4 @@ type MsgGenerateProgress struct {
 	Logs     []string
 
 	Continue bool
-}
-
-func ReturnBuildMessage(isMinimal bool) string {
-	// TODO: this isn't a `Build` message output, it's just a Generate final message.
-	// It's also not standardized.
-	var minimalStr string
-
-	if isMinimal {
-		minimalStr = "* Inspect and edit the the `./src/lib.rs` file\n"
-	}
-
-	return fmt.Sprintf(
-		"Your Substreams project is ready! Follow the next steps to start streaming:\n\n"+
-			"%s"+
-			"\n    substreams build\n"+
-			"    substreams auth\n"+
-			"    substreams gui\n\n"+
-			"    substreams codegen subgraph\n"+
-			"    substreams codegen sql\n",
-		minimalStr)
 }
