@@ -32,8 +32,22 @@ type Contract struct {
 	PaddedAddress string
 }
 
-func (c *Contract) Identifier() string { return c.Name }
+func (c *Contract) AddressWithoutLead() string {
+	return c.PaddedAddress[2:]
+}
 
+func (c *Contract) Identifier() string { return c.Name }
+func (c *Contract) IdentifierCapitalize() string {
+	if len(c.Name) == 0 {
+		return c.Name
+	}
+
+	if len(c.Name) == 1 {
+		return strings.ToUpper(c.Name)
+	}
+
+	return strings.ToUpper(string(c.Name[0])) + c.Name[1:]
+}
 func (c *Contract) SetAliases() {
 	events := c.Abi.decodedAbi.EventsBySelector
 
@@ -108,7 +122,7 @@ func (c *Contract) fetchABI(config *ChainConfig) (string, error) {
 func (c *Contract) handleContractAddress(inputAddress string) {
 	// ADDRESS ALREADY PADDED
 	if len(inputAddress) == 66 {
-		c.Address = inputAddress[2:] + strings.TrimLeft(inputAddress[2:], "0")
+		c.Address = inputAddress[0:2] + strings.TrimLeft(inputAddress[2:], "0")
 		c.PaddedAddress = inputAddress
 
 		return

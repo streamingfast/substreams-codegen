@@ -347,9 +347,26 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			return loop.Seq(cmd(MsgInvalidContractAddress{err}), cmd(AskContractAddress{}))
 		}
 
-		contract.Address = inputAddress
+		contract.handleContractAddress(inputAddress)
 
 		return c.NextStep()
+
+	case AskConfirmContractABI:
+		return c.Action(InputConfirmContractABI{}).
+			Confirm("Do you want to proceed with this ABI?", "Yes", "No").
+			Cmd()
+
+	case InputConfirmContractABI:
+		if msg.Affirmative {
+			return c.NextStep()
+		}
+		contract := c.contextContract()
+		if contract == nil {
+			return QuitInvalidContext
+		}
+		contract.RawABI = nil
+		contract.abiFetchedInThisSession = false
+		return cmd(AskContractABI{})
 
 	case codegen.InputProjectName:
 		c.State.Name = msg.Value

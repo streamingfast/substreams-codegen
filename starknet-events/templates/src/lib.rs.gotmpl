@@ -3,7 +3,7 @@ mod abi;
 
 use pb::starknet::v1::*;
 {{- range $i, $contract := .Contracts }}
-use crate::abi::{{ $contract.Identifier }}_contract::Event as {{ toUpper $contract.Identifier}}Event;
+use crate::abi::{{ $contract.Identifier }}_contract::Event as {{ $contract.IdentifierCapitalize }}Event;
 {{- end }}
 
 use substreams::Hex;
@@ -26,7 +26,7 @@ fn map_{{ $contract.Identifier }}_events(transactions: Transactions) -> Result<E
         for event in data_events {
             let event_from_address = Hex(event.from_address.as_slice()).to_string();
 
-            if event_from_address != "{{ $contract.Address }}" {
+            if event_from_address != "{{ $contract.AddressWithoutLead }}" {
                 continue;
             }
 
@@ -51,7 +51,7 @@ fn map_{{ $contract.Identifier }}_events(transactions: Transactions) -> Result<E
                 transaction_hash: Felt::default(),
             };
 
-            let {{ $contract.Identifier}}_event = {{ toUpper $contract.Identifier}}Event::try_from(emitted_event).unwrap();
+            let {{ $contract.Identifier}}_event = {{ $contract.IdentifierCapitalize }}Event::try_from(emitted_event).unwrap();
 
             let event_json = serde_json::to_string(&{{ $contract.Identifier}}_event).unwrap();
             let event = Event {
