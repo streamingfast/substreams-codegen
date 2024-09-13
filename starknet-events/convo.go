@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/dustin/go-humanize"
@@ -15,6 +14,8 @@ import (
 
 var QuitInvalidContext = loop.Quit(fmt.Errorf("invalid state context: no current contract"))
 var AbiFilepathPrefix = "file://"
+
+const EKUBO_POSITIONS_CONTRACT = "0x2e0af29598b407c8716b17f6d2795eca1b471413fa03fb145a5e33722184067"
 
 type Convo struct {
 	*codegen.Conversation[*Project]
@@ -82,10 +83,6 @@ func (c *Convo) NextStep() loop.Cmd {
 				return notifyContext(cmd(FetchContractABI{}))
 			}
 			return notifyContext(cmd(RunDecodeContractABI{}))
-		}
-
-		if contract.InitialBlock == nil {
-			return notifyContext(cmd(AskContractInitialBlock{}))
 		}
 
 		// TODO: can we infer the name from what we find through the ABI discovery?
@@ -228,9 +225,14 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		if contract == nil {
 			return QuitInvalidContext
 		}
+
 		act := c.Action(InputContractName{}).TextInput(fmt.Sprintf("Choose a short name for the contract at address %q (lowercase and numbers only)", contract.Address), "Submit").
 			Description("Lowercase and numbers only").
 			Validation(`^([a-z][a-z0-9_]{0,63})$`, "The name should be short, and contain only lowercase characters and numbers, and not start with a number.")
+		if contract.Address == EKUBO_POSITIONS_CONTRACT {
+			act = act.DefaultValue("ekubo_positions")
+		}
+
 		return act.Cmd()
 
 	case InputContractName:
@@ -274,30 +276,10 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 	case AskContractAddress:
 		return loop.Seq(
 			c.Action(InputContractAddress{}).TextInput("Please enter the contract address", "Submit").
-				Description("Format it with 0x prefix and make sure it's a valid Starknet address.\nFor example, the Ekubo Positions contract address: 0x02e0af29598b407c8716b17f6d2795eca1b471413fa03fb145a5e33722184067").
-				DefaultValue("0x02e0af29598b407c8716b17f6d2795eca1b471413fa03fb145a5e33722184067").
+				Description(fmt.Sprintf("Format it with 0x prefix and make sure it's a valid Starknet address.\nFor example, the Ekubo Positions contract address: %s", EKUBO_POSITIONS_CONTRACT)).
+				DefaultValue(EKUBO_POSITIONS_CONTRACT).
 				Validation("^0x(0{0,63}[a-fA-F0-9]{1,63}|0{64})$", "Please enter a valid Starknet address").Cmd(),
 		)
-
-	case AskContractInitialBlock:
-		return c.Action(InputContractInitialBlock{}).TextInput("Please enter the contract initial block number", "Submit").
-			Validation(`^\d+$`, "Please enter a valid block number").
-			Cmd()
-
-	case InputContractInitialBlock:
-		contract := c.contextContract()
-		if contract == nil {
-			return QuitInvalidContext
-		}
-		blk, err := strconv.ParseUint(msg.Value, 10, 64)
-		if err != nil {
-			return loop.Seq(
-				c.Msg().Messagef("Cannot parse the block number %q: %s", msg.Value, err).Cmd(),
-				cmd(AskContractInitialBlock{}),
-			)
-		}
-		contract.InitialBlock = &blk
-		return c.NextStep()
 
 	case StartFirstContract:
 		c.State.Contracts = append(c.State.Contracts, &Contract{})
@@ -355,6 +337,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 	case AskConfirmContractABI:
 		return c.Action(InputConfirmContractABI{}).
 			Confirm("Do you want to proceed with this ABI?", "Yes", "No").
+			DefaultAccept().
 			Cmd()
 
 	case InputConfirmContractABI:
