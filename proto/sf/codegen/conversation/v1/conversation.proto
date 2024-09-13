@@ -20,6 +20,7 @@ message UserInput {
     Selection selection = 17;
     Confirmation confirmation = 18;
     Upload file = 16;
+    // Deprecated: we don't use this.
     DownloadedFiles downloaded_files = 20;
   }
   message TextInput {
@@ -55,6 +56,7 @@ message UserInput {
   message Confirmation {
     bool affirmative = 1;
   }
+  // Deprecated: this isn't used
   message DownloadedFiles {
     // This is only to return a message to the server that the files were downloaded
   }
@@ -94,6 +96,7 @@ message SystemOutput {
     bool select_many = 8;
     SelectType select_type = 7;
     string select_button_label = 5;
+    string default_value = 9;
 
     enum SelectType {
       DROPDOWN = 0;

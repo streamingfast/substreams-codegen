@@ -205,6 +205,8 @@ func (w *MsgWrap) DefaultValue(value string) *MsgWrap {
 	switch entry := w.Msg.Entry.(type) {
 	case *pbconvo.SystemOutput_TextInput_:
 		entry.TextInput.DefaultValue = value
+	case *pbconvo.SystemOutput_ListSelect_:
+		entry.ListSelect.DefaultValue = value
 	default:
 		panic("unsupported message type for this method")
 	}

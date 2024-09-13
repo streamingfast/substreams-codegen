@@ -4,21 +4,15 @@
 
 Use the codegen.substreams.dev and codegen-staging.substreams.dev endpoints.
 
-Invoke with:
-
 ```bash
-substreams init --discovery-endpoint http://localhost:9000
+substreams init --codegen-endpoint https://localhost:9000
 ```
 
 ## Develop
 
-Run the `substreams-codegen` backend:
-
 ```bash
-# remove the DEBUG var if you want info level logs
 DEBUG=.* go run ./cmd/substreams-codegen api --http-listen-addr "*:9000"
 ```
-
 
 ## Principles
 

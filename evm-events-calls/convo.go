@@ -14,6 +14,9 @@ import (
 	"golang.org/x/exp/maps"
 )
 
+const WETH_USDC_ADDRESS = "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8"
+const UNISWAP_V3_FACTORY_ADDRESS = "0x1f98431c8ad98523631ae4a59f267346ea31f984"
+
 var QuitInvalidContext = loop.Quit(fmt.Errorf("invalid state context: no current contract"))
 var AbiFilepathPrefix = "file://"
 
@@ -193,9 +196,11 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			labels = append(labels, conf.DisplayName)
 			values = append(values, conf.ID)
 		}
-		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain").
+		act := c.Action(codegen.InputChainName{}).ListSelect("Please select the chain").
 			Labels(labels...).
-			Values(values...).
+			Values(values...)
+		act.DefaultValue("mainnet")
+		return act.
 			Cmd()
 
 	case codegen.MsgInvalidChainName:
@@ -244,7 +249,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			c.Msg().Messagef("We're tackling the %s contract.", humanize.Ordinal(c.State.currentContractIdx+1)).Cmd(),
 			c.Action(InputContractAddress{}).TextInput("Please enter the contract address", "Submit").
 				Description("Format it with 0x prefix and make sure it's a valid Ethereum address.\nThe default value is the Uniswap v3 factory address.").
-				DefaultValue("0x1f98431c8ad98523631ae4a59f267346ea31f984").
+				DefaultValue(UNISWAP_V3_FACTORY_ADDRESS).
 				Validation("^0x[a-fA-F0-9]{40}$", "Please enter a valid Ethereum address: 0x followed by 40 hex characters.").Cmd(),
 		)
 
@@ -254,8 +259,8 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			return QuitInvalidContext
 		}
 		return c.Action(InputDynamicContractAddress{}).TextInput(fmt.Sprintf("Please enter an example contract created by the %q factory", factory.Name), "Submit").
-			Description("Format it with 0x prefix and make sure it's a valid Ethereum address.\nThe default value is the USDC/ETH pool address.").
-			DefaultValue("0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640").
+			Description("Format it with 0x prefix and make sure it's a valid Ethereum address.\nThe default value is the WETH/USDC pool address.").
+			DefaultValue(WETH_USDC_ADDRESS).
 			Validation("^0x[a-fA-F0-9]{40}$", "Please enter a valid Ethereum address: 0x followed by 40 hex characters.").Cmd()
 
 	case InputDynamicContractAddress:
@@ -417,7 +422,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		contract := c.State.dynamicContractOf(factory.Name)
 		if msg.err != nil {
 			return loop.Seq(
-				c.Msg().Messagef("Cannot fetch the ABI for contract %q (%s)", contract.referenceContractAddress, msg.err).Cmd(),
+				c.Msg().Messagef("Cannot fetch the ABI for dynamic contract %q (%s)", contract.referenceContractAddress, msg.err).Cmd(),
 				cmd(AskDynamicContractABI{}),
 			)
 		}
@@ -477,6 +482,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 	case AskConfirmContractABI:
 		return c.Action(InputConfirmContractABI{}).
 			Confirm("Do you want to proceed with this ABI?", "Yes", "No").
+			DefaultAccept().
 			Cmd()
 
 	case InputConfirmContractABI:
@@ -594,7 +600,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		act := c.Action(InputContractName{}).TextInput(fmt.Sprintf("Choose a short name for the contract at address %q (lowercase and numbers only)", contract.Address), "Submit").
 			Description("Lowercase and numbers only").
 			Validation(`^([a-z][a-z0-9_]{0,63})$`, "The name should be short, and contain only lowercase characters and numbers, and not start with a number.")
-		if contract.Address == "0x1f98431c8ad98523631ae4a59f267346ea31f984" {
+		if contract.Address == UNISWAP_V3_FACTORY_ADDRESS {
 			act = act.DefaultValue("factory")
 		}
 		return act.Cmd()
@@ -624,7 +630,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		act := c.Action(InputDynamicContractName{}).TextInput(fmt.Sprintf("Choose a short name for the contract that will be created by the factory %q (lowercase and numbers only)", factory.Name), "Submit").
 			Description("Lowercase and numbers only").
 			Validation(`^([a-z][a-z0-9_]{0,63})$`, "The name should be short, and contain only lowercase characters and numbers, and not start with a number.")
-		if factory.Address == "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640" {
+		if factory.Address == UNISWAP_V3_FACTORY_ADDRESS {
 			act = act.DefaultValue("pool")
 		}
 		return act.Cmd()
@@ -663,12 +669,14 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 			contract.TrackCalls = false
 			return c.NextStep()
 		}
-
-		return c.Action(InputContractTrackWhat{}).
+		act := c.Action(InputContractTrackWhat{}).
 			ListSelect("What do you want to track for this contract?").
 			Labels("Events", "Calls", "Both events and calls").
-			Values("events", "calls", "both").
-			Cmd()
+			Values("events", "calls", "both")
+		if contract.Address == UNISWAP_V3_FACTORY_ADDRESS {
+			act = act.DefaultValue("events")
+		}
+		return act.Cmd()
 
 	case InputContractTrackWhat:
 		contract := c.contextContract()
@@ -689,11 +697,17 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		return c.NextStep()
 
 	case AskDynamicContractTrackWhat:
-		return c.Action(InputDynamicContractTrackWhat{}).
+		contract := c.contextContract()
+		if contract == nil {
+			return QuitInvalidContext
+		}
+
+		act := c.Action(InputDynamicContractTrackWhat{}).
 			ListSelect("What do you want to track for the contracts that will be created by this factory ?").
 			Labels("Events", "Calls", "Both events and calls").
-			Values("events", "calls", "both").
-			Cmd()
+			Values("events", "calls", "both")
+		act = act.DefaultValue("both")
+		return act.Cmd()
 
 	case InputDynamicContractTrackWhat:
 		factory := c.contextContract()
@@ -720,9 +734,12 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 			return loop.Seq(cmd(InputContractIsFactory{}))
 		}
 
-		return c.Action(InputContractIsFactory{}).
-			Confirm("Is this contract a factory that will create more contracts that you want to track ?", "Yes", "No").
-			Cmd()
+		act := c.Action(InputContractIsFactory{}).
+			Confirm("Is this contract a factory that will create more contracts that you want to track ?", "Yes", "No")
+		if contract.Address == UNISWAP_V3_FACTORY_ADDRESS {
+			act.DefaultAccept()
+		}
+		return act.Cmd()
 
 	case InputContractIsFactory:
 		contract := c.contextContract()
@@ -752,12 +769,12 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		for _, k := range keys {
 			values = append(values, events[k])
 		}
-
-		return c.Action(InputFactoryCreationEvent{}).
+		act := c.Action(InputFactoryCreationEvent{}).
 			ListSelect("Choose the event signaling a new contract deployment").
 			Labels(values...).
-			Values(keys...).
-			Cmd()
+			Values(keys...)
+		act.DefaultValue("PoolCreated")
+		return act.Cmd()
 
 	case InputFactoryCreationEvent:
 		contract := c.State.Contracts[c.State.currentContractIdx]
@@ -778,9 +795,16 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 
 		var params []string
 		var indexes []string
+		var defaultValue string
 		for i, param := range eventFields {
-			indexes = append(indexes, fmt.Sprintf("%d", i))
-			params = append(params, fmt.Sprintf("%d - %s (%s)", i, param.Name, param.TypeName))
+			value := fmt.Sprintf("%d", i)
+			label := fmt.Sprintf("%d - %s (%s)", i, param.Name, param.TypeName)
+			if contract.Address == UNISWAP_V3_FACTORY_ADDRESS && param.Name == "pool" {
+				defaultValue = value
+			}
+
+			indexes = append(indexes, value)
+			params = append(params, label)
 		}
 
 		return loop.Seq(
@@ -789,6 +813,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 				Cmd(),
 			c.Action(InputFactoryCreationEventField{}).
 				ListSelect("Choose the field containing the contract address").
+				DefaultValue(defaultValue).
 				Labels(params...).
 				Values(indexes...).
 				Cmd(),
@@ -804,20 +829,19 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		return c.NextStep()
 
 	case AskAddContract:
-		out := []loop.Cmd{
-			c.Msg().Message("Current contracts: [" + strings.Join(contractNames(c.State.Contracts), ", ") + "]").Cmd(),
+		message := []string{
+			"Configured contracts: [" + strings.Join(contractNames(c.State.Contracts), ", ") + "]",
 		}
-
 		if len(c.State.DynamicContracts) != 0 {
-			out = append(out, c.Msg().Message("Dynamic contracts: ["+strings.Join(dynamicContractNames(c.State.DynamicContracts), ", ")+"]").Cmd())
+			message = append(message, "Dynamically created contracts: ["+strings.Join(dynamicContractNames(c.State.DynamicContracts), ", ")+"]")
 		}
 
-		out = append(out,
+		return loop.Seq(
+			c.Msg().Message(strings.Join(message, "\n")).Cmd(),
 			c.Action(InputAddContract{}).
 				Confirm("Add another contract ?", "Yes", "No").
-				Cmd())
-
-		return loop.Seq(out...)
+				Cmd(),
+		)
 
 	case InputAddContract:
 		if msg.Affirmative {
