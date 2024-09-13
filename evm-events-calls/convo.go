@@ -249,7 +249,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			c.Msg().Messagef("We're tackling the %s contract.", humanize.Ordinal(c.State.currentContractIdx+1)).Cmd(),
 			c.Action(InputContractAddress{}).TextInput("Please enter the contract address", "Submit").
 				Description("Format it with 0x prefix and make sure it's a valid Ethereum address.\nThe default value is the Uniswap v3 factory address.").
-				DefaultValue(UNISWAP_V3_FACTORY_ADDRESS).
+				DefaultValue(c.State.ChainConfig().ExampleContract).
 				Validation("^0x[a-fA-F0-9]{40}$", "Please enter a valid Ethereum address: 0x followed by 40 hex characters.").Cmd(),
 		)
 
@@ -600,7 +600,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		act := c.Action(InputContractName{}).TextInput(fmt.Sprintf("Choose a short name for the contract at address %q (lowercase and numbers only)", contract.Address), "Submit").
 			Description("Lowercase and numbers only").
 			Validation(`^([a-z][a-z0-9_]{0,63})$`, "The name should be short, and contain only lowercase characters and numbers, and not start with a number.")
-		if contract.Address == UNISWAP_V3_FACTORY_ADDRESS {
+		if contract.Address == c.State.ChainConfig().ExampleContract {
 			act = act.DefaultValue("factory")
 		}
 		return act.Cmd()

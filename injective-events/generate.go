@@ -11,7 +11,7 @@ var templatesFS embed.FS
 
 func (p *Project) Generate() codegen.ReturnGenerate {
 	return codegen.GenerateTemplateTree(p, templatesFS, map[string]string{
-		".gitignore":             ".gitignore",
+		".gitignore.gotmpl":      ".gitignore",
 		"README.md.gotmpl":       "README.md",
 		"substreams.yaml.gotmpl": "substreams.yaml",
 	})

@@ -15,7 +15,7 @@ func (p *Project) Generate() codegen.ReturnGenerate {
 		"src/pb/mod.rs.gotmpl":      "src/pb/mod.rs",
 		"src/lib.rs.gotmpl":         "src/lib.rs",
 		"Cargo.toml.gotmpl":         "Cargo.toml",
-		".gitignore":                ".gitignore",
+		".gitignore.gotmpl":         ".gitignore",
 		"substreams.yaml.gotmpl":    "substreams.yaml",
 		"README.md.gotmpl":          "README.md",
 	})

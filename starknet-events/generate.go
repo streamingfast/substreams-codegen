@@ -18,7 +18,7 @@ func (p *Project) Generate() codegen.ReturnGenerate {
 		"build.rs.gotmpl":           "build.rs",
 		"Cargo.toml.gotmpl":         "Cargo.toml",
 		"rust-toolchain.toml":       "rust-toolchain.toml",
-		".gitignore":                ".gitignore",
+		".gitignore.gotmpl":         ".gitignore",
 		"substreams.yaml.gotmpl":    "substreams.yaml",
 		"README.md.gotmpl":          "README.md",
 	})
