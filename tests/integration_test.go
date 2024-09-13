@@ -64,6 +64,10 @@ func TestIntegration(t *testing.T) {
 			name:      "sol-transactions",
 			stateFile: "./sol-transactions/generator.json",
 		},
+		{
+			name:      "starknet-events",
+			stateFile: "./starknet-events/generator.json",
+		},
 	}
 
 	ctx := context.Background()
