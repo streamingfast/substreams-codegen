@@ -1,4 +1,4 @@
-FROM ghcr.io/streamingfast/substreams:5e372ed AS substreams
+FROM ghcr.io/streamingfast/substreams:latest AS substreams
 FROM bufbuild/buf AS buf
 FROM rust:latest
 
