@@ -288,7 +288,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			Cmd()
 
 	case InputContractABI:
-		// FIXME: dedupe all these QuitInvalidContext!
 		contract := c.contextContract()
 		if contract == nil {
 			return QuitInvalidContext

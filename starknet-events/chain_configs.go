@@ -3,21 +3,24 @@ package starknet_events
 import "sort"
 
 type ChainConfig struct {
-	ID          string // Public
-	DisplayName string // Public
-	Network     string
+	ID             string // Public
+	DisplayName    string // Public
+	Network        string
+	EndpointEnvVar string
 }
 
 var ChainConfigs []*ChainConfig
 
 var ChainConfigByID = map[string]*ChainConfig{
 	"starknet-mainnet": {
-		DisplayName: "Starknet Mainnet",
-		Network:     "starknet-mainnet",
+		DisplayName:    "Starknet Mainnet",
+		Network:        "starknet-mainnet",
+		EndpointEnvVar: "STARKNET_MAINNET_ENDPOINT",
 	},
 	"starknet-testnet": {
-		DisplayName: "Starknet Testnet",
-		Network:     "starknet-testnet",
+		DisplayName:    "Starknet Testnet",
+		Network:        "starknet-testnet",
+		EndpointEnvVar: "STARKNET_TESTNET_ENDPOINT",
 	},
 }
 

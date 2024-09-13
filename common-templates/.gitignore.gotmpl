@@ -1,0 +1,13 @@
+This template holds chunks of common .gitignore
+
+{{ define "gitignore_usage" -}}
+# Compiled source files
+target/
+
+# Sink data when running any sinker
+sink-data/
+
+# The spkg packed by the subtreams cli
+*.spkg
+{{- end }}
+

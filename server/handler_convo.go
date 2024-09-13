@@ -27,8 +27,8 @@ import (
 	_ "github.com/streamingfast/substreams-codegen/injective-minimal"
 	_ "github.com/streamingfast/substreams-codegen/sol-minimal"
 	_ "github.com/streamingfast/substreams-codegen/sol-transactions"
+	_ "github.com/streamingfast/substreams-codegen/starknet-events"
 	_ "github.com/streamingfast/substreams-codegen/starknet-minimal"
-
 	_ "github.com/streamingfast/substreams-codegen/vara-extrinsics"
 	_ "github.com/streamingfast/substreams-codegen/vara-minimal"
 )
@@ -41,7 +41,7 @@ func (s *server) Discover(ctx context.Context, req *connect.Request[pbconvo.Disc
 			Title:       conv.Title,
 			Description: conv.Description,
 		})
-		// TODO: add generators from an extra config file or flags, from different endpoints
+
 	}
 	return connect.NewResponse(&pbconvo.DiscoveryResponse{
 		Generators: generators,

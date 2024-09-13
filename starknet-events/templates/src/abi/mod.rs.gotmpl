@@ -1,0 +1,3 @@
+{{- range $i, $contract := .Contracts }}
+pub mod {{ $contract.Identifier }}_contract;
+{{- end }}

@@ -13,10 +13,8 @@ type AskChainName struct{}
 
 type InputChainName struct{ pbconvo.UserInput_Selection }
 
-//type StartFirstContract struct{} // Start asking for contract inputs
-//
-// type MsgContractSwitch struct{}
-//
+// type StartFirstContract struct{} // Start asking for contract inputs
+type MsgContractSwitch struct{}
 
 type AskContractAddress struct{}
 type AskEventAddress struct{}
@@ -41,35 +39,30 @@ type AskContractInitialBlock struct{}
 type InputContractInitialBlock struct{ pbconvo.UserInput_TextInput }
 type SetContractInitialBlock struct{ InitialBlock uint64 }
 
-//type AskContractTrackWhat struct{}
-//type InputContractTrackWhat struct{ pbconvo.UserInput_Selection }
+type FetchContractABI struct{}
+type ReturnFetchContractABI struct {
+	abi string
+	err error
+}
 
-//type FetchContractABI struct{}
-//type ReturnFetchContractABI struct {
-//	abi string
-//	err error
-//}
+type StartFirstContract struct{} // Start asking for contract inputs
+type AskContractABI struct{}
+type InputContractABI struct{ pbconvo.UserInput_TextInput }
 
-//type AskContractABI struct{}
-//type InputContractABI struct{ pbconvo.UserInput_TextInput }
+type RunDecodeContractABI struct{}
+type ReturnRunDecodeContractABI struct {
+	Abi *ABI
+	Err error
+}
 
-//type RunDecodeContractABI struct{}
-//type ReturnRunDecodeContractABI struct {
-//	abi *ABI
-//	err error
-//}
-//
-//type AskConfirmContractABI struct{}
-//type InputConfirmContractABI struct{ pbconvo.UserInput_Confirmation }
-//
+type AskConfirmContractABI struct{}
+type InputConfirmContractABI struct{ pbconvo.UserInput_Confirmation }
 
 //type FetchContractInitialBlock struct{}
 //type ReturnFetchContractInitialBlock struct {
 //	InitialBlock uint64
 //	Err          error
 //}
-//
 
-//
-//type AskAddContract struct{}
-//type InputAddContract struct{ pbconvo.UserInput_Confirmation }
+type AskAddContract struct{}
+type InputAddContract struct{ pbconvo.UserInput_Confirmation }
