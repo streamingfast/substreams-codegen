@@ -29,7 +29,7 @@ func New() codegen.Converser {
 
 func init() {
 	codegen.RegisterConversation(
-		"starknet-events",
+		"starknet-events-beta",
 		"Filtered and decode desired Starknet events and create a substreams as source",
 		"Given a list of contracts and their ABIs, this will build an Starknet substreams that decodes events",
 		codegen.ConversationFactory(New),
