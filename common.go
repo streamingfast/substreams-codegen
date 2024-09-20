@@ -20,6 +20,11 @@ func init() {
 		panic(err)
 	}
 }
+
+func MarkdownEscape(s string) string {
+	return "```\n" + s + "\n```\n"
+}
+
 func parseCommonTemplates() (*template.Template, error) {
 	t := template.New("").Funcs(templateFuncs)
 	filenames, err := doublestar.Glob(commonTemplatesFS, "**/*.gotmpl")

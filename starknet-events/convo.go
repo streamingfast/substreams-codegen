@@ -269,7 +269,8 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			return c.NextStep()
 		}
 
-		peekABI := c.Msg().Message(string(contract.RawABI)).Cmd()
+		peekABI := c.Msg().Message(codegen.MarkdownEscape(string(contract.RawABI))).Cmd()
+
 		informMessage := c.Msg().Message("The ABI is retrieved from the latest block. Changes to the contract's ABI since its deployment are not currently handled.").Cmd()
 		return loop.Seq(peekABI, informMessage, cmd(AskConfirmContractABI{}))
 
