@@ -52,7 +52,6 @@ fn map_{{ $contract.Identifier }}_events(transactions: Transactions) -> Result<E
             };
 
             if let {{ $contract.Identifier}}_event = {{ $contract.IdentifierCapitalize }}Event::try_from(emitted_event) {
-
                 let event_json = serde_json::to_string(&{{ $contract.Identifier}}_event).unwrap();
                 let event = Event {
                     json_description: event_json
