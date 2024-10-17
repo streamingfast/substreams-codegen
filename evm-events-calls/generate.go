@@ -14,16 +14,17 @@ var templatesFS embed.FS
 
 func (p *Project) Generate() codegen.ReturnGenerate {
 	res := codegen.GenerateTemplateTree(p, templatesFS, map[string]string{
-		"proto/contract.proto.gotmpl": "proto/contract.proto",
-		"src/abi/mod.rs.gotmpl":       "src/abi/mod.rs",
-		"src/pb/mod.rs.gotmpl":        "src/pb/mod.rs",
-		"src/lib.rs.gotmpl":           "src/lib.rs",
-		"build.rs.gotmpl":             "build.rs",
-		"Cargo.toml.gotmpl":           "Cargo.toml",
-		"rust-toolchain.toml":         "rust-toolchain.toml",
-		".gitignore.gotmpl":           ".gitignore",
-		"substreams.yaml.gotmpl":      "substreams.yaml",
-		"README.md.gotmpl":            "README.md",
+		"proto/contract.proto.gotmpl":   "proto/contract.proto",
+		"src/abi/mod.rs.gotmpl":         "src/abi/mod.rs",
+		"src/pb/mod.rs.gotmpl":          "src/pb/mod.rs",
+		"src/lib.rs.gotmpl":             "src/lib.rs",
+		"build.rs.gotmpl":               "build.rs",
+		"Cargo.toml.gotmpl":             "Cargo.toml",
+		"rust-toolchain.toml":           "rust-toolchain.toml",
+		".gitignore.gotmpl":             ".gitignore",
+		"substreams.yaml.gotmpl":        "substreams.yaml",
+		"README.md.gotmpl":              "README.md",
+		"common-templates/buf.gen.yaml": "buf.gen.yaml",
 	})
 	if res.Err != nil {
 		return res

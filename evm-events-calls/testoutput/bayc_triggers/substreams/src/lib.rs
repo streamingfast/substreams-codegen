@@ -476,14 +476,12 @@ fn zipped_events_calls(
 fn map_events(blk: eth::Block) -> Result<contract::Events, substreams::errors::Error> {
     let mut events = contract::Events::default();
     map_bayc_events(&blk, &mut events);
-    substreams::skip_empty_output();
     Ok(events)
 }
 #[substreams::handlers::map]
 fn map_calls(blk: eth::Block) -> Result<contract::Calls, substreams::errors::Error> {
 let mut calls = contract::Calls::default();
     map_bayc_calls(&blk, &mut calls);
-    substreams::skip_empty_output();
     Ok(calls)
 }
 
