@@ -32,10 +32,6 @@ type Contract struct {
 	PaddedAddress string
 }
 
-func (c *Contract) AddressWithoutLead() string {
-	return c.PaddedAddress[2:]
-}
-
 func (c *Contract) Identifier() string { return c.Name }
 func (c *Contract) IdentifierCapitalize() string {
 	if len(c.Name) == 0 {
