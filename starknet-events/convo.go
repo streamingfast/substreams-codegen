@@ -15,7 +15,7 @@ import (
 var QuitInvalidContext = loop.Quit(fmt.Errorf("invalid state context: no current contract"))
 var AbiFilepathPrefix = "file://"
 
-const EKUBO_POSITIONS_CONTRACT = "0x2e0af29598b407c8716b17f6d2795eca1b471413fa03fb145a5e33722184067"
+const EKUBO_POSITIONS_CONTRACT = "0x02e0af29598b407c8716b17f6d2795eca1b471413fa03fb145a5e33722184067"
 
 type Convo struct {
 	*codegen.Conversation[*Project]
