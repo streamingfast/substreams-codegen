@@ -18,7 +18,7 @@ jobs:
     env:
       TEST_LOCAL_CODEGEN: "true"
       RUN_INTEGRATION_TESTS: "true"
-      GITHUB_ACTIONS: "true"
+      CI: "true"
       CODEGEN_MAINNET_API_KEY: ${{ secrets.CODEGEN_MAINNET_API_KEY }}
       REGISTRY: ghcr.io
     steps:
