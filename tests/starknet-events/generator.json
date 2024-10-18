@@ -1,5 +1,5 @@
 {
-  "generator": "starknet-events",
+  "generator": "starknet-events-beta",
   "state": {
     "name": "my_project",
     "chainName": "starknet-mainnet",
