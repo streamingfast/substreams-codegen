@@ -98,7 +98,6 @@ func TestIntegration(t *testing.T) {
 				cors,
 				sessionStore,
 				zlog)
-
 			server.Run()
 		}()
 
