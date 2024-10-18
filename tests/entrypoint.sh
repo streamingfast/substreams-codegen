@@ -3,7 +3,7 @@ set -euxo pipefail
 
 listen_address=
 if [[ $TEST_LOCAL_CODEGEN == "true" ]]; then
-      if [[ -n "${CI:-}" ]]; then
+      if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
          # Codegen address when running test
          listen_address="http://172.17.0.1:9000"
       else
