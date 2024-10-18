@@ -26,7 +26,7 @@ fn map_{{ $contract.Identifier }}_events(transactions: Transactions) -> Result<E
         for event in data_events {
             let event_from_address = Hex(event.from_address.as_slice()).to_string();
 
-            if event_from_address != "{{ $contract.PaddedAddress }}" {
+            if event_from_address != "{{ $contract.AddressWithoutPrefix }}" {
                 continue;
             }
 

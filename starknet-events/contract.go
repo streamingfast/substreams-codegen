@@ -28,8 +28,6 @@ type Contract struct {
 	Abi                     *ABI
 	emptyABI                bool
 	abiFetchedInThisSession bool
-
-	PaddedAddress string
 }
 
 func (c *Contract) Identifier() string { return c.Name }
@@ -89,14 +87,14 @@ func (c *Contract) fetchABI(config *ChainConfig) (string, error) {
 	}
 
 	emptyField := felt.Felt{}
-	addressToFelt, err := emptyField.SetString(c.PaddedAddress)
+	addressToFelt, err := emptyField.SetString(c.AddressWithoutPrefix())
 	if err != nil {
 		return "", fmt.Errorf("converting address to felt: %w", err)
 	}
 
 	classOutput, err := client.ClassAt(ctx, blockId, addressToFelt)
 	if err != nil {
-		return "", fmt.Errorf("calling class at for adderss: %s : %w", c.PaddedAddress, err)
+		return "", fmt.Errorf("calling class at for adderss: %s : %w", c.AddressWithoutPrefix(), err)
 	}
 
 	var contractABI string
@@ -116,19 +114,19 @@ func (c *Contract) fetchABI(config *ChainConfig) (string, error) {
 // In some explorers (Ex: Starkscan) the address is padded on 66 characters with the prefix 0x
 // The Contract is containing both, the padded address or the raw one without leading zeros...
 func (c *Contract) handleContractAddress(inputAddress string) {
-	// ADDRESS ALREADY PADDED
+	// Address padded
 	if len(inputAddress) == 66 {
-		c.Address = inputAddress[0:2] + strings.TrimLeft(inputAddress[2:], "0")
-		c.PaddedAddress = inputAddress
-
+		c.Address = inputAddress
 		return
 	}
 
-	// ADDRESS NOT PADDED
+	// Address not padded
+	withoutPrefix := strings.TrimPrefix(inputAddress, "0x")
+	c.Address = "0x" + strings.Repeat("0", 64-len(withoutPrefix)) + withoutPrefix
 
-	c.Address = inputAddress
-	addressWithoutPrefix := inputAddress[2:]
-
-	c.PaddedAddress = strings.Repeat("0", 64-len(addressWithoutPrefix)) + addressWithoutPrefix
 	return
+}
+
+func (c *Contract) AddressWithoutPrefix() string {
+	return strings.TrimPrefix(c.Address, "0x")
 }
