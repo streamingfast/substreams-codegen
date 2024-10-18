@@ -3,7 +3,7 @@ set -euxo pipefail
 
 listen_address=
 if [[ ${TEST_LOCAL_CODEGEN:-false} == "true" ]]; then
-      if [[ -z $CI ]]; then
+      if [[ -z ${CI} ]]; then
         listen_address="http://host.docker.internal:9000"
       else
          # Codegen address when running test
