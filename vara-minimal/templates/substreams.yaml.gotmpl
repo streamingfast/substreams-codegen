@@ -28,4 +28,17 @@ modules:
    output:
     type: proto:mydata.v1.MyData
 
+# For performance, you should use a blockFilter whenever possible, like this:
+# imports:
+#   vara: https://spkg.io/streamingfast/vara-common-v0.1.5.spkg
+#
+# modules:
+#   - name: (...)
+#     blockFilter:
+#      module: vara:index_extrinsics
+#      query:
+#          string: extrinsic:Timestamp.set # set the extrinsic of your choice, of course
+#
+# see https://substreams.dev/streamingfast/vara-common for details
+
 network: {{ .ChainNetwork }}
