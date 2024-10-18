@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-LOCAL = $TEST_LOCAL_CODEGEN
 listen_address=
-if [[ "$LOCAL" == "true" ]]; then
+if [[ $TEST_LOCAL_CODEGEN == "true" ]]; then
       if [[ -n "${CI:-}" ]]; then
          # Codegen address when running test
          listen_address="http://172.17.0.1:9000"
