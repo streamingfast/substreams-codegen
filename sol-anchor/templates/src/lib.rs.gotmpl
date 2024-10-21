@@ -1,0 +1,103 @@
+mod idl;
+mod pb;
+
+use anchor_lang::AnchorDeserialize;
+use anchor_lang::Discriminator;
+use base64::prelude::*;
+use pb::substreams::v1::program::Data;
+
+{{- range $i, $event := .Idl.Events }}
+use pb::substreams::v1::program::{{$event.Name}};
+{{- end}}
+
+{{- range $i, $type := .Idl.Types }}
+use idl::idl::program::types::{{$type.Name}};
+{{- end}}
+
+use sologger_log_context::programs_selector::ProgramsSelector;
+use sologger_log_context::sologger_log_context::LogContext;
+use substreams_solana::pb::sf::solana::r#type::v1::Block;
+
+const PROGRAM_ID: &str = "{{.Idl.Metadata.Address}}";
+
+#[substreams::handlers::map]
+fn map_program_data(blk: Block) -> Data {
+    {{- range $i, $event := .Idl.Events }}
+    let mut {{ $event.SnakeCaseName }}_list: Vec<{{$event.Name}}> = Vec::new();
+    {{- end}}
+
+    blk.transactions().for_each(|transaction| {
+        let meta_wrapped = &transaction.meta;
+        let meta = meta_wrapped.as_ref().unwrap();
+
+        // ------------- EVENTS -------------
+        let programs_selector: ProgramsSelector = ProgramsSelector::new(&["*".to_string()]);
+        let log_contexts = LogContext::parse_logs_basic(&meta.log_messages, &programs_selector);
+
+        log_contexts
+            .iter()
+            .filter(|context| context.program_id == PROGRAM_ID)
+            .for_each(|context| {
+                context.data_logs.iter().for_each(|data| {
+                    if let Ok(decoded) = BASE64_STANDARD.decode(data) {
+                        let slice_u8: &mut &[u8] = &mut &decoded[..];
+                        let slice_discriminator: [u8; 8] =
+                            slice_u8[0..8].try_into().expect("error");
+
+                        match slice_discriminator {
+                            {{- range $i, $event := .Idl.Events }}
+                            idl::idl::program::events::{{$event.Name}}::DISCRIMINATOR => {
+                                if let Ok(event) =
+                                    idl::idl::program::events::{{$event.Name}}::deserialize(
+                                        &mut &slice_u8[8..],
+                                    )
+                                {
+                                    {{ $event.SnakeCaseName }}_list.push({{ $event.Name }} {
+                                        {{- range $i, $field := $event.Fields }}
+                                        {{$field.SnakeCaseName}}: {{ if $field.Type.IsSimple }}event.{{$field.SnakeCaseName}}{{ if $field.Type.IsSimplePubKey }}.toString(){{ end }},
+                                        {{- else if $field.Type.IsDefined -}}
+                                        {{- range $i, $type := $.Idl.Types -}}
+                                        {{- if eq $type.Name $field.Type.Defined -}}
+                                        {{- if $type.Type.IsEnum -}}
+                                        map_enum_{{$type.SnakeCaseName}}(event.{{$field.SnakeCaseName}}),
+                                        {{- else -}}
+                                        {{ $field.Defined }} {
+                                            {{- range $j, $structField := $type.Struct.Fields }}
+                                            {{$structField.SnakeCaseName}}: {{$field.SnakeCaseName}}.{{$structField.SnakeCaseName}}
+                                            {{- end}}
+                                        }
+                                        {{- end}}
+                                        {{- end}}
+                                        {{- end}}
+                                        {{- end}}
+                                        {{- end}}
+                                    });
+                                }
+                            }
+                            {{- end}}
+                            _ => {}
+                        }
+                    }
+                });
+            });
+    });
+
+    Data {
+        {{- range $i, $event := .Idl.Events }}
+        {{ $event.SnakeCaseName }}_list,
+        {{- end}}
+    }
+}
+
+{{- range $i, $type := .Idl.Types }}
+{{- if $type.Type.IsEnum -}}
+fn map_enum_{{$type.SnakeCaseName}}(value: {{ $type.Name }}) -> i32 {
+    match value {
+        {{- range $j, $variant := $type.Type.Enum.Variants }}
+        StrategyType::{{ $variant.Name }} => return {{ $j }},
+        {{- end}}
+        _ => 0,
+    }
+}
+{{- end }}
+{{- end }}

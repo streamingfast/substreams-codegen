@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package substreams.v1.program;
+
+message Data {
+  // events
+  {{- $counter := 0 }}
+  {{- range $i, $event := .Idl.Events }}
+    {{- $counter = add $counter 1 }}
+    repeated {{ $event.Name }} {{ $event.SnakeCaseName }}_list = {{ $counter }};
+  {{- end}}
+}
+
+// EVENTS
+{{- range $i, $event := .Idl.Events }}
+message {{$event.Name}} {
+  {{- $counter := 0 }}
+  {{- range $i, $field := $event.Fields }}
+    {{- $counter = add $counter 1 }}
+    {{ if $field.Type.IsArray }} repeated {{ end }} {{$field.Type.ResolveProtobufType}} {{$field.SnakeCaseName}} = {{ $counter }};
+  {{- end}}
+}
+{{- end}}
+
+// TYPES
+{{- range $i, $type := .Idl.Types }}
+  {{- if $type.Type.IsStruct }}
+    message {{$type.Name}} {
+      {{- $counter := 0 }}
+      {{- range $i, $field := $type.Type.Struct.Fields }}
+        {{- $counter = add $counter 1 }}
+        {{ if $field.Type.IsArray }} repeated {{ end }} {{$field.Type.ResolveProtobufType}} {{$field.SnakeCaseName}} = {{ $counter }};
+      {{- end}}
+    }
+  {{- else }}
+    enum {{$type.Name}} {
+      {{- range $i, $variant := $type.Type.Enum.Variants }}
+        {{ $variant.SnakeCaseName }} = {{ $i }};
+      {{- end}}
+    }
+  {{- end }}
+
+{{- end}}
