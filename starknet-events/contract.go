@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/NethermindEth/juno/core/felt"
-
 	starknetRPC "github.com/NethermindEth/starknet.go/rpc"
 )
 
@@ -17,12 +16,19 @@ type Alias struct {
 	NewName string
 }
 
+func NewAlias(oldName, newName string) *Alias {
+	return &Alias{
+		OldName: oldName,
+		NewName: newName,
+	}
+}
+
 type Contract struct {
 	Name    string `json:"name,omitempty"`
 	Address string `json:"address"`
 
 	InitialBlock *uint64         `json:"initialBlock"`
-	Aliases      []Alias         `json:"aliases"`
+	Aliases      []*Alias        `json:"aliases"`
 	RawABI       json.RawMessage `json:"rawAbi,omitempty"`
 
 	Abi                     *ABI
@@ -43,34 +49,50 @@ func (c *Contract) IdentifierCapitalize() string {
 	return strings.ToUpper(string(c.Name[0])) + c.Name[1:]
 }
 func (c *Contract) SetAliases() {
-	events := c.Abi.decodedAbi.EventsBySelector
+	events := c.Abi.decodedEvents
 
-	aliases := make([]Alias, 0)
+	aliases := make([]*Alias, 0)
 	seen := make(map[string]struct{})
-	for _, eventItem := range events {
 
-		eventName := eventItem.Name
+	// Based on Starknet documentation, we assume that in each contract, it exists a Event which is an enum containing all other events... (https://docs.starknet.io/architecture-and-concepts/smart-contracts/contract-abi/)
+	// Finding this "golden" event is not an easy path, as multiple enum with the same name can exist in the ABI...
+	// We need to detect the Golden Event to avoid applying Alias on it...
+	potentialsGoldenEvent := make(map[string]*StarknetEvent)
+	for _, event := range events {
+		eventName := event.Name
+		lastPart, newName := eventNameInfo(eventName)
 
-		splitEventName := strings.Split(eventName, "::")
+		if lastPart == "Event" {
+			// Event which are not enum, we can safely apply alias
+			if event.Kind != "enum" {
+				alias := NewAlias(eventName, newName)
+				aliases = append(aliases, alias)
+				continue
+			}
 
-		lastPart := splitEventName[len(splitEventName)-1]
+			potentialsGoldenEvent[event.Name] = event
+			continue
+		}
 
 		if _, found := seen[lastPart]; found {
-			if len(splitEventName) < 2 {
-				panic("parsed event name does not contain enough parts to have an alias")
-			}
-
-			alias := Alias{
-				OldName: eventName,
-				NewName: splitEventName[len(splitEventName)-2] + lastPart,
-			}
-
+			alias := NewAlias(eventName, newName)
 			aliases = append(aliases, alias)
 		}
 
 		seen[lastPart] = struct{}{}
 	}
 
+	if len(potentialsGoldenEvent) == 1 {
+		c.Aliases = aliases
+		return
+	}
+
+	goldenName := detectGoldenEvent(potentialsGoldenEvent)
+	if goldenName == "" {
+		panic("no golden event found")
+	}
+
+	aliases = setNonGoldenAliases(potentialsGoldenEvent, goldenName, aliases)
 	c.Aliases = aliases
 }
 
