@@ -89,12 +89,10 @@ func (p *Project) GenerateEventsBlockFilterQuery() string {
 	for i, dynamicContract := range p.DynamicContracts {
 		if i == 0 {
 			query += fmt.Sprintf(" || evt_addr:%s", dynamicContract.ReferenceContractAddress)
-			fmt.Println("query", query)
 			continue
 		}
 
 		query += fmt.Sprintf(" || evt_addr:%s", dynamicContract.ReferenceContractAddress)
-		fmt.Println("query", query)
 	}
 
 	return query
