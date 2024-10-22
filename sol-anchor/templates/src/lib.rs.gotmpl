@@ -10,8 +10,10 @@ use pb::substreams::v1::program::Data;
 use pb::substreams::v1::program::{{$event.Name}};
 {{- end}}
 
-{{- range $i, $type := .Idl.Types }}
-use idl::idl::program::types::{{$type.Name}};
+{{- range $i, $instruction := .Idl.Instructions }}
+{{- if $instruction.Args }}
+use pb::substreams::v1::program::{{$instruction.PascalCaseName}};
+{{- end }}
 {{- end}}
 
 use sologger_log_context::programs_selector::ProgramsSelector;
@@ -22,14 +24,22 @@ const PROGRAM_ID: &str = "{{.Idl.Metadata.Address}}";
 
 #[substreams::handlers::map]
 fn map_program_data(blk: Block) -> Data {
+
     {{- range $i, $event := .Idl.Events }}
     let mut {{ $event.SnakeCaseName }}_list: Vec<{{$event.Name}}> = Vec::new();
+    {{- end}}
+
+    {{- range $i, $instruction := .Idl.Instructions }}
+    {{- if $instruction.Args }}
+    let mut {{ $instruction.SnakeCaseName }}_list: Vec<{{$instruction.PascalCaseName}}> = Vec::new();
+    {{- end}}
     {{- end}}
 
     blk.transactions().for_each(|transaction| {
         let meta_wrapped = &transaction.meta;
         let meta = meta_wrapped.as_ref().unwrap();
 
+        {{ if .Idl.Events -}}
         // ------------- EVENTS -------------
         let programs_selector: ProgramsSelector = ProgramsSelector::new(&["*".to_string()]);
         let log_contexts = LogContext::parse_logs_basic(&meta.log_messages, &programs_selector);
@@ -54,7 +64,7 @@ fn map_program_data(blk: Block) -> Data {
                                 {
                                     {{ $event.SnakeCaseName }}_list.push({{ $event.Name }} {
                                         {{- range $i, $field := $event.Fields }}
-                                        {{$field.SnakeCaseName}}: {{ if $field.Type.IsSimple }}event.{{$field.SnakeCaseName}}{{ if $field.Type.IsSimplePubKey }}.toString(){{ end }},
+                                        {{$field.SnakeCaseNameWithoutInitialUnderscore}}: {{ if $field.Type.IsSimple }}event.{{$field.SnakeCaseName}}{{ if $field.Type.IsSimplePubKey }}.toString(){{ end }},
                                         {{- else if $field.Type.IsDefined -}}
                                         {{- range $i, $type := $.Idl.Types -}}
                                         {{- if eq $type.Name $field.Type.Defined -}}
@@ -80,12 +90,62 @@ fn map_program_data(blk: Block) -> Data {
                     }
                 });
             });
+        {{- end -}}
+
+        {{ if .Idl.Instructions -}}
+        // ------------- INSTRUCTIONS -------------
+        transaction
+        .walk_instructions()
+        .into_iter()
+        .filter(|inst| inst.program_id().to_string() == PROGRAM_ID)
+        .for_each(|inst| {
+            let slice_u8: &[u8] = &inst.data()[..];
+
+            {{- range $i, $instruction := .Idl.Instructions }}
+            {{- if $instruction.Args -}}
+            if slice_u8[0..8] == idl::idl::program::client::args::{{ $instruction.PascalCaseName }}::DISCRIMINATOR {
+                if let Ok(instruction) =
+                    idl::idl::program::client::args::{{ $instruction.PascalCaseName }}::deserialize(&mut &slice_u8[8..])
+                {
+                    {{ $instruction.SnakeCaseName }}_list.push({{ $instruction.PascalCaseName }} {
+                        {{- range $i, $arg := $instruction.Args }}
+                        {{$arg.SnakeCaseNameWithoutInitialUnderscore}}: {{ if $arg.Type.IsSimple }}instruction.{{$arg.SnakeCaseName}}{{ if $arg.Type.IsSimplePubKey }}.toString(){{ end }},
+                        {{- else if $arg.Type.IsDefined -}}
+                        {{- range $i, $type := $.Idl.Types -}}
+                        {{- if eq $type.Name $arg.Type.Defined -}}
+                        {{- if $type.Type.IsEnum -}}
+                        map_enum_{{$type.SnakeCaseName}}(event.{{$arg.SnakeCaseName}}),
+                        {{- else -}}
+                        {{ $arg.Defined }} {
+                            {{- range $j, $structField := $type.Struct.Fields }}
+                            {{$structField.SnakeCaseName}}: {{$arg.SnakeCaseName}}.{{$structField.SnakeCaseName}}
+                            {{- end}}
+                        }
+                        {{- end}}
+                        {{- end}}
+                        {{- end}}
+                        {{- end}}
+                        {{- end}}
+                    });
+                }
+            }
+            {{- end }}
+            {{- end }}
+        });
+        {{- end }}
     });
+
 
     Data {
         {{- range $i, $event := .Idl.Events }}
         {{ $event.SnakeCaseName }}_list,
-        {{- end}}
+        {{- end }}
+
+        {{- range $i, $instruction := .Idl.Instructions }}
+        {{- if $instruction.Args }}
+        {{ $instruction.SnakeCaseName }}_list,
+        {{- end -}}
+        {{- end }}
     }
 }
 

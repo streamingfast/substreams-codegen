@@ -3,15 +3,21 @@ syntax = "proto3";
 package substreams.v1.program;
 
 message Data {
-  // events
+  
   {{- $counter := 0 }}
   {{- range $i, $event := .Idl.Events }}
     {{- $counter = add $counter 1 }}
     repeated {{ $event.Name }} {{ $event.SnakeCaseName }}_list = {{ $counter }};
   {{- end}}
+
+  {{- range $i, $instruction := .Idl.Instructions -}}
+  {{ if $instruction.Args }}
+    {{- $counter = add $counter 1 }}
+    repeated {{ $instruction.PascalCaseName }} {{ $instruction.SnakeCaseName }}_list = {{ $counter }};
+  {{- end }}
+  {{- end }}
 }
 
-// EVENTS
 {{- range $i, $event := .Idl.Events }}
 message {{$event.Name}} {
   {{- $counter := 0 }}
@@ -22,7 +28,18 @@ message {{$event.Name}} {
 }
 {{- end}}
 
-// TYPES
+{{- range $i, $instruction := .Idl.Instructions }}
+{{ if $instruction.Args }}
+message {{$instruction.PascalCaseName}} {
+  {{- $counter := 0 }}
+  {{- range $i, $arg := $instruction.Args }}
+    {{- $counter = add $counter 1 }}
+    {{ if $arg.Type.IsArray }} repeated {{ end }} {{$arg.Type.ResolveProtobufType}} {{$arg.SnakeCaseName}} = {{ $counter }};
+  {{- end}}
+}
+{{- end}}
+{{- end}}
+
 {{- range $i, $type := .Idl.Types }}
   {{- if $type.Type.IsStruct }}
     message {{$type.Name}} {
@@ -39,5 +56,4 @@ message {{$event.Name}} {
       {{- end}}
     }
   {{- end }}
-
 {{- end}}

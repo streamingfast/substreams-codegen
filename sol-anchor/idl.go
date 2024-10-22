@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"strings"
 	"unicode"
+	"github.com/golang-cz/textcase"
 )
 
 type IDL struct {
-	Events   []Event  `json:"events"`
-	Metadata Metadata `json:"metadata"`
-	Types    []Type   `json:"types"`
+	Events       []Event       `json:"events"`
+	Instructions []Instruction `json:"instructions"`
+	Metadata     Metadata      `json:"metadata"`
+	Types        []Type        `json:"types"`
 }
 
 type Metadata struct {
@@ -25,19 +27,37 @@ type Event struct {
 }
 
 func (e *Event) SnakeCaseName() string {
-	return toSnakeCase(e.Name)
+	return toSnakeCase(e.Name, true)
+}
+
+// --- INSTRUCTIONS
+type Instruction struct {
+	Name string  `json:"name"`
+	Args []Field `json:"args"`
+}
+
+func (i *Instruction) PascalCaseName() string {
+	return textcase.PascalCase(i.Name)
+}
+
+func (i *Instruction) SnakeCaseName() string {
+	return toSnakeCase(i.Name, true)
 }
 
 // --- FIELDS
 
 type Field struct {
-	Name  string    `json:"name"`
-	Type  FieldType `json:"type"`
-	Index bool      `json:"index"`
+	Name string    `json:"name"`
+	Type FieldType `json:"type"`
+	//Index bool      `json:"index"`
 }
 
 func (f *Field) SnakeCaseName() string {
-	return toSnakeCase(f.Name)
+	return toSnakeCase(f.Name, true)
+}
+
+func (f *Field) SnakeCaseNameWithoutInitialUnderscore() string {
+	return toSnakeCase(f.Name, false)
 }
 
 type FieldType struct {
@@ -147,7 +167,7 @@ type Type struct {
 }
 
 func (t *Type) SnakeCaseName() string {
-	return toSnakeCase(t.Name)
+	return toSnakeCase(t.Name, true)
 }
 
 type TypeDetails struct {
@@ -202,7 +222,7 @@ type TypeStructField struct {
 }
 
 func (f *TypeStructField) SnakeCaseName() string {
-	return toSnakeCase(f.Name)
+	return toSnakeCase(f.Name, true)
 }
 
 type TypeEnum struct {
@@ -215,15 +235,18 @@ type TypeEnumVariant struct {
 }
 
 func (f *TypeEnumVariant) SnakeCaseName() string {
-	return strings.ToUpper(toSnakeCase(f.Name))
+	return strings.ToUpper(toSnakeCase(f.Name, true))
 }
 
 // --- UTILS
 
-func toSnakeCase(str string) string {
+func toSnakeCase(str string, initialUnderscore bool) string {
 	var result []rune
 
 	for i, r := range str {
+		if !initialUnderscore && r == '_' && i == 0 {
+			continue
+		}
 		// Check if the character is uppercase
 		if unicode.IsUpper(r) {
 			// Add an underscore before the uppercase letter if it's not the first character
