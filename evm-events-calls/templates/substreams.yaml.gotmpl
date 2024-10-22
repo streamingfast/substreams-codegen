@@ -56,7 +56,7 @@ modules:
     initialBlock: {{ .MustLowestStartBlock }}
     blockFilter:
         module: ethcommon:index_calls
-        {{ $callQuery := .GenerateCallsBlockFilterQuery }}
+        {{- $callQuery := .GenerateCallsBlockFilterQuery }}
         query:
           string: {{ $callQuery }}
     inputs:
