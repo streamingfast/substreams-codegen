@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"unicode"
+
 	"github.com/golang-cz/textcase"
 )
 
@@ -61,9 +62,11 @@ func (f *Field) SnakeCaseNameWithoutInitialUnderscore() string {
 }
 
 type FieldType struct {
-	Simple  string
-	Defined string
-	Array   string
+	Simple     string
+	Defined    string
+	Array      string
+	VecSimple  string
+	VecDefined string
 }
 
 func (t *FieldType) IsSimple() bool {
@@ -80,6 +83,14 @@ func (t *FieldType) IsDefined() bool {
 
 func (t *FieldType) IsArray() bool {
 	return t.Array != ""
+}
+
+func (t *FieldType) IsVecDefined() bool {
+	return t.VecDefined != ""
+}
+
+func (t *FieldType) IsVecSimple() bool {
+	return t.VecSimple != ""
 }
 
 func (t *FieldType) Resolve() string {
@@ -106,41 +117,112 @@ func (t *FieldType) ResolveProtobufType() string {
 	return ToProtobufType(t.Resolve())
 }
 
-func ToProtobufType(rustType string) string {
-	switch rustType {
-	case "u8":
-		return "uint64"
-	case "u64":
-		return "uint64"
-	case "i64":
-		return "int64"
-	case "f64":
-		return "double"
-	case "f32":
-		return "float"
-	case "i32":
-		return "int32"
-	case "u32":
-		return "uint32"
-	case "PubKey":
-		return "string"
+func (f *FieldType) Print(fieldName string, variableName string, types []Type) string {
+	fieldNameSnakeCase := toSnakeCase(fieldName, true)
+	fieldNameSnakeCaseWithoutInitialUnderscore := toSnakeCase(fieldName, false)
+
+	if f.IsSimplePubKey() {
+		return fmt.Sprintf("%s: %s.%s.toString(),", fieldNameSnakeCaseWithoutInitialUnderscore, variableName, fieldNameSnakeCase)
 	}
 
-	return rustType
+	if f.IsSimple() {
+		cast := CastInRustIfNeeded(f.Simple)
+		if cast != "" {
+			return fmt.Sprintf("%s: %s.%s as %s,", fieldNameSnakeCaseWithoutInitialUnderscore, variableName, fieldName, cast)
+		}
+
+		return fmt.Sprintf("%s: %s.%s,", fieldNameSnakeCaseWithoutInitialUnderscore, variableName, fieldNameSnakeCase)
+	}
+
+	if f.IsDefined() {
+		for _, t := range types {
+			if t.Name == f.Defined {
+				if t.Type.IsEnum() {
+					return fmt.Sprintf("%s: map_enum_%s(%s.%s),", toSnakeCase(fieldName, false), t.SnakeCaseName(), variableName, toSnakeCase(fieldName, true))
+				} else {
+					var fieldsInString strings.Builder
+					for _, structField := range t.Type.Struct.Fields {
+						fieldsInString.WriteString(structField.Type.Print(structField.Name, variableName, types))
+					}
+					return fmt.Sprintf(`%s: %s {
+							%s
+						},`, toSnakeCase(fieldName, false), t.Name, fieldsInString.String())
+				}
+			}
+		}
+	}
+
+	return ""
 }
 
-func (t *FieldType) UnmarshalJSON(data []byte) error {
-	var simpleType string
-	if err := json.Unmarshal(data, &simpleType); err == nil {
-		t.Simple = simpleType
-		return nil
-	}
+/*
+A field could be of type:
+    - simple (e.g. "string")
+    - defined
+    - array
+    - vec
+*/
 
+func unmarshalDefined(data []byte) string {
 	var definedType struct {
 		Defined string `json:"defined"`
 	}
 	if err := json.Unmarshal(data, &definedType); err == nil && definedType.Defined != "" {
-		t.Defined = definedType.Defined
+		return definedType.Defined
+	}
+
+	return ""
+}
+
+func unmarshalSimple(data []byte) string {
+	var simpleType string
+	if err := json.Unmarshal(data, &simpleType); err == nil && simpleType != "" {
+		return simpleType
+	}
+
+	return ""
+}
+
+/*
+Return types:
+
+	bool: isDefined (true/false)
+	string: type (simple/defined)
+*/
+func unmarshalVec(data []byte) (bool, string) {
+	// Try simple
+	var vecSimpleType struct {
+		Vec string `json:"vec"`
+	}
+	err := json.Unmarshal(data, &vecSimpleType)
+	if err == nil {
+		return false, vecSimpleType.Vec
+	}
+
+	// Try defined
+	type DefinedType struct {
+		Defined string `json:"defined"`
+	}
+	var vecDefinedType struct {
+		Vec DefinedType `json:"vec"`
+	}
+	err = json.Unmarshal(data, &vecDefinedType)
+	//fmt.Printf("%s", string(vecDefinedType.Vec.Defined))
+	if err == nil {
+		return true, vecDefinedType.Vec.Defined
+	}
+
+	return false, ""
+}
+
+func (t *FieldType) UnmarshalJSON(data []byte) error {
+	if result := unmarshalSimple(data); result != "" {
+		t.Simple = result
+		return nil
+	}
+
+	if result := unmarshalDefined(data); result != "" {
+		t.Defined = result
 		return nil
 	}
 
@@ -149,10 +231,20 @@ func (t *FieldType) UnmarshalJSON(data []byte) error {
 	}
 	if err := json.Unmarshal(data, &arrayType); err == nil && len(arrayType.Array) > 0 {
 		stringType, ok1 := arrayType.Array[0].(string)
-		//_, _ := arrayType.Array[1].(int)
 		if ok1 {
 			t.Array = stringType
 		}
+		return nil
+	}
+
+	isDefined, result := unmarshalVec(data)
+	if result != "" {
+		if isDefined {
+			t.VecDefined = result
+		} else {
+			t.VecSimple = result
+		}
+
 		return nil
 	}
 
@@ -221,8 +313,12 @@ type TypeStructField struct {
 	Type FieldType `json:"type"`
 }
 
-func (f *TypeStructField) SnakeCaseName() string {
-	return toSnakeCase(f.Name, true)
+func (t *TypeStructField) SnakeCaseName() string {
+	return toSnakeCase(t.Name, true)
+}
+
+func (t *TypeStructField) SnakeCaseNameWithoutInitialUnderscore() string {
+	return toSnakeCase(t.Name, false)
 }
 
 type TypeEnum struct {
@@ -239,6 +335,62 @@ func (f *TypeEnumVariant) SnakeCaseName() string {
 }
 
 // --- UTILS
+
+func ToProtobufType(rustType string) string {
+	switch rustType {
+	case "u8":
+		return "uint64"
+	case "u64":
+		return "uint64"
+	case "i64":
+		return "int64"
+	case "f64":
+		return "double"
+	case "f32":
+		return "float"
+	case "i32":
+		return "int32"
+	case "u32":
+		return "uint32"
+	case "PubKey":
+		return "string"
+	}
+
+	return rustType
+}
+
+func CastInRustIfNeeded(rustType string) string {
+	switch rustType {
+	case "u8":
+		return "u64"
+	}
+
+	return ""
+}
+
+func PrintFieldTypeRecursively(fieldName string, fieldType FieldType, types []Type) string {
+	if fieldType.IsSimple() {
+		return fmt.Sprintf("%s: %s", toSnakeCase(fieldName, false), fieldName)
+	}
+
+	if fieldType.IsDefined() {
+		for _, t := range types {
+			if t.Type.IsEnum() {
+
+			} else {
+				var fieldsInString strings.Builder
+				for _, f := range t.Type.Struct.Fields {
+					fieldsInString.WriteString(PrintFieldTypeRecursively(f.SnakeCaseName(), f.Type, types))
+				}
+				return fmt.Sprintf(`%s {
+					%s
+				}`, t.Name, fieldsInString.String())
+			}
+		}
+	}
+
+	return ""
+}
 
 func toSnakeCase(str string, initialUnderscore bool) string {
 	var result []rune

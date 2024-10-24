@@ -16,6 +16,10 @@ use pb::substreams::v1::program::{{$instruction.PascalCaseName}};
 {{- end }}
 {{- end}}
 
+{{- range $i, $type := .Idl.Types }}
+use pb::substreams::v1::program::{{$type.Name}};
+{{- end}}
+
 use sologger_log_context::programs_selector::ProgramsSelector;
 use sologger_log_context::sologger_log_context::LogContext;
 use substreams_solana::pb::sf::solana::r#type::v1::Block;
@@ -63,23 +67,8 @@ fn map_program_data(blk: Block) -> Data {
                                     )
                                 {
                                     {{ $event.SnakeCaseName }}_list.push({{ $event.Name }} {
-                                        {{- range $i, $field := $event.Fields }}
-                                        {{$field.SnakeCaseNameWithoutInitialUnderscore}}: {{ if $field.Type.IsSimple }}event.{{$field.SnakeCaseName}}{{ if $field.Type.IsSimplePubKey }}.toString(){{ end }},
-                                        {{- else if $field.Type.IsDefined -}}
-                                        {{- range $i, $type := $.Idl.Types -}}
-                                        {{- if eq $type.Name $field.Type.Defined -}}
-                                        {{- if $type.Type.IsEnum -}}
-                                        map_enum_{{$type.SnakeCaseName}}(event.{{$field.SnakeCaseName}}),
-                                        {{- else -}}
-                                        {{ $field.Defined }} {
-                                            {{- range $j, $structField := $type.Struct.Fields }}
-                                            {{$structField.SnakeCaseName}}: {{$field.SnakeCaseName}}.{{$structField.SnakeCaseName}}
-                                            {{- end}}
-                                        }
-                                        {{- end}}
-                                        {{- end}}
-                                        {{- end}}
-                                        {{- end}}
+                                        {{- range $i, $arg := $event.Fields }}
+                                        {{ $arg.Type.Print $arg.Name "event" $.Idl.Types }}
                                         {{- end}}
                                     });
                                 }
@@ -109,22 +98,7 @@ fn map_program_data(blk: Block) -> Data {
                 {
                     {{ $instruction.SnakeCaseName }}_list.push({{ $instruction.PascalCaseName }} {
                         {{- range $i, $arg := $instruction.Args }}
-                        {{$arg.SnakeCaseNameWithoutInitialUnderscore}}: {{ if $arg.Type.IsSimple }}instruction.{{$arg.SnakeCaseName}}{{ if $arg.Type.IsSimplePubKey }}.toString(){{ end }},
-                        {{- else if $arg.Type.IsDefined -}}
-                        {{- range $i, $type := $.Idl.Types -}}
-                        {{- if eq $type.Name $arg.Type.Defined -}}
-                        {{- if $type.Type.IsEnum -}}
-                        map_enum_{{$type.SnakeCaseName}}(event.{{$arg.SnakeCaseName}}),
-                        {{- else -}}
-                        {{ $arg.Defined }} {
-                            {{- range $j, $structField := $type.Struct.Fields }}
-                            {{$structField.SnakeCaseName}}: {{$arg.SnakeCaseName}}.{{$structField.SnakeCaseName}}
-                            {{- end}}
-                        }
-                        {{- end}}
-                        {{- end}}
-                        {{- end}}
-                        {{- end}}
+                        {{ $arg.Type.Print $arg.Name "instruction" $.Idl.Types }}
                         {{- end}}
                     });
                 }
@@ -149,7 +123,7 @@ fn map_program_data(blk: Block) -> Data {
     }
 }
 
-{{- range $i, $type := .Idl.Types }}
+{{ range $i, $type := .Idl.Types }}
 {{- if $type.Type.IsEnum -}}
 fn map_enum_{{$type.SnakeCaseName}}(value: {{ $type.Name }}) -> i32 {
     match value {
