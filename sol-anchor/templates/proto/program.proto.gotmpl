@@ -23,7 +23,7 @@ message {{$event.Name}} {
   {{- $counter := 0 }}
   {{- range $i, $field := $event.Fields }}
     {{- $counter = add $counter 1 }}
-    {{ if $field.Type.IsArray }} repeated {{ end }} {{$field.Type.ResolveProtobufType}} {{$field.SnakeCaseName}} = {{ $counter }};
+    {{ if or $field.Type.IsArray $field.Type.IsVec }} repeated {{ end }} {{ if $field.Type.IsOption }} optional {{ end }} {{$field.Type.ResolveProtobufType}} {{$field.SnakeCaseName}} = {{ $counter }};
   {{- end}}
 }
 {{- end}}
@@ -34,7 +34,7 @@ message {{$instruction.PascalCaseName}} {
   {{- $counter := 0 }}
   {{- range $i, $arg := $instruction.Args }}
     {{- $counter = add $counter 1 }}
-    {{ if $arg.Type.IsArray }} repeated {{ end }} {{$arg.Type.ResolveProtobufType}} {{$arg.SnakeCaseName}} = {{ $counter }};
+    {{ if or $arg.Type.IsArray $arg.Type.IsVec }} repeated {{ end }} {{ if $arg.Type.IsOption }} optional {{ end }} {{$arg.Type.ResolveProtobufType}} {{$arg.SnakeCaseName}} = {{ $counter }};
   {{- end}}
 }
 {{- end}}
@@ -46,7 +46,7 @@ message {{$instruction.PascalCaseName}} {
       {{- $counter := 0 }}
       {{- range $i, $field := $type.Type.Struct.Fields }}
         {{- $counter = add $counter 1 }}
-        {{ if $field.Type.IsArray }} repeated {{ end }} {{$field.Type.ResolveProtobufType}} {{$field.SnakeCaseName}} = {{ $counter }};
+        {{ if or $field.Type.IsArray $field.Type.IsVec }} repeated {{ end }} {{ if $field.Type.IsOption }} optional {{ end }} {{$field.Type.ResolveProtobufType}} {{$field.SnakeCaseName}} = {{ $counter }};
       {{- end}}
     }
   {{- else }}

@@ -125,13 +125,28 @@ fn map_program_data(blk: Block) -> Data {
 
 {{ range $i, $type := .Idl.Types }}
 {{- if $type.Type.IsEnum -}}
-fn map_enum_{{$type.SnakeCaseName}}(value: {{ $type.Name }}) -> i32 {
+fn map_enum_{{$type.SnakeCaseName}}(value: idl::idl::program::types::{{ $type.Name }}) -> i32 {
     match value {
         {{- range $j, $variant := $type.Type.Enum.Variants }}
-        StrategyType::{{ $variant.Name }} => return {{ $j }},
+        idl::idl::program::types::{{ $type.Name }}::{{ $variant.Name }} => return {{ $j }},
         {{- end}}
         _ => 0,
     }
 }
-{{- end }}
+{{ else }}
+fn map_option_{{$type.SnakeCaseName}}(value: Option<idl::idl::program::types::{{ $type.Name }}>) -> Option<{{ $type.Name }}> {
+    match value {
+        Some({{$type.SnakeCaseName}}) => {
+            return Some({{$type.PascalCaseName}} {
+                {{- range $i, $field := $type.Type.Struct.Fields }}
+                {{ $field.Type.Print $field.Name $type.SnakeCaseName $.Idl.Types }}
+                {{- end}}
+            })
+        },
+        None => {
+            return None;
+        }
+    }
+}
+{{ end }}
 {{- end }}
