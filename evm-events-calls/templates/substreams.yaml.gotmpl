@@ -28,9 +28,9 @@ modules:
     updatePolicy: set
     valueType: proto:dynamic_datasource
     blockFilter:
-            module: ethcommon:index_events
-            query:
-              string: evt_addr:{{ $ddsContract.ParentContract.Address }}
+      module: ethcommon:index_events
+      query:
+        string: evt_addr:{{ $ddsContract.ParentContract.Address }}
     inputs:
       - source: sf.ethereum.type.v2.Block
 {{- end}}
@@ -41,10 +41,10 @@ modules:
     initialBlock: {{ .MustLowestStartBlock }}
     {{- if .ApplyEventsBlockFilter }}
     blockFilter:
-        module: ethcommon:index_events
-        {{- $eventQuery := .GenerateEventsBlockFilterQuery }}
-        query:
-          string: {{ $eventQuery }}
+      module: ethcommon:index_events
+      {{- $eventQuery := .GenerateEventsBlockFilterQuery }}
+      query:
+        string: {{ $eventQuery }}
     {{- end }}
     inputs:
       - source: sf.ethereum.type.v2.Block
@@ -62,10 +62,10 @@ modules:
     initialBlock: {{ .MustLowestStartBlock }}
     {{- if .ApplyCallsBlockFilter }}
     blockFilter:
-        module: ethcommon:index_calls
-        {{- $callQuery := .GenerateCallsBlockFilterQuery }}
-        query:
-          string: {{ $callQuery }}
+      module: ethcommon:index_calls
+      {{- $callQuery := .GenerateCallsBlockFilterQuery }}
+      query:
+        string: {{ $callQuery }}
     {{- end }}
     inputs:
       - source: sf.ethereum.type.v2.Block
