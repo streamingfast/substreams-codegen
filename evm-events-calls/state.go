@@ -75,6 +75,74 @@ func isValidChainName(input string) bool {
 	return ChainConfigByID[input] != nil
 }
 
+func (p *Project) ApplyEventsBlockFilter() bool {
+	for _, dcontract := range p.DynamicContracts {
+		if dcontract.TrackEvents {
+			return false
+		}
+	}
+
+	for _, contract := range p.Contracts {
+		if contract.TrackEvents {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (p *Project) ApplyCallsBlockFilter() bool {
+	for _, dcontract := range p.DynamicContracts {
+		if dcontract.TrackCalls {
+			return false
+		}
+	}
+
+	for _, contract := range p.Contracts {
+		if contract.TrackCalls {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (p *Project) GenerateEventsBlockFilterQuery() string {
+	var query string
+	for _, contract := range p.Contracts {
+		if !contract.TrackEvents {
+			continue
+		}
+
+		if query == "" {
+			query = fmt.Sprintf("evt_addr:%s", contract.Address)
+			continue
+		}
+
+		query += fmt.Sprintf(" || evt_addr:%s", contract.Address)
+	}
+
+	return query
+}
+
+func (p *Project) GenerateCallsBlockFilterQuery() string {
+	var query string
+	for _, contract := range p.Contracts {
+		if !contract.TrackCalls {
+			continue
+		}
+
+		if query == "" {
+			query = fmt.Sprintf("call_to:%s", contract.Address)
+			continue
+		}
+
+		query += fmt.Sprintf(" || call_to:%s", contract.Address)
+	}
+
+	return query
+}
+
 func (p *Project) TrackAnyCalls() bool {
 	for _, contract := range p.Contracts {
 		if contract.TrackCalls {
@@ -268,18 +336,20 @@ type DynamicContract struct {
 	ParentContractName string `json:"parentContractName"`
 
 	parentContract           *Contract
-	referenceContractAddress string
+	ReferenceContractAddress string `json:"referenceContractAddress"`
 }
 
 func (d DynamicContract) FactoryInitialBlock() uint64 {
 	return *d.parentContract.InitialBlock
 }
-
+func (d DynamicContract) GenerateStoreQuery() string {
+	return fmt.Sprintf("evt_addr:%s && evt_sig:%s", d.parentContract.Address, "0x"+d.parentContract.FactoryCreationEvent)
+}
 func (d DynamicContract) ParentContract() *Contract   { return d.parentContract }
 func (d DynamicContract) Identifier() string          { return d.Name }
 func (d DynamicContract) IdentifierSnakeCase() string { return kace.Snake(d.Name) }
 func (d DynamicContract) FetchABI(chainConfig *ChainConfig) (abi string, err error) {
-	a, err := getContractABIFollowingProxy(context.Background(), d.referenceContractAddress, chainConfig)
+	a, err := getContractABIFollowingProxy(context.Background(), d.ReferenceContractAddress, chainConfig)
 	if err != nil {
 		return "", err
 	}
@@ -317,7 +387,7 @@ func validateContractAddress(p *Project, address string) error {
 	}
 
 	for _, dynamicContract := range p.DynamicContracts {
-		if dynamicContract.referenceContractAddress == address {
+		if dynamicContract.ReferenceContractAddress == address {
 			return fmt.Errorf("contract address %s already exists in the project", address)
 		}
 	}
@@ -347,12 +417,12 @@ func validateIncomingState(p *Project) error {
 			return fmt.Errorf("contract with name %s already exists in the project", dynamicContract.Name)
 		}
 
-		if _, found := uniqueContractAddresses[dynamicContract.referenceContractAddress]; found {
-			return fmt.Errorf("contract address %s already exists in the project", dynamicContract.referenceContractAddress)
+		if _, found := uniqueContractAddresses[dynamicContract.ReferenceContractAddress]; found {
+			return fmt.Errorf("contract address %s already exists in the project", dynamicContract.ReferenceContractAddress)
 		}
 
 		uniqueContractNames[dynamicContract.Name] = struct{}{}
-		uniqueContractAddresses[dynamicContract.referenceContractAddress] = struct{}{}
+		uniqueContractAddresses[dynamicContract.ReferenceContractAddress] = struct{}{}
 	}
 
 	return nil

@@ -72,7 +72,7 @@ func (c *Convo) NextStep() loop.Cmd {
 			return cmd(AskContractAddress{})
 		}
 
-		if contract.Abi == nil || contract.Abi.decodedAbi == nil {
+		if contract.Abi == nil || contract.Abi.decodedEvents == nil {
 			// if the user pasted an empty ABI, we would restart the process or choosing a contract address
 			if contract.emptyABI {
 				contract.Address = ""     // reset the address

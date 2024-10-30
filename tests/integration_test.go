@@ -136,6 +136,8 @@ func TestIntegration(t *testing.T) {
 				fmt.Sprintf("%s:/app/generator.json", c.stateFile),
 				"-e",
 				fmt.Sprintf("TEST_LOCAL_CODEGEN=%s", os.Getenv("TEST_LOCAL_CODEGEN")),
+				"-e",
+				fmt.Sprintf("CI=%s", os.Getenv("CI")),
 				"test-image",
 			}
 
