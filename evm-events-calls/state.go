@@ -343,7 +343,7 @@ func (d DynamicContract) FactoryInitialBlock() uint64 {
 	return *d.parentContract.InitialBlock
 }
 func (d DynamicContract) GenerateStoreQuery() string {
-	return fmt.Sprintf("evt_addr:%s || evt_sig:%s", d.parentContract.Address, "0x"+d.parentContract.FactoryCreationEvent)
+	return fmt.Sprintf("evt_addr:%s && evt_sig:%s", d.parentContract.Address, "0x"+d.parentContract.FactoryCreationEvent)
 }
 func (d DynamicContract) ParentContract() *Contract   { return d.parentContract }
 func (d DynamicContract) Identifier() string          { return d.Name }
