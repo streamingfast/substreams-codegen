@@ -75,10 +75,46 @@ func isValidChainName(input string) bool {
 	return ChainConfigByID[input] != nil
 }
 
+func (p *Project) ApplyEventsBlockFilter() bool {
+	for _, dcontract := range p.DynamicContracts {
+		if dcontract.TrackEvents {
+			return false
+		}
+	}
+
+	for _, contract := range p.Contracts {
+		if contract.TrackEvents {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (p *Project) ApplyCallsBlockFilter() bool {
+	for _, dcontract := range p.DynamicContracts {
+		if dcontract.TrackCalls {
+			return false
+		}
+	}
+
+	for _, contract := range p.Contracts {
+		if contract.TrackCalls {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (p *Project) GenerateEventsBlockFilterQuery() string {
 	var query string
-	for i, contract := range p.Contracts {
-		if i == 0 {
+	for _, contract := range p.Contracts {
+		if !contract.TrackEvents {
+			continue
+		}
+
+		if query == "" {
 			query = fmt.Sprintf("evt_addr:%s", contract.Address)
 			continue
 		}
@@ -86,22 +122,17 @@ func (p *Project) GenerateEventsBlockFilterQuery() string {
 		query += fmt.Sprintf(" || evt_addr:%s", contract.Address)
 	}
 
-	for i, dynamicContract := range p.DynamicContracts {
-		if i == 0 {
-			query += fmt.Sprintf(" || evt_addr:%s", dynamicContract.ReferenceContractAddress)
-			continue
-		}
-
-		query += fmt.Sprintf(" || evt_addr:%s", dynamicContract.ReferenceContractAddress)
-	}
-
 	return query
 }
 
 func (p *Project) GenerateCallsBlockFilterQuery() string {
 	var query string
-	for i, contract := range p.Contracts {
-		if i == 0 {
+	for _, contract := range p.Contracts {
+		if !contract.TrackCalls {
+			continue
+		}
+
+		if query == "" {
 			query = fmt.Sprintf("call_to:%s", contract.Address)
 			continue
 		}
@@ -109,14 +140,6 @@ func (p *Project) GenerateCallsBlockFilterQuery() string {
 		query += fmt.Sprintf(" || call_to:%s", contract.Address)
 	}
 
-	for i, dynamicContract := range p.DynamicContracts {
-		if i == 0 {
-			query += fmt.Sprintf(" || call_to:%s", dynamicContract.ReferenceContractAddress)
-			continue
-		}
-
-		query += fmt.Sprintf(" || call_to:%s", dynamicContract.ReferenceContractAddress)
-	}
 	return query
 }
 
