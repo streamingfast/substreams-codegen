@@ -136,12 +136,12 @@ func (c *Convo) NextStep() (out loop.Cmd) {
 			if dynContract.Abi == nil {
 				// if the user pasted an empty ABI, we would restart the process or choosing a contract address
 				if dynContract.emptyABI {
-					dynContract.referenceContractAddress = "" // reset the reference address
+					dynContract.ReferenceContractAddress = "" // reset the reference address
 					dynContract.emptyABI = false              // reset the flag
 					return notifyContext(cmd(AskContractAddress{}))
 				}
 				if dynContract.RawABI == nil {
-					if dynContract.referenceContractAddress == "" {
+					if dynContract.ReferenceContractAddress == "" {
 						if p.ChainConfig().ApiEndpoint == "" {
 							return notifyContext(cmd(AskDynamicContractABI{}))
 						}
@@ -275,7 +275,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 
 		contract := c.State.dynamicContractOf(factory.Name)
-		contract.referenceContractAddress = inputAddress
+		contract.ReferenceContractAddress = inputAddress
 
 		return c.NextStep()
 
@@ -422,7 +422,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		contract := c.State.dynamicContractOf(factory.Name)
 		if msg.err != nil {
 			return loop.Seq(
-				c.Msg().Messagef("Cannot fetch the ABI for dynamic contract %q (%s)", contract.referenceContractAddress, msg.err).Cmd(),
+				c.Msg().Messagef("Cannot fetch the ABI for dynamic contract %q (%s)", contract.ReferenceContractAddress, msg.err).Cmd(),
 				cmd(AskDynamicContractABI{}),
 			)
 		}
