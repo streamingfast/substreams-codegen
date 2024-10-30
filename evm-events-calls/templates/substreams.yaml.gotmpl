@@ -30,7 +30,7 @@ modules:
     blockFilter:
       module: ethcommon:index_events
       query:
-        string: evt_addr:{{ $ddsContract.ParentContract.Address }}
+        string: {{ $ddsContract.GenerateStoreQuery }}
     inputs:
       - source: sf.ethereum.type.v2.Block
 {{- end}}
