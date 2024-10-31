@@ -1,0 +1,29 @@
+specVersion: v0.1.0
+package:
+  name: {{ .Name }}
+  version: v0.1.0
+
+imports:
+  mantra: https://spkg.io/streamingfast/mantra-common-v0.1.0.spkg
+
+modules:
+  - name: {{ .ModuleName }}
+{{- if .IsEvents }}
+    use: mantra:filtered_events{{ if .HasAttributeValues }}_by_attribute_value{{ end }}
+{{- else if .IsEventGroups }}
+    use: mantra:filtered_event_groups{{ if .HasAttributeValues }}_by_attribute_value{{ end }}
+{{- else }}
+    use: mantra:filtered_trx_by_events{{ if .HasAttributeValues }}_attribute_value{{ end }}
+{{- end }}
+    initialBlock: {{ .InitialBlock }}
+{{- if .HasAttributeValues }}
+    blockFilter:
+      module: mantra:index_events
+      query:
+        string: {{ .GetEventsIndexQuery }}
+{{- end }}
+
+params:
+  {{ .ModuleName }}: {{ .GetEventsQuery }}
+
+network: mantra-mainnet
