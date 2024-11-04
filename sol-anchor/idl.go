@@ -16,6 +16,26 @@ type IDL struct {
 	Types        []Type        `json:"types"`
 }
 
+func (i *IDL) IsTypeUsed(typeName string) bool {
+	for _, instruction := range i.Instructions {
+		for _, arg := range instruction.Args {
+			if arg.Type.IsTypeUsed(typeName) == true {
+				return true
+			}
+		}
+	}
+
+	for _, event := range i.Events {
+		for _, field := range event.Fields {
+			if field.Type.IsTypeUsed(typeName) == true {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 type Metadata struct {
 	Address string `json:"address"`
 }
@@ -126,6 +146,22 @@ func (t *FieldType) IsVec() bool {
 
 func (t *FieldType) IsOption() bool {
 	return t.Option != nil
+}
+
+func (t *FieldType) IsTypeUsed(typeName string) bool {
+	if t.IsDefined() && t.Defined == typeName {
+		return true
+	}
+
+	if t.IsVec() && t.Vec.Type == typeName {
+		return true
+	}
+
+	if t.IsOption() && *t.Option.Defined == typeName {
+		return true
+	}
+
+	return false
 }
 
 func (t *FieldType) Resolve() string {
@@ -241,7 +277,7 @@ func (f *FieldType) Print(fieldName string, variableName string, types []Type) s
 	fieldNameSnakeCaseWithoutInitialUnderscore := toSnakeCase(fieldName, false)
 
 	if f.IsSimplePubKey() {
-		return fmt.Sprintf("%s: %s.%s.toString(),", fieldNameSnakeCaseWithoutInitialUnderscore, variableName, fieldNameSnakeCase)
+		return fmt.Sprintf("%s: %s.%s.to_string(),", fieldNameSnakeCaseWithoutInitialUnderscore, variableName, fieldNameSnakeCase)
 	}
 
 	if f.IsSimple() {
@@ -284,11 +320,11 @@ func (f *FieldType) Print(fieldName string, variableName string, types []Type) s
 
 /*
 A field could be of type:
-    - simple (e.g. "string")
-    - defined
-    - array
-    - vec
-	- optional (simple, defined or vec)
+  - simple (e.g. "string")
+  - defined
+  - array
+  - vec
+  - optional (simple, defined or vec)
 */
 func unmarshalDefined(data []byte) string {
 	var definedType struct {
@@ -312,6 +348,7 @@ func unmarshalSimple(data []byte) string {
 
 /*
 Return types:
+
 	bool: isDefined (true/false)
 	string: type (simple/defined)
 */
@@ -343,8 +380,8 @@ func unmarshalVec(data []byte) (bool, string) {
 
 /*
 Return types:
-	- option type (simple, defined or vec)
-	- type
+  - option type (simple, defined or vec)
+  - type
 */
 func unmarshalOption(data []byte) (string, string) {
 	// Try simple
