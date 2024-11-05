@@ -318,20 +318,21 @@ func (f *FieldType) Print(fieldName string, variableName string, types []Type) s
 	return ""
 }
 
-/*
-A field could be of type:
-  - simple (e.g. "string")
-  - defined
-  - array
-  - vec
-  - optional (simple, defined or vec)
-*/
 func unmarshalDefined(data []byte) string {
 	var definedType struct {
 		Defined string `json:"defined"`
 	}
 	if err := json.Unmarshal(data, &definedType); err == nil && definedType.Defined != "" {
 		return definedType.Defined
+	}
+
+	var definedAlternateType struct {
+		Defined struct {
+			Name string `json:"name"`
+		} `json:"defined"`
+	}
+	if err := json.Unmarshal(data, &definedAlternateType); err == nil && definedAlternateType.Defined.Name != "" {
+		return definedAlternateType.Defined.Name
 	}
 
 	return ""
