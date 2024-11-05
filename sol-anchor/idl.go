@@ -10,10 +10,18 @@ import (
 )
 
 type IDL struct {
+	Address      string        `json:"address"` // seen in the 'secret' program
 	Events       []Event       `json:"events"`
 	Instructions []Instruction `json:"instructions"`
 	Metadata     Metadata      `json:"metadata"`
 	Types        []Type        `json:"types"`
+}
+
+func (i *IDL) ProgramID() string {
+	if i.Metadata.Address != "" {
+		return i.Metadata.Address
+	}
+	return i.Address
 }
 
 func (i *IDL) IsTypeUsed(typeName string) bool {
@@ -38,6 +46,7 @@ func (i *IDL) IsTypeUsed(typeName string) bool {
 
 type Metadata struct {
 	Address string `json:"address"`
+	Name    string `json:"name"` // seen in the 'secret' program
 }
 
 // --- EVENTS
@@ -129,7 +138,7 @@ func (t *FieldType) IsSimple() bool {
 }
 
 func (t *FieldType) IsSimplePubKey() bool {
-	return t.Simple == "publicKey"
+	return t.Simple == "publicKey" || t.Simple == "pubkey"
 }
 
 func (t *FieldType) IsDefined() bool {
@@ -603,7 +612,7 @@ func ToProtobufType(rustType string) string {
 		return "int32"
 	case "u32":
 		return "uint32"
-	case "PubKey":
+	case "PubKey", "pubkey", "publicKey":
 		return "string"
 	}
 
