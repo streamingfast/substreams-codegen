@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/mr-tron/base58"
 	codegen "github.com/streamingfast/substreams-codegen"
 	"github.com/streamingfast/substreams-codegen/loop"
+	"github.com/tidwall/sjson"
 )
 
 type Convo struct {
@@ -37,12 +39,20 @@ func (c *Convo) NextStep() loop.Cmd {
 		return cmd(codegen.AskProjectName{})
 	}
 
-	if !p.InitialBlockSet {
-		return cmd(codegen.AskInitialStartBlockType{})
+	if p.idl == nil {
+		return cmd(AskIdl{})
 	}
 
-	if p.Idl == nil {
-		return cmd(AskIdl{})
+	if p.ChainName == "" {
+		return cmd(codegen.AskChainName{})
+	}
+
+	if p.idl.ProgramID() == "" {
+		return cmd(AskProgramID{})
+	}
+
+	if !p.InitialBlockSet {
+		return cmd(codegen.AskInitialStartBlockType{})
 	}
 
 	return cmd(codegen.RunGenerate{})
@@ -70,6 +80,18 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		c.State.Name = msg.Value
 		return c.NextStep()
 
+	case codegen.AskChainName:
+		labels := []string{"Solana Mainnet", "Solana Devnet"}
+		values := []string{"solana-mainnet", "solana-devnet"}
+		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain").
+			Labels(labels...).
+			Values(values...).
+			Cmd()
+
+	case codegen.InputChainName:
+		c.State.ChainName = msg.Value
+		return c.NextStep()
+
 	case codegen.AskInitialStartBlockType:
 		return c.Action(codegen.InputAskInitialStartBlockType{}).
 			TextInput(codegen.InputAskInitialStartBlockTypeTextInput(), "Submit").
@@ -88,9 +110,8 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.NextStep()
 
 	case AskIdl:
-
 		return c.Action(InputIdl{}).
-			TextInput(fmt.Sprintf("Input the Anchor IDL in JSON format\n"), "Submit").
+			TextInput("Input the Anchor IDL in JSON format\n", "Submit").
 			Cmd()
 
 	case InputIdl:
@@ -100,19 +121,43 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			fmt.Println("Error unmarshaling JSON:", err)
 			return loop.Quit(fmt.Errorf("could not decode IDL"))
 		}
-
-		c.State.Idl = idl
+		if idl.Metadata.Name == "" {
+			idl.Metadata.Name = c.State.Name // we need a name so anchor can compile
+		}
+		c.State.idl = idl
 		c.State.IdlString = msg.Value
+		return c.NextStep()
+
+	case AskProgramID:
+		return c.Action(InputProgramID{}).
+			TextInput("Cannot get the ProgramID from the IDL. Please input the Program ID to match.\n", "Submit").
+			Cmd()
+
+	case InputProgramID:
+		newIDLString, err := sjson.Set(c.State.IdlString, "metadata.address", msg.Value)
+		if err != nil {
+			return loop.Quit(fmt.Errorf("could not set ProgramID in IDL: %w", err))
+		}
+		c.State.IdlString = newIDLString
+
+		c.State.idl.Metadata.Address = msg.Value
+		b, err := base58.Decode(msg.Value)
+		if err != nil || len(b) != 32 {
+			return loop.Seq(
+				c.Msg().Message("This address is not a valid base58-encoded solana address").Cmd(),
+				c.NextStep(),
+			)
+		}
 		return c.NextStep()
 
 	case codegen.RunGenerate:
 		str := ""
-		for _, event := range c.State.Idl.Events {
+		for _, event := range c.State.idl.Events {
 			for _, field := range event.Fields {
 				fmt.Println("-----------------------------")
 				fmt.Println(field.Name)
 
-				str += fmt.Sprintf("%s", field.Type.Simple)
+				str += field.Type.Simple
 			}
 		}
 		return c.CmdGenerate(c.State.Generate)

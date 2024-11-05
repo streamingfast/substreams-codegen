@@ -166,8 +166,18 @@ func (t *FieldType) IsTypeUsed(typeName string) bool {
 		return true
 	}
 
-	if t.IsOption() && *t.Option.Defined == typeName {
-		return true
+	if t.IsOption() {
+		switch {
+		case t.Option.Defined != nil && *t.Option.Defined == typeName:
+			return true
+		case t.Option.Simple != nil && *t.Option.Simple == typeName:
+			return true
+		case t.Option.Array != nil && t.Option.Array.Type == typeName:
+			return true
+		case t.Option.Vec != nil && t.Option.Vec.Type == typeName:
+			return true
+		}
+		return false
 	}
 
 	return false
@@ -554,7 +564,7 @@ func (t *TypeDetails) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	return fmt.Errorf("failed to unmarshal Type: %s", string(data))
+	return fmt.Errorf("failed to unmarshal TypeDetails: %s", string(data))
 }
 
 type TypeStruct struct {

@@ -11,11 +11,10 @@ type Project struct {
 	Download        bool   `json:"download,omitempty"`
 	InitialBlock    uint64 `json:"initialBlock,omitempty"`
 	InitialBlockSet bool   `json:"initialBlockSet,omitempty"`
-	Idl             *IDL   `json:"idl,omitempty"`
+	idl             *IDL
 	IdlString       string `json:"idlString,omitempty"`
-
-	generatedCodeCompleted bool
 }
 
+func (p *Project) Idl() *IDL          { return p.idl }
 func (p *Project) ModuleName() string { return strings.ReplaceAll(p.Name, "-", "_") }
 func (p *Project) KebabName() string  { return strings.ReplaceAll(p.Name, "_", "-") }
