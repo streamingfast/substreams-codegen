@@ -32,6 +32,10 @@ modules:
    inputs:
    - map: solana:blocks_without_votes
    output:
-    type: proto:substreams.v1.program.Data
+     type: proto:substreams.v1.program.Data
+   blockFilter:
+     module: solana:program_ids_without_votes
+     query:
+       string: program:{{.Idl.ProgramID}}
 
 network: {{ .ChainName }} 
