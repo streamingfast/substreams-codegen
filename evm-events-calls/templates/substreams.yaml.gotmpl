@@ -3,6 +3,9 @@ package:
   name: {{ .ModuleName }}
   version: v0.1.0
 
+imports:
+    ethcommon: https://spkg.io/streamingfast/ethereum-common-v0.3.0.spkg
+
 protobuf:
   files:
     - contract.proto
@@ -24,6 +27,10 @@ modules:
     initialBlock: {{ with $ddsContract.ParentContract.InitialBlock }}{{ . }}{{ else }}0{{ end }}
     updatePolicy: set
     valueType: proto:dynamic_datasource
+    blockFilter:
+      module: ethcommon:index_events
+      query:
+        string: {{ $ddsContract.GenerateStoreQuery }}
     inputs:
       - source: sf.ethereum.type.v2.Block
 {{- end}}
@@ -32,6 +39,13 @@ modules:
   - name: map_events
     kind: map
     initialBlock: {{ .MustLowestStartBlock }}
+    {{- if .ApplyEventsBlockFilter }}
+    blockFilter:
+      module: ethcommon:index_events
+      {{- $eventQuery := .GenerateEventsBlockFilterQuery }}
+      query:
+        string: {{ $eventQuery }}
+    {{- end }}
     inputs:
       - source: sf.ethereum.type.v2.Block
     {{- range $index, $ddsContract := .DynamicContracts }}
@@ -46,6 +60,13 @@ modules:
   - name: map_calls
     kind: map
     initialBlock: {{ .MustLowestStartBlock }}
+    {{- if .ApplyCallsBlockFilter }}
+    blockFilter:
+      module: ethcommon:index_calls
+      {{- $callQuery := .GenerateCallsBlockFilterQuery }}
+      query:
+        string: {{ $callQuery }}
+    {{- end }}
     inputs:
       - source: sf.ethereum.type.v2.Block
   {{- range $index, $ddsContract := .DynamicContracts }}

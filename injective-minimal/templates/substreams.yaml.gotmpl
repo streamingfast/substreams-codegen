@@ -28,5 +28,17 @@ modules:
    - source: sf.cosmos.type.v2.Block
    output:
     type: proto:mydata.v1.MyData
+  # For performance, you should use a blockFilter whenever possible, like this:
+  # imports:
+  #   injective: https://spkg.io/streamingfast/injective-common-v0.2.2.spkg
+  #
+  # modules:
+  #   - name: (...)
+  #     blockFilter:
+  #      module: injective:index_events
+  #      query:
+  #          string: "(type:message && attr:action) || (type:wasm && attr:_contract_address)"
+  #
+  # see https://substreams.dev/streamingfast/injective-common/v0.2.2 for details
 
 network: {{ .ChainNetwork }}

@@ -15,7 +15,7 @@ import (
 var QuitInvalidContext = loop.Quit(fmt.Errorf("invalid state context: no current contract"))
 var AbiFilepathPrefix = "file://"
 
-const EKUBO_POSITIONS_CONTRACT = "0x2e0af29598b407c8716b17f6d2795eca1b471413fa03fb145a5e33722184067"
+const EKUBO_POSITIONS_CONTRACT = "0x02e0af29598b407c8716b17f6d2795eca1b471413fa03fb145a5e33722184067"
 
 type Convo struct {
 	*codegen.Conversation[*Project]
@@ -72,7 +72,7 @@ func (c *Convo) NextStep() loop.Cmd {
 			return cmd(AskContractAddress{})
 		}
 
-		if contract.Abi == nil || contract.Abi.decodedAbi == nil {
+		if contract.Abi == nil || contract.Abi.decodedEvents == nil {
 			// if the user pasted an empty ABI, we would restart the process or choosing a contract address
 			if contract.emptyABI {
 				contract.Address = ""     // reset the address

@@ -10,6 +10,6 @@ fn map_my_data(blk: Block) -> mydata::MyData {
     my_data.block_slot = blk.slot;
     my_data.block_timestamp = blk.block_time.clone().unwrap_or_default().timestamp as u64;
     my_data.transactions_len = blk.transactions.len() as u64;
-    my_data.instructions_len = blk.instructions().count() as u64;
+    my_data.instructions_len = blk.walk_instructions().count() as u64;
     my_data
 }

@@ -33,6 +33,7 @@ type GenerateConfig struct {
 	Files map[string]string
 }
 
+// GenerateTemplateTree will read from both the given templateFS and the commonTemplate folder for files prefixed with 'common-templates/'
 func GenerateTemplateTree(projectData any, templatesFS embed.FS, templateFiles map[string]string) ReturnGenerate {
 	projFiles, err := generateTemplateTree(projectData, templatesFS, templateFiles)
 	if err != nil {
@@ -55,12 +56,23 @@ func generateTemplateTree(projectData any, templatesFS embed.FS, templateFiles m
 		var content []byte
 		if strings.HasSuffix(templateFile, ".gotmpl") {
 			buffer := &bytes.Buffer{}
-			if err := tpls.ExecuteTemplate(buffer, templateFile, projectData); err != nil {
+
+			var err error
+			if strings.HasPrefix(templateFile, "common-templates/") {
+				err = commonTemplates.ExecuteTemplate(buffer, templateFile, projectData)
+			} else {
+				err = tpls.ExecuteTemplate(buffer, templateFile, projectData)
+			}
+			if err != nil {
 				return nil, fmt.Errorf("embed render entry template %q: %w", templateFile, err)
 			}
 			content = buffer.Bytes()
 		} else {
-			content, err = templatesFS.ReadFile("templates/" + templateFile)
+			if strings.HasPrefix(templateFile, "common-templates/") {
+				content, err = commonTemplatesFS.ReadFile(templateFile)
+			} else {
+				content, err = templatesFS.ReadFile("templates/" + templateFile)
+			}
 			if err != nil {
 				return nil, fmt.Errorf("reading %q: %w", templateFile, err)
 			}

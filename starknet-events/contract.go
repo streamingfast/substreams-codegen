@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/NethermindEth/juno/core/felt"
-
 	starknetRPC "github.com/NethermindEth/starknet.go/rpc"
 )
 
@@ -17,23 +16,24 @@ type Alias struct {
 	NewName string
 }
 
+func NewAlias(oldName, newName string) *Alias {
+	return &Alias{
+		OldName: oldName,
+		NewName: newName,
+	}
+}
+
 type Contract struct {
 	Name    string `json:"name,omitempty"`
 	Address string `json:"address"`
 
 	InitialBlock *uint64         `json:"initialBlock"`
-	Aliases      []Alias         `json:"aliases"`
+	Aliases      []*Alias        `json:"aliases"`
 	RawABI       json.RawMessage `json:"rawAbi,omitempty"`
 
 	Abi                     *ABI
 	emptyABI                bool
 	abiFetchedInThisSession bool
-
-	PaddedAddress string
-}
-
-func (c *Contract) AddressWithoutLead() string {
-	return c.PaddedAddress[2:]
 }
 
 func (c *Contract) Identifier() string { return c.Name }
@@ -49,34 +49,50 @@ func (c *Contract) IdentifierCapitalize() string {
 	return strings.ToUpper(string(c.Name[0])) + c.Name[1:]
 }
 func (c *Contract) SetAliases() {
-	events := c.Abi.decodedAbi.EventsBySelector
+	events := c.Abi.decodedEvents
 
-	aliases := make([]Alias, 0)
+	aliases := make([]*Alias, 0)
 	seen := make(map[string]struct{})
-	for _, eventItem := range events {
 
-		eventName := eventItem.Name
+	// Based on Starknet documentation, we assume that in each contract, it exists a Event which is an enum containing all other events... (https://docs.starknet.io/architecture-and-concepts/smart-contracts/contract-abi/)
+	// Finding this "golden" event is not an easy path, as multiple enum with the same name can exist in the ABI...
+	// We need to detect the Golden Event to avoid applying Alias on it...
+	potentialsGoldenEvent := make(map[string]*StarknetEvent)
+	for _, event := range events {
+		eventName := event.Name
+		lastPart, newName := eventNameInfo(eventName)
 
-		splitEventName := strings.Split(eventName, "::")
+		if lastPart == "Event" {
+			// Event which are not enum, we can safely apply alias
+			if event.Kind != "enum" {
+				alias := NewAlias(eventName, newName)
+				aliases = append(aliases, alias)
+				continue
+			}
 
-		lastPart := splitEventName[len(splitEventName)-1]
+			potentialsGoldenEvent[event.Name] = event
+			continue
+		}
 
 		if _, found := seen[lastPart]; found {
-			if len(splitEventName) < 2 {
-				panic("parsed event name does not contain enough parts to have an alias")
-			}
-
-			alias := Alias{
-				OldName: eventName,
-				NewName: splitEventName[len(splitEventName)-2] + lastPart,
-			}
-
+			alias := NewAlias(eventName, newName)
 			aliases = append(aliases, alias)
 		}
 
 		seen[lastPart] = struct{}{}
 	}
 
+	if len(potentialsGoldenEvent) == 1 {
+		c.Aliases = aliases
+		return
+	}
+
+	goldenName := detectGoldenEvent(potentialsGoldenEvent)
+	if goldenName == "" {
+		panic("no golden event found")
+	}
+
+	aliases = setNonGoldenAliases(potentialsGoldenEvent, goldenName, aliases)
 	c.Aliases = aliases
 }
 
@@ -93,14 +109,14 @@ func (c *Contract) fetchABI(config *ChainConfig) (string, error) {
 	}
 
 	emptyField := felt.Felt{}
-	addressToFelt, err := emptyField.SetString(c.PaddedAddress)
+	addressToFelt, err := emptyField.SetString(c.AddressWithoutPrefix())
 	if err != nil {
 		return "", fmt.Errorf("converting address to felt: %w", err)
 	}
 
 	classOutput, err := client.ClassAt(ctx, blockId, addressToFelt)
 	if err != nil {
-		return "", fmt.Errorf("calling class at for adderss: %s : %w", c.PaddedAddress, err)
+		return "", fmt.Errorf("calling class at for adderss: %s : %w", c.AddressWithoutPrefix(), err)
 	}
 
 	var contractABI string
@@ -120,19 +136,19 @@ func (c *Contract) fetchABI(config *ChainConfig) (string, error) {
 // In some explorers (Ex: Starkscan) the address is padded on 66 characters with the prefix 0x
 // The Contract is containing both, the padded address or the raw one without leading zeros...
 func (c *Contract) handleContractAddress(inputAddress string) {
-	// ADDRESS ALREADY PADDED
+	// Address padded
 	if len(inputAddress) == 66 {
-		c.Address = inputAddress[0:2] + strings.TrimLeft(inputAddress[2:], "0")
-		c.PaddedAddress = inputAddress
-
+		c.Address = inputAddress
 		return
 	}
 
-	// ADDRESS NOT PADDED
+	// Address not padded
+	withoutPrefix := strings.TrimPrefix(inputAddress, "0x")
+	c.Address = "0x" + strings.Repeat("0", 64-len(withoutPrefix)) + withoutPrefix
 
-	c.Address = inputAddress
-	addressWithoutPrefix := inputAddress[2:]
-
-	c.PaddedAddress = strings.Repeat("0", 64-len(addressWithoutPrefix)) + addressWithoutPrefix
 	return
+}
+
+func (c *Contract) AddressWithoutPrefix() string {
+	return strings.TrimPrefix(c.Address, "0x")
 }

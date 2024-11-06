@@ -8,7 +8,7 @@ import (
 	"github.com/bmatcuk/doublestar/v4"
 )
 
-//go:embed common-templates/*.gotmpl
+//go:embed common-templates/*
 var commonTemplatesFS embed.FS
 
 var commonTemplates *template.Template
