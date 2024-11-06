@@ -29,6 +29,7 @@ binaries:
 modules:
  - name: map_program_data
    kind: map
+   initialBlock: {{ .InitialBlock }}
    inputs:
    - map: solana:blocks_without_votes
    output:

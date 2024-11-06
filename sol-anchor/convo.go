@@ -23,11 +23,11 @@ func New() codegen.Converser {
 
 func init() {
 	codegen.RegisterConversation(
-		"sol-anchor",
-		"Get Solana transactions filtered by one or several Program IDs",
-		"Allows you to specified a regex containing the Program IDs used to filter the Solana transactions",
+		"sol-anchor-beta",
+		"Given an Anchor JSON IDL, create a Substreams that decodes instructions and events",
+		"Allows you to decode data based on an Anchor JSON IDL",
 		codegen.ConversationFactory(New),
-		100,
+		2000,
 	)
 }
 
