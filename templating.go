@@ -12,8 +12,6 @@ import (
 	"github.com/huandu/xstrings"
 	"github.com/iancoleman/strcase"
 
-	//solanchor "github.com/streamingfast/substreams-codegen/sol-anchor"
-
 	"github.com/bmatcuk/doublestar/v4"
 	"github.com/golang-cz/textcase"
 )
