@@ -26,7 +26,7 @@ func init() {
 		"Get Solana transactions filtered by one or several Program IDs",
 		"Allows you to specified a regex containing the Program IDs used to filter the Solana transactions",
 		codegen.ConversationFactory(New),
-		100,
+		2001,
 	)
 }
 
