@@ -1,0 +1,96 @@
+package solanchor
+
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+
+	"github.com/golang-cz/textcase"
+)
+
+// --- TYPES
+
+type Type struct {
+	Name string      `json:"name"`
+	Type TypeDetails `json:"type"`
+}
+
+func (t *Type) SnakeCaseName() string {
+	return toSnakeCase(t.Name, true)
+}
+
+func (t *Type) PascalCaseName() string {
+	return textcase.PascalCase(t.Name)
+}
+
+type TypeDetails struct {
+	Kind   string
+	Struct *TypeStruct
+	Enum   *TypeEnum
+}
+
+func (t *TypeDetails) IsStruct() bool {
+	return t.Kind == "struct"
+}
+
+func (t *TypeDetails) IsEnum() bool {
+	return t.Kind == "enum"
+}
+
+func (t *TypeDetails) UnmarshalJSON(data []byte) error {
+	var kindType struct {
+		Kind string `json:"kind"`
+	}
+	if err := json.Unmarshal(data, &kindType); err == nil {
+		switch kindType.Kind {
+		case "enum":
+			var typeEnum TypeEnum
+			if err := json.Unmarshal(data, &typeEnum); err == nil {
+				t.Kind = "enum"
+				t.Enum = &typeEnum
+				return nil
+			}
+		case "struct":
+			var typeStruct TypeStruct
+			if err := json.Unmarshal(data, &typeStruct); err == nil {
+				t.Kind = "struct"
+				t.Struct = &typeStruct
+				return nil
+			}
+		}
+		return nil
+	}
+
+	return fmt.Errorf("failed to unmarshal TypeDetails: %s", string(data))
+}
+
+type TypeStruct struct {
+	Kind   string            `json:"kind"`
+	Fields []TypeStructField `json:"fields"`
+}
+
+type TypeStructField struct {
+	Name string    `json:"name"`
+	Type FieldType `json:"type"`
+}
+
+func (t *TypeStructField) SnakeCaseName() string {
+	return toSnakeCase(t.Name, true)
+}
+
+func (t *TypeStructField) SnakeCaseNameWithoutInitialUnderscore() string {
+	return toSnakeCase(t.Name, false)
+}
+
+type TypeEnum struct {
+	Kind     string            `json:"kind"`
+	Variants []TypeEnumVariant `json:"variants"`
+}
+
+type TypeEnumVariant struct {
+	Name string `json:"name"`
+}
+
+func (f *TypeEnumVariant) SnakeCaseName() string {
+	return strings.ToUpper(toSnakeCase(f.Name, true))
+}
