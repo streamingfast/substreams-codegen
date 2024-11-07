@@ -14,7 +14,7 @@ func init() {
 		"Simplest Substreams to get you started on solana",
 		"This creating the most simple substreams on Solana",
 		codegen.ConversationFactory(New),
-		60,
+		2002,
 	)
 }
 
