@@ -125,7 +125,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		ApiEndpoint:          "",
 		ExampleContract:      "0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7",
 		FirstStreamableBlock: 0,
-		Network:              "avalanche",
+		Network:              "avalanche-mainnet",
 		abiCache:             make(map[string]*ABI),
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        false,
