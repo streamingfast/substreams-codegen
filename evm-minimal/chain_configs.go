@@ -78,10 +78,10 @@ var ChainConfigByID = map[string]*ChainConfig{
 		SupportsCalls:        false,
 		APIKeyEnvVar:         "CODEGEN_OPTIMISM_API_KEY",
 	},
-	"avalanche": {
+	"avalanche-mainnet": {
 		DisplayName:          "Avalanche C-chain",
 		FirstStreamableBlock: 0,
-		Network:              "avalanche",
+		Network:              "avalanche-mainnet",
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        false,
 	},
