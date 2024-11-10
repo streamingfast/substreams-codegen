@@ -119,7 +119,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		SupportsCalls:        false,
 		APIKeyEnvVar:         "CODEGEN_OPTIMISM_API_KEY",
 	},
-	"avalanche": {
+	"avalanche-mainnet": {
 		DisplayName:          "Avalanche C-chain",
 		ExplorerLink:         "https://subnets.avax.network/c-chain",
 		ApiEndpoint:          "",
