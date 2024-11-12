@@ -70,7 +70,9 @@ func (c *Conversation[X]) CmdDownloadFiles(msg ReturnGenerate) loop.Cmd {
 `+"```"+`bash
 substreams build
 substreams auth
-substreams gui       # Get streaming!
+substreams gui       			  # Get streaming!
+substreams registry login         # Login to substreams.dev
+substreams registry publish       # Publish your Substreams to substreams.dev
 `+"```"+`
 
 Build Subgraphs and other sinks with:

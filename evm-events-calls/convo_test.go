@@ -142,6 +142,8 @@ func TestConvoUpdate(t *testing.T) {
 	msg1 := seq[1]().(*pbconvo.SystemOutput)
 
 	assert.Contains(t, msg1.GetMessage().Markdown, "substreams build\nsubstreams auth\nsubstreams gui")
+	assert.Contains(t, msg1.GetMessage().Markdown, "substreams registry login")
+	assert.Contains(t, msg1.GetMessage().Markdown, "substreams registry publish")
 	//msg2 := seq[1]().(*pbconvo.SystemOutput)
 	//assert.NotNil(t, msg2.GetDownloadFiles())
 	//
