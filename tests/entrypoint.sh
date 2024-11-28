@@ -13,7 +13,9 @@ else
     listen_address="https://codegen-staging.substreams.dev"
 fi
 
-substreams init --state-file /app/generator.json --force-download-cwd --codegen-endpoint $listen_address
+SUBSTREAMS_CODEGEN_ENDPOINT=$listen_address
+
+substreams init --state-file /app/generator.json --force-download-cwd
 
 substreams build
 
