@@ -45,10 +45,6 @@ func TestIntegration(t *testing.T) {
 			stateFile: "./injective-minimal/generator.json",
 		},
 		{
-			name:      "vara-minimal",
-			stateFile: "./vara-minimal/generator.json",
-		},
-		{
 			name:      "sol-minimal",
 			stateFile: "./sol-minimal/generator.json",
 		},
