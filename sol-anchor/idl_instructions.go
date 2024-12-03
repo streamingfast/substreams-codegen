@@ -6,8 +6,10 @@ import (
 
 // --- INSTRUCTIONS
 type Instruction struct {
-	Name string  `json:"name"`
-	Args []Field `json:"args"`
+	Name          string    `json:"name"`
+	Args          []Field   `json:"args"`
+	Accounts      []Account `json:"accounts"`
+	Discriminator []uint8   `json:"discriminator"`
 }
 
 func (i *Instruction) PascalCaseName() string {

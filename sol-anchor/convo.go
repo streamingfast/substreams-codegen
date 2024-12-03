@@ -126,7 +126,49 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 		c.State.idl = idl
 		c.State.IdlString = msg.Value
-		return c.NextStep()
+
+		descString := "Here are the instructions that you will get from this IDL:\n\n"
+		for _, inst := range idl.Instructions {
+			descString += fmt.Sprintf("# %s (%s)\n", inst.Name, arrayToHex(inst.Discriminator))
+			if len(inst.Args) == 0 {
+				descString += "## Args (none)\n"
+			} else {
+				descString += "## Args\n"
+				for _, arg := range inst.Args {
+					descString += fmt.Sprintf("* %s\n", arg.Name)
+				}
+			}
+			if len(inst.Accounts) == 0 {
+				descString += "\n## Accounts (none)\n"
+			} else {
+				descString += "\n## Accounts\n"
+				for _, acc := range inst.Accounts {
+					if acc.Address == "" {
+						descString += fmt.Sprintf("- %s\n", acc.Name)
+					} else {
+						descString += fmt.Sprintf("- _%s (ignored static: %s)_\n", acc.Name, acc.Address)
+					}
+				}
+			}
+			descString += "\n"
+		}
+
+		peekIDL := c.Msg().Message(descString).Cmd()
+		return loop.Seq(peekIDL, cmd(AskConfirmIDL{}))
+
+	case AskConfirmIDL:
+		return c.Action(InputConfirmIDL{}).
+			Confirm("Do you want to proceed with this IDL?", "Yes", "No").
+			DefaultAccept().
+			Cmd()
+
+	case InputConfirmIDL:
+		if msg.Affirmative {
+			return c.NextStep()
+		}
+		c.State.idl = nil
+		c.State.IdlString = ""
+		return loop.Seq(c.Msg().Message("Modify your JSON IDL and try again...").Cmd(), cmd(AskIdl{}))
 
 	case AskProgramID:
 		return c.Action(InputProgramID{}).
@@ -167,4 +209,15 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 	}
 
 	return loop.Quit(fmt.Errorf("invalid loop message: %T", msg))
+}
+
+func arrayToHex(arr []uint8) (out string) {
+	for i, v := range arr {
+		if i == 0 {
+			out = fmt.Sprintf("%02x", v)
+			continue
+		}
+		out = fmt.Sprintf("%s %02x", out, v)
+	}
+	return out
 }

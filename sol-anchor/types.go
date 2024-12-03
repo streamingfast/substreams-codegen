@@ -6,3 +6,5 @@ type AskIdl struct{}
 type InputIdl struct{ pbconvo.UserInput_TextInput }
 type AskProgramID struct{}
 type InputProgramID struct{ pbconvo.UserInput_TextInput }
+type AskConfirmIDL struct{}
+type InputConfirmIDL struct{ pbconvo.UserInput_Confirmation }
