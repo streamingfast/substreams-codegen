@@ -35,7 +35,7 @@ message {{$instruction.PascalCaseName}} {
   {{- range $i, $acc := $instruction.Accounts }}
     {{- if not $acc.Address }}
     {{- $counter = add $counter 1 }}
-    string acct_{{$acc.Name}} = {{ $counter }};
+    string acct_{{$acc.SnakeCaseName}} = {{ $counter }};
     {{- end }}
   {{- end}}
 }

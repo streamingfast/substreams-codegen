@@ -63,7 +63,7 @@ fn map_program_data(blk: Block) -> Data {
                                     )
                                 {
                                     {{ $event.SnakeCaseName }}_list.push({{ $event.Name }} {
-                                        trx_hash: context.signature.clone(),
+                                        trx_hash: transaction.id(),
                                         {{- range $i, $arg := $event.Fields }}
                                         {{ $arg.Type.Print $arg.Name "event" $.Idl.Types }}
                                         {{- end}}
@@ -100,7 +100,7 @@ fn map_program_data(blk: Block) -> Data {
                         {{- end }}
                         {{- range $i, $acc := $instruction.Accounts }}
                         {{- if not $acc.Address }}
-                        acct_{{ $acc.Name }}: accts[{{ $i }}].to_string(),
+                        acct_{{ $acc.SnakeCaseName }}: accts[{{ $i }}].to_string(),
                         {{- end }}
                         {{- end }}
                     });

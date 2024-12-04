@@ -6,3 +6,7 @@ type Account struct {
 	Signer   bool   `json:"signer"`
 	Address  string `json:"address"`
 }
+
+func (a *Account) SnakeCaseName() string {
+	return toSnakeCase(a.Name, true)
+}

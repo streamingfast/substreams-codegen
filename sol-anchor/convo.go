@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/mr-tron/base58"
 	codegen "github.com/streamingfast/substreams-codegen"
@@ -127,30 +128,39 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		c.State.idl = idl
 		c.State.IdlString = msg.Value
 
-		descString := "Here are the instructions that you will get from this IDL:\n\n"
+		descString := "# Instructions\n\n"
 		for _, inst := range idl.Instructions {
-			descString += fmt.Sprintf("# %s (%s)\n", inst.Name, arrayToHex(inst.Discriminator))
-			if len(inst.Args) == 0 {
-				descString += "## Args (none)\n"
-			} else {
-				descString += "## Args\n"
-				for _, arg := range inst.Args {
-					descString += fmt.Sprintf("* %s\n", arg.Name)
+			descString += fmt.Sprintf("## %s (%s)\n", inst.Name, arrayToHex(inst.Discriminator))
+			if len(inst.Args) != 0 {
+				argNames := make([]string, len(inst.Args))
+				for i, field := range inst.Args {
+					argNames[i] = field.Name
 				}
+				descString += fmt.Sprintf("* Args: (%s)\n", strings.Join(argNames, ", "))
 			}
-			if len(inst.Accounts) == 0 {
-				descString += "\n## Accounts (none)\n"
-			} else {
-				descString += "\n## Accounts\n"
-				for _, acc := range inst.Accounts {
-					if acc.Address == "" {
-						descString += fmt.Sprintf("- %s\n", acc.Name)
-					} else {
-						descString += fmt.Sprintf("- _%s (ignored static: %s)_\n", acc.Name, acc.Address)
+			if len(inst.Accounts) != 0 {
+				accNames := make([]string, len(inst.Accounts))
+				for i, field := range inst.Accounts {
+					accNames[i] = field.Name
+					if field.Address != "" {
+						accNames[i] = "_" + field.Name + "_"
 					}
 				}
+				descString += fmt.Sprintf("* Accounts: (%s)\n", strings.Join(accNames, ", "))
 			}
 			descString += "\n"
+		}
+
+		if len(idl.Events) != 0 {
+			descString += fmt.Sprintf("# %s\n", "Events")
+			for _, evt := range idl.Events {
+				fieldNames := make([]string, len(evt.Fields))
+				for i, field := range evt.Fields {
+					fieldNames[i] = field.Name
+				}
+				descString += fmt.Sprintf("* %s (%s)\n", evt.Name, strings.Join(fieldNames, ", "))
+				descString += "\n"
+			}
 		}
 
 		peekIDL := c.Msg().Message(descString).Cmd()
