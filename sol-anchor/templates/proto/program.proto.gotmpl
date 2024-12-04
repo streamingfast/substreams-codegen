@@ -16,7 +16,8 @@ message Data {
 }
 {{ range $i, $event := .Idl.Events -}}
 message {{$event.Name}} {
-  {{- $counter := 0 }}
+  string trx_hash = 1;
+  {{- $counter := 1 }}
   {{- range $i, $field := $event.Fields }}
     {{- $counter = add $counter 1 }}
     {{ if or $field.Type.IsArray $field.Type.IsVec }} repeated {{ end }} {{ if $field.Type.IsOption }} optional {{ end }} {{$field.Type.ResolveProtobufType}} {{$field.SnakeCaseName}} = {{ $counter }};
@@ -25,7 +26,7 @@ message {{$event.Name}} {
 {{- end}}
 {{ range $i, $instruction := .Idl.Instructions }}
 message {{$instruction.PascalCaseName}} {
-  trx_hash string = 1;
+  string trx_hash = 1;
   {{- $counter := 1 }}
   {{- range $i, $arg := $instruction.Args }}
     {{- $counter = add $counter 1 }}

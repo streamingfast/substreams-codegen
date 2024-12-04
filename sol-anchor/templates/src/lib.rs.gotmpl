@@ -36,11 +36,11 @@ fn map_program_data(blk: Block) -> Data {
     {{- end}}
 
     blk.transactions().for_each(|transaction| {
-        let meta_wrapped = &transaction.meta;
-        let meta = meta_wrapped.as_ref().unwrap();
 
         {{ if .Idl.Events -}}
         // ------------- EVENTS -------------
+        let meta_wrapped = &transaction.meta;
+        let meta = meta_wrapped.as_ref().unwrap();
         let programs_selector: ProgramsSelector = ProgramsSelector::new(&["*".to_string()]);
         let log_contexts = LogContext::parse_logs_basic(&meta.log_messages, &programs_selector);
 
@@ -63,6 +63,7 @@ fn map_program_data(blk: Block) -> Data {
                                     )
                                 {
                                     {{ $event.SnakeCaseName }}_list.push({{ $event.Name }} {
+                                        trx_hash: context.signature.clone(),
                                         {{- range $i, $arg := $event.Fields }}
                                         {{ $arg.Type.Print $arg.Name "event" $.Idl.Types }}
                                         {{- end}}
@@ -93,6 +94,7 @@ fn map_program_data(blk: Block) -> Data {
                 {
                     let accts = inst.accounts();
                     {{ $instruction.SnakeCaseName }}_list.push({{ $instruction.PascalCaseName }} {
+                        trx_hash: transaction.id(),
                         {{- range $i, $arg := $instruction.Args }}
                         {{ $arg.Type.Print $arg.Name "instruction" $.Idl.Types }}
                         {{- end }}
