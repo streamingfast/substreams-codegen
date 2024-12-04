@@ -3,7 +3,6 @@ syntax = "proto3";
 package substreams.v1.program;
 
 message Data {
-  
   {{- $counter := 0 }}
   {{- range $i, $event := .Idl.Events }}
     {{- $counter = add $counter 1 }}
@@ -11,14 +10,11 @@ message Data {
   {{- end}}
 
   {{- range $i, $instruction := .Idl.Instructions -}}
-  {{ if $instruction.Args }}
     {{- $counter = add $counter 1 }}
     repeated {{ $instruction.PascalCaseName }} {{ $instruction.SnakeCaseName }}_list = {{ $counter }};
   {{- end }}
-  {{- end }}
 }
-
-{{- range $i, $event := .Idl.Events }}
+{{ range $i, $event := .Idl.Events -}}
 message {{$event.Name}} {
   {{- $counter := 0 }}
   {{- range $i, $field := $event.Fields }}
@@ -27,33 +23,37 @@ message {{$event.Name}} {
   {{- end}}
 }
 {{- end}}
-
-{{- range $i, $instruction := .Idl.Instructions }}
-{{ if $instruction.Args }}
+{{ range $i, $instruction := .Idl.Instructions }}
 message {{$instruction.PascalCaseName}} {
-  {{- $counter := 0 }}
+  trx_hash string = 1;
+  {{- $counter := 1 }}
   {{- range $i, $arg := $instruction.Args }}
     {{- $counter = add $counter 1 }}
-    {{ if or $arg.Type.IsArray $arg.Type.IsVec }} repeated {{ end }} {{ if $arg.Type.IsOption }} optional {{ end }} {{$arg.Type.ResolveProtobufType}} {{$arg.SnakeCaseName}} = {{ $counter }};
+    {{ if or $arg.Type.IsArray $arg.Type.IsVec }}repeated {{ end }}{{ if $arg.Type.IsOption }}optional {{ end }}{{$arg.Type.ResolveProtobufType}} {{$arg.SnakeCaseName}} = {{ $counter }};
+  {{- end}}
+  {{- range $i, $acc := $instruction.Accounts }}
+    {{- if not $acc.Address }}
+    {{- $counter = add $counter 1 }}
+    string acct_{{$acc.Name}} = {{ $counter }};
+    {{- end }}
   {{- end}}
 }
 {{- end}}
-{{- end}}
 
-{{- range $i, $type := .Idl.Types }}
+{{ range $i, $type := .Idl.Types }}
   {{- if $type.Type.IsStruct }}
-    message {{$type.Name}} {
-      {{- $counter := 0 }}
-      {{- range $i, $field := $type.Type.Struct.Fields }}
-        {{- $counter = add $counter 1 }}
-        {{ if or $field.Type.IsArray $field.Type.IsVec }} repeated {{ end }} {{ if $field.Type.IsOption }} optional {{ end }} {{$field.Type.ResolveProtobufType}} {{$field.SnakeCaseName}} = {{ $counter }};
-      {{- end}}
-    }
+message {{$type.Name}} {
+  {{- $counter := 0 }}
+  {{- range $i, $field := $type.Type.Struct.Fields }}
+    {{- $counter = add $counter 1 }}
+    {{ if or $field.Type.IsArray $field.Type.IsVec }}repeated {{ end }}{{ if $field.Type.IsOption }}optional {{ end }}{{$field.Type.ResolveProtobufType}} {{$field.SnakeCaseName}} = {{ $counter }};
+    {{- end}}
+}
   {{- else }}
-    enum {{$type.Name}} {
-      {{- range $i, $variant := $type.Type.Enum.Variants }}
-        {{ $variant.SnakeCaseName }} = {{ $i }};
-      {{- end}}
-    }
+enum {{$type.Name}} {
+    {{- range $i, $variant := $type.Type.Enum.Variants }}
+    {{ $variant.SnakeCaseName }} = {{ $i }};
+    {{- end}}
+}
   {{- end }}
 {{- end}}
