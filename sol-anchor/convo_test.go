@@ -18,6 +18,15 @@ func TestConvoNextStep(t *testing.T) {
 	assert.Equal(t, codegen.AskProjectName{}, next())
 	p.Name = "my-proj"
 
+	p.idl = &IDL{
+		Address:      "deadbeef",
+		Events:       nil,
+		Instructions: nil,
+		Metadata: Metadata{
+			Address: "deadbeef",
+			Name:    "my contract",
+		},
+	}
 	res := p.Generate()
 	assert.NoError(t, res.Err)
 	assert.NotEmpty(t, res.ProjectFiles)
