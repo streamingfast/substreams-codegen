@@ -34,17 +34,26 @@ func runTest(generatorName string) error {
 		fmt.Printf("Error creating temporary directory: %v\n", err)
 		return err
 	}
-	defer os.RemoveAll(tempDir)
-
 	fmt.Printf("Temporary directory created: %s\n", tempDir)
 
+	defer os.RemoveAll(tempDir)
+
+	// Move generator to temp directory
+	cpCmd := exec.Command("cp", fmt.Sprintf("generators/%s.json", generatorName), fmt.Sprintf("%s/%s.json", tempDir, generatorName))
+	output, err := cpCmd.CombinedOutput()
+	if err != nil {
+		fmt.Printf("Error moving files: %v\n", err)
+		return err
+	}
+	fmt.Printf("Output %s\n", output)
+
 	// Set the command to execute
-	cmd := exec.Command("substreams", "init", "--state-file", fmt.Sprintf("/Users/enolalvarezdeprado/Documents/projects/substreams/substreams-codegen/sol-anchor/tests/integration/generators/%s.json", generatorName)) // Replace "ls" with your desired command
+	cmd := exec.Command("substreams", "init", "--state-file", fmt.Sprintf("%s.json", generatorName))
 	cmd.Env = append(os.Environ(), "SUBSTREAMS_CODEGEN_ENDPOINT=https://localhost:9000")
 	cmd.Dir = tempDir
 
 	// Run the command and capture the output
-	output, err := cmd.CombinedOutput()
+	output, err = cmd.CombinedOutput()
 	if err != nil {
 		fmt.Printf("Error running command: %v\n", err)
 		return err
