@@ -19,6 +19,10 @@ func (t *Type) SnakeCaseName() string {
 	return toSnakeCase(t.Name, true)
 }
 
+func (t *Type) SnakeCaseNameUpperCase() string {
+	return strings.ToUpper(t.SnakeCaseName())
+}
+
 func (t *Type) PascalCaseName() string {
 	return textcase.PascalCase(t.Name)
 }

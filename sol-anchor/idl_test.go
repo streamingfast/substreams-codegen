@@ -48,6 +48,17 @@ func TestOrcaIDL(t *testing.T) {
 	assert.Equal(t, 12, len(result.Types))
 }
 
+func TestJupiterV4Swap(t *testing.T) {
+	idl := readFromFile("jupiter_v4_swap")
+
+	result := &IDL{}
+	err := json.Unmarshal(idl, &result)
+
+	assert.Nil(t, err)
+	assert.Equal(t, "JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB", result.Metadata.Address)
+	assert.True(t, result.IsTypeEnum("SwapLeg"))
+}
+
 func readFromFile(idlName string) []byte {
 	data, err := os.ReadFile("tests/" + idlName + ".json")
 	if err != nil {
