@@ -36,7 +36,7 @@ func runTest(generatorName string) error {
 	}
 	fmt.Printf("Temporary directory created: %s\n", tempDir)
 
-	defer os.RemoveAll(tempDir)
+	//defer os.RemoveAll(tempDir)
 
 	// Move generator to temp directory
 	cpCmd := exec.Command("cp", fmt.Sprintf("generators/%s.json", generatorName), fmt.Sprintf("%s/%s.json", tempDir, generatorName))
@@ -49,13 +49,15 @@ func runTest(generatorName string) error {
 
 	// Set the command to execute
 	cmd := exec.Command("substreams", "init", "--state-file", fmt.Sprintf("%s.json", generatorName))
-	cmd.Env = append(os.Environ(), "SUBSTREAMS_CODEGEN_ENDPOINT=https://localhost:9000")
+	cmd.Env = append(os.Environ(), "SUBSTREAMS_CODEGEN_ENDPOINT=http://localhost:9000")
 	cmd.Dir = tempDir
+
+	fmt.Print("Hereee")
 
 	// Run the command and capture the output
 	output, err = cmd.CombinedOutput()
 	if err != nil {
-		fmt.Printf("Error running command: %v\n", err)
+		fmt.Printf("Error running command: %v\n", err.Error())
 		return err
 	}
 
