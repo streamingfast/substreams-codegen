@@ -20,7 +20,7 @@ message {{$event.Name}} {
   {{- $counter := 1 }}
   {{- range $i, $field := $event.Fields }}
     {{- $counter = add $counter 1 }}
-    {{ if or $field.Type.IsArray $field.Type.IsVec }} repeated {{ end }} {{ if $field.Type.IsOption }} optional {{ end }} {{$field.Type.ResolveProtobufType}} {{$field.SnakeCaseName}} = {{ $counter }};
+    {{ if or $field.Type.IsArray $field.Type.IsVec }} repeated {{ end }} {{ if $field.Type.IsOption }} optional {{ end }} {{$field.Type.ResolveProtobufType}}{{ if $.Idl.IsTypeEnum $field.Type.ResolveProtobufType }}Enum{{end}} {{$field.SnakeCaseName}} = {{ $counter }};
   {{- end}}
 }
 {{- end}}
@@ -30,7 +30,7 @@ message {{$instruction.PascalCaseName}} {
   {{- $counter := 1 }}
   {{- range $i, $arg := $instruction.Args }}
     {{- $counter = add $counter 1 }}
-    {{ if or $arg.Type.IsArray $arg.Type.IsVec }}repeated {{ end }}{{ if $arg.Type.IsOption }}optional {{ end }}{{$arg.Type.ResolveProtobufType}} {{$arg.SnakeCaseName}} = {{ $counter }};
+    {{ if or $arg.Type.IsArray $arg.Type.IsVec }}repeated {{ end }}{{ if $arg.Type.IsOption }}optional {{ end }}{{$arg.Type.ResolveProtobufType}}{{ if $.Idl.IsTypeEnum $arg.Type.ResolveProtobufType }}Enum{{end}} {{$arg.SnakeCaseName}} = {{ $counter }};
   {{- end}}
   {{- range $i, $acc := $instruction.Accounts }}
     {{- if not $acc.Address }}
@@ -43,6 +43,13 @@ message {{$instruction.PascalCaseName}} {
 
 {{ range $i, $type := .Idl.Types }}
   {{- if $type.Type.IsStruct }}
+    message {{$type.Name}} {
+      {{- $counter := 0 }}
+      {{- range $i, $field := $type.Type.Struct.Fields }}
+        {{- $counter = add $counter 1 }}
+        {{ if or $field.Type.IsArray $field.Type.IsVec }} repeated {{ end }} {{ if $field.Type.IsOption }} optional {{ end }} {{$field.Type.ResolveProtobufType}}{{ if $.Idl.IsTypeEnum $field.Type.ResolveProtobufType }}Enum{{end}} {{$field.SnakeCaseName}} = {{ $counter }};
+      {{- end}}
+    }
 message {{$type.Name}} {
   {{- $counter := 0 }}
   {{- range $i, $field := $type.Type.Struct.Fields }}
@@ -51,9 +58,9 @@ message {{$type.Name}} {
     {{- end}}
 }
   {{- else }}
-enum {{$type.Name}} {
+enum {{$type.Name}}Enum {
     {{- range $i, $variant := $type.Type.Enum.Variants }}
-    {{ $variant.SnakeCaseName }} = {{ $i }};
+    {{ $type.SnakeCaseNameUpperCase }}_{{ $variant.SnakeCaseName }} = {{ $i }};
     {{- end}}
 }
   {{- end }}

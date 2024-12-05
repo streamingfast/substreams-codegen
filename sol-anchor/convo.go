@@ -68,6 +68,13 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 				return loop.Quit(fmt.Errorf(`something went wrong, here's an error message to share with our devs (%s); we've notified them already`, err))
 			}
 
+			c.State.idl = &IDL{}
+			err := json.Unmarshal([]byte(c.State.IdlString), &c.State.idl)
+			if err != nil {
+				fmt.Println("Error unmarshaling JSON:", err)
+				return loop.Quit(fmt.Errorf("could not decode IDL"))
+			}
+
 			msgCmd = c.Msg().Message("Ok, I reloaded your state.").Cmd()
 		} else {
 			msgCmd = c.Msg().Message("Ok, let's start a new package.").Cmd()

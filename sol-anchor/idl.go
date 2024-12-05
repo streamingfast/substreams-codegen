@@ -39,6 +39,16 @@ func (i *IDL) IsTypeUsed(typeName string) bool {
 	return false
 }
 
+func (i *IDL) IsTypeEnum(typeName string) bool {
+	for _, typeObj := range i.Types {
+		if typeObj.Name == typeName {
+			return typeObj.Type.IsEnum()
+		}
+	}
+
+	return false
+}
+
 type Metadata struct {
 	Address string `json:"address"`
 	Name    string `json:"name"` // seen in the 'secret' program
