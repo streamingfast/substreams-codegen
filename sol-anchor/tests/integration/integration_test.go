@@ -65,15 +65,14 @@ func runTest(generatorName string) error {
 
 	// Execute build
 	cmd1 := exec.Command("substreams", "build")
-	cmd.Dir = tempDir
+	cmd1.Dir = tempDir
 
 	output1, err := cmd1.CombinedOutput()
+	fmt.Printf("Command output:\n%s\n", output1)
 	if err != nil {
 		fmt.Printf("Error running command: %v\n", err)
 		return err
 	}
-
-	fmt.Printf("Command output:\n%s\n", output1)
 
 	return nil
 }
