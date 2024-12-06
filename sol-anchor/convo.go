@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/mr-tron/base58"
 	codegen "github.com/streamingfast/substreams-codegen"
@@ -133,7 +134,58 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 		c.State.idl = idl
 		c.State.IdlString = msg.Value
-		return c.NextStep()
+
+		descString := "# Instructions\n\n"
+		for _, inst := range idl.Instructions {
+			descString += fmt.Sprintf("## %s (%s)\n", inst.Name, arrayToHex(inst.Discriminator))
+			if len(inst.Args) != 0 {
+				argNames := make([]string, len(inst.Args))
+				for i, field := range inst.Args {
+					argNames[i] = field.Name
+				}
+				descString += fmt.Sprintf("* Args: (%s)\n", strings.Join(argNames, ", "))
+			}
+			if len(inst.Accounts) != 0 {
+				accNames := make([]string, len(inst.Accounts))
+				for i, field := range inst.Accounts {
+					accNames[i] = field.Name
+					if field.Address != "" {
+						accNames[i] = "_" + field.Name + "_"
+					}
+				}
+				descString += fmt.Sprintf("* Accounts: (%s)\n", strings.Join(accNames, ", "))
+			}
+			descString += "\n"
+		}
+
+		if len(idl.Events) != 0 {
+			descString += fmt.Sprintf("# %s\n", "Events")
+			for _, evt := range idl.Events {
+				fieldNames := make([]string, len(evt.Fields))
+				for i, field := range evt.Fields {
+					fieldNames[i] = field.Name
+				}
+				descString += fmt.Sprintf("* %s (%s)\n", evt.Name, strings.Join(fieldNames, ", "))
+				descString += "\n"
+			}
+		}
+
+		peekIDL := c.Msg().Message(descString).Cmd()
+		return loop.Seq(peekIDL, cmd(AskConfirmIDL{}))
+
+	case AskConfirmIDL:
+		return c.Action(InputConfirmIDL{}).
+			Confirm("Do you want to proceed with this IDL?", "Yes", "No").
+			DefaultAccept().
+			Cmd()
+
+	case InputConfirmIDL:
+		if msg.Affirmative {
+			return c.NextStep()
+		}
+		c.State.idl = nil
+		c.State.IdlString = ""
+		return loop.Seq(c.Msg().Message("Modify your JSON IDL and try again...").Cmd(), cmd(AskIdl{}))
 
 	case AskProgramID:
 		return c.Action(InputProgramID{}).
@@ -158,15 +210,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.NextStep()
 
 	case codegen.RunGenerate:
-		str := ""
-		for _, event := range c.State.idl.Events {
-			for _, field := range event.Fields {
-				fmt.Println("-----------------------------")
-				fmt.Println(field.Name)
-
-				str += field.Type.Simple
-			}
-		}
 		return c.CmdGenerate(c.State.Generate)
 
 	case codegen.ReturnGenerate:
@@ -174,4 +217,15 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 	}
 
 	return loop.Quit(fmt.Errorf("invalid loop message: %T", msg))
+}
+
+func arrayToHex(arr []uint8) (out string) {
+	for i, v := range arr {
+		if i == 0 {
+			out = fmt.Sprintf("%02x", v)
+			continue
+		}
+		out = fmt.Sprintf("%s %02x", out, v)
+	}
+	return out
 }

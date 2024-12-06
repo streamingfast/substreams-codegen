@@ -11,9 +11,7 @@ use pb::substreams::v1::program::{{$event.Name}};
 {{- end}}
 
 {{- range $i, $instruction := .Idl.Instructions }}
-{{- if $instruction.Args }}
 use pb::substreams::v1::program::{{$instruction.PascalCaseName}};
-{{- end }}
 {{- end}}
 
 {{- range $i, $type := .Idl.Types }}
@@ -38,17 +36,15 @@ fn map_program_data(blk: Block) -> Data {
     {{- end}}
 
     {{- range $i, $instruction := .Idl.Instructions }}
-    {{- if $instruction.Args }}
     let mut {{ $instruction.SnakeCaseName }}_list: Vec<{{$instruction.PascalCaseName}}> = Vec::new();
-    {{- end}}
     {{- end}}
 
     blk.transactions().for_each(|transaction| {
-        let meta_wrapped = &transaction.meta;
-        let meta = meta_wrapped.as_ref().unwrap();
 
         {{ if .Idl.Events -}}
         // ------------- EVENTS -------------
+        let meta_wrapped = &transaction.meta;
+        let meta = meta_wrapped.as_ref().unwrap();
         let programs_selector: ProgramsSelector = ProgramsSelector::new(&["*".to_string()]);
         let log_contexts = LogContext::parse_logs_basic(&meta.log_messages, &programs_selector);
 
@@ -71,6 +67,7 @@ fn map_program_data(blk: Block) -> Data {
                                     )
                                 {
                                     {{ $event.SnakeCaseName }}_list.push({{ $event.Name }} {
+                                        trx_hash: transaction.id(),
                                         {{- range $i, $arg := $event.Fields }}
                                         {{ $arg.Type.Print $arg.Name "event" $.Idl.Types }}
                                         {{- end}}
@@ -95,19 +92,24 @@ fn map_program_data(blk: Block) -> Data {
             let slice_u8: &[u8] = &inst.data()[..];
 
             {{- range $i, $instruction := .Idl.Instructions -}}
-            {{- if $instruction.Args -}}
             if slice_u8[0..8] == idl::idl::program::client::args::{{ $instruction.PascalCaseName }}::DISCRIMINATOR {
                 if let Ok(instruction) =
                     idl::idl::program::client::args::{{ $instruction.PascalCaseName }}::deserialize(&mut &slice_u8[8..])
                 {
+                    let accts = inst.accounts();
                     {{ $instruction.SnakeCaseName }}_list.push({{ $instruction.PascalCaseName }} {
+                        trx_hash: transaction.id(),
                         {{- range $i, $arg := $instruction.Args }}
                         {{ $arg.Type.Print $arg.Name "instruction" $.Idl.Types }}
-                        {{- end}}
+                        {{- end }}
+                        {{- range $i, $acc := $instruction.Accounts }}
+                        {{- if not $acc.Address }}
+                        acct_{{ $acc.SnakeCaseName }}: accts[{{ $i }}].to_string(),
+                        {{- end }}
+                        {{- end }}
                     });
                 }
             }
-            {{- end }}
             {{- end }}
         });
         {{- end }}
@@ -120,9 +122,7 @@ fn map_program_data(blk: Block) -> Data {
         {{- end }}
 
         {{- range $i, $instruction := .Idl.Instructions }}
-        {{- if $instruction.Args }}
         {{ $instruction.SnakeCaseName }}_list,
-        {{- end -}}
         {{- end }}
     }
 }

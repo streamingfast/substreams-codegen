@@ -60,7 +60,7 @@ func TestJupiterV4Swap(t *testing.T) {
 }
 
 func readFromFile(idlName string) []byte {
-	data, err := os.ReadFile("tests/" + idlName + ".json")
+	data, err := os.ReadFile("idls/" + idlName + ".json")
 	if err != nil {
 		fmt.Println("Error reading file:", err)
 		return make([]byte, 0)

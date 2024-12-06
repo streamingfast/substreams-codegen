@@ -15,10 +15,3 @@ RUN chmod +x /usr/local/bin/substreams && \
     chmod +x /app/entrypoint.sh
 
 CMD ["/app/entrypoint.sh"]
-
-
-
-
-
-
-
