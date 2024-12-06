@@ -2,16 +2,16 @@
 
 ## Usage
 
-Use the codegen.substreams.dev and codegen-staging.substreams.dev endpoints.
+Using the local codegen for substreams init:
 
 ```bash
-substreams init --codegen-endpoint https://localhost:9000
+SUBSTREAMS_CODEGEN_ENDPOINT=http://localhost:9000 substreams init
 ```
 
 ## Develop
 
 ```bash
-DEBUG=.* go run ./cmd/substreams-codegen api --http-listen-addr "*:9000"
+DEBUG=.* go run ./cmd/substreams-codegen
 ```
 
 ## Principles

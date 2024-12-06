@@ -16,7 +16,7 @@ jobs:
     if: "${{ !startsWith(github.event.head_commit.message, 'GitBook: [#') }}"
 
     env:
-      TEST_LOCAL_CODEGEN: "true"
+      INTEGRATION_TESTS_IN_DOCKER: "true"
       RUN_INTEGRATION_TESTS: "true"
       CI: "true"
       CODEGEN_MAINNET_API_KEY: ${{ secrets.CODEGEN_MAINNET_API_KEY }}

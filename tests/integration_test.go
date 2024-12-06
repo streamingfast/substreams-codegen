@@ -1,28 +1,33 @@
 package tests
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
-	"regexp"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 
 	"github.com/streamingfast/logging"
 
 	"github.com/streamingfast/dstore"
 
 	"github.com/streamingfast/substreams-codegen/server"
-
-	"golang.org/x/net/context"
 )
 
 func TestIntegration(t *testing.T) {
-	if os.Getenv("RUN_INTEGRATION_TESTS") != "true" {
-		t.Skip()
+	runIntegrationTests := os.Getenv("RUN_INTEGRATION_TESTS") == "true"
+	if !runIntegrationTests {
+		t.Skip("RUN_INTEGRATION_TESTS is not set to 'true'")
 	}
+
+	integrationTestsInDocker := os.Getenv("INTEGRATION_TESTS_IN_DOCKER") == "true"
+	integrationTestsAgainstLocal := os.Getenv("INTEGRATION_TESTS_AGAINST_STAGING") != "true"
 
 	cases := []struct {
 		name                  string
@@ -64,43 +69,100 @@ func TestIntegration(t *testing.T) {
 			name:      "starknet-events",
 			stateFile: "./starknet-events/generator.json",
 		},
+		//{
+		//	name:      "sol-anchor-jupiter",
+		//	stateFile: "./sol-anchor/generators/jupiter.json",
+		//},
+		{
+			name:      "sol-anchor-meteora",
+			stateFile: "./sol-anchor/generators/meteora.json",
+		},
+		{
+			name:      "sol-anchor-orca",
+			stateFile: "./sol-anchor/generators/orca.json",
+		},
+		{
+			name:      "sol-anchor-pump-fun",
+			stateFile: "./sol-anchor/generators/pump-fun.json",
+		},
 	}
 
-	ctx := context.Background()
+	var zlog, _ = logging.RootLogger("test", "test")
+	endpoint := "https://codegen-staging.substreams.dev"
+	if integrationTestsAgainstLocal {
+		launchLocalServer(t, ":51012", zlog)
+
+		switch {
+		case integrationTestsInDocker && os.Getenv("CI") == "":
+			endpoint = "http://host.docker.internal:51012"
+		case integrationTestsInDocker:
+			endpoint = "http://172.17.0.1:51012"
+		default:
+			endpoint = "http://127.0.0.1:51012"
+		}
+	}
+
+	if integrationTestsInDocker {
+		runTestsInDocker(t, cases, endpoint)
+		return
+	}
+
+	validateBinary(t, "substreams")
+	validateBinary(t, "cargo")
+	validateBinary(t, "buf")
+
+	hasSSCache := hasBinary("sscache")
+	if !hasSSCache {
+		zlog.Info("sscache not found, tests will not run in parallel (run `cargo install sscache` to enable parallelism)")
+	} else {
+		os.Setenv("RUSTC_WRAPPER", "sccache")
+		os.Setenv("SSCACHE_DIR", filepath.Join(os.TempDir(), "sscachedir"))
+	}
+
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+			runTestLocally(t, c.stateFile)
+		})
+	}
+}
+
+func launchLocalServer(t *testing.T, listenAddr string, zlog *zap.Logger) {
+	go func() {
+		sessionStore := dstore.NewMockStore(func(base string, f io.Reader) (err error) { return nil })
+		server := server.New(
+			listenAddr,
+			nil,
+			sessionStore,
+			zlog)
+		server.OnTerminating(func(e error) {
+			require.NoError(t, e)
+		})
+		server.Run()
+	}()
+
+	//Make sure server is running before, `substreams init`
+	time.Sleep(2 * time.Second)
+}
+
+func runTestsInDocker(t *testing.T, cases []struct {
+	name                  string
+	stateFile             string
+	explorerApiKeyEnvName string
+	apiKeyNeeded          bool
+}, endpoint string) {
 
 	buildArgs := []string{
 		"build",
 		"-t",
-		"test-image",
+		"substreams-test-image",
 		".",
 		"--platform",
 		"linux/amd64",
 	}
 
-	if os.Getenv("TEST_LOCAL_CODEGEN") == "true" {
-		go func() {
-			var cors *regexp.Regexp
-			hostRegex, err := regexp.Compile("^localhost")
-			require.NoError(t, err)
-			cors = hostRegex
-
-			sessionStore, err := dstore.NewStore("", "", "", false)
-			require.NoError(t, err)
-
-			var zlog, _ = logging.RootLogger("test", "test")
-
-			server := server.New(
-				":9000",
-				cors,
-				sessionStore,
-				zlog)
-			server.Run()
-		}()
-
-		//Make sure server is running before, `substreams init`
-		time.Sleep(2 * time.Second)
-	}
-
+	ctx := context.Background()
 	buildCmd := exec.CommandContext(ctx, "docker", buildArgs...)
 	buildCmd.Dir = "./"
 
@@ -114,13 +176,6 @@ func TestIntegration(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
 
-			if os.Getenv("TEST_LOCAL_CODEGEN") == "true" {
-				explorerApiKey := os.Getenv(c.explorerApiKeyEnvName)
-				if explorerApiKey == "" && c.apiKeyNeeded {
-					fmt.Printf("NO %s has been provided, please make sure to provide it to enable code generation...", c.explorerApiKeyEnvName)
-				}
-			}
-
 			runArgs := []string{
 				"run",
 				"--rm",
@@ -131,10 +186,8 @@ func TestIntegration(t *testing.T) {
 				"-v",
 				fmt.Sprintf("%s:/app/generator.json", c.stateFile),
 				"-e",
-				fmt.Sprintf("TEST_LOCAL_CODEGEN=%s", os.Getenv("TEST_LOCAL_CODEGEN")),
-				"-e",
-				fmt.Sprintf("CI=%s", os.Getenv("CI")),
-				"test-image",
+				"SUBSTREAMS_CODEGEN_ENDPOINT=" + endpoint,
+				"substreams-test-image",
 			}
 
 			runCmd := exec.CommandContext(ctx, "docker", runArgs...)
@@ -145,4 +198,32 @@ func TestIntegration(t *testing.T) {
 
 		})
 	}
+}
+
+func runTestLocally(t *testing.T, generatorPath string) {
+	tempDir, err := os.MkdirTemp("", "temp")
+	require.NoError(t, err)
+	//defer os.RemoveAll(tempDir)
+
+	runCommand(t, "", "cp", generatorPath, fmt.Sprintf("%s/state.json", tempDir))
+	runCommand(t, tempDir, "substreams", "init", "--state-file", "state.json")
+	runCommand(t, tempDir, "substreams", "build")
+}
+
+func hasBinary(bin string) bool {
+	cmd := exec.Command("which", bin)
+	_, err := cmd.CombinedOutput()
+	return cmd.ProcessState.ExitCode() == 0 && err == nil
+}
+
+func validateBinary(t *testing.T, bin string) {
+	require.True(t, hasBinary(bin), "cannot find binary %q in PATH", bin)
+}
+
+func runCommand(t *testing.T, dir string, bin string, args ...string) {
+	cmd := exec.Command(bin, args...)
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), "SUBSTREAMS_CODEGEN_ENDPOINT=http://127.0.0.1:51012")
+	output, err := cmd.CombinedOutput()
+	require.NoError(t, err, "error while running %s %v. Output: %s", bin, args, output)
 }

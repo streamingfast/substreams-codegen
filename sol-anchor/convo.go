@@ -210,15 +210,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.NextStep()
 
 	case codegen.RunGenerate:
-		str := ""
-		for _, event := range c.State.idl.Events {
-			for _, field := range event.Fields {
-				fmt.Println("-----------------------------")
-				fmt.Println(field.Name)
-
-				str += field.Type.Simple
-			}
-		}
 		return c.CmdGenerate(c.State.Generate)
 
 	case codegen.ReturnGenerate:
