@@ -111,9 +111,11 @@ func TestIntegration(t *testing.T) {
 	validateBinary(t, "cargo")
 	validateBinary(t, "buf")
 
+	parallel := true
 	hasSSCache := hasBinary("sscache")
 	if !hasSSCache {
 		zlog.Info("sscache not found, tests will not run in parallel (run `cargo install sscache` to enable parallelism)")
+		parallel = false
 	} else {
 		os.Setenv("RUSTC_WRAPPER", "sccache")
 		os.Setenv("SSCACHE_DIR", filepath.Join(os.TempDir(), "sscachedir"))
@@ -122,7 +124,9 @@ func TestIntegration(t *testing.T) {
 	for _, c := range cases {
 		c := c
 		t.Run(c.name, func(t *testing.T) {
-			t.Parallel()
+			if parallel {
+				t.Parallel()
+			}
 			runTestLocally(t, c.stateFile)
 		})
 	}
