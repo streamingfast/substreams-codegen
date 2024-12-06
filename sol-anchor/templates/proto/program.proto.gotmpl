@@ -42,26 +42,19 @@ message {{$instruction.PascalCaseName}} {
 {{- end}}
 
 {{ range $i, $type := .Idl.Types }}
-  {{- if $type.Type.IsStruct }}
-    message {{$type.Name}} {
-      {{- $counter := 0 }}
-      {{- range $i, $field := $type.Type.Struct.Fields }}
-        {{- $counter = add $counter 1 }}
-        {{ if or $field.Type.IsArray $field.Type.IsVec }} repeated {{ end }} {{ if $field.Type.IsOption }} optional {{ end }} {{$field.Type.ResolveProtobufType}}{{ if $.Idl.IsTypeEnum $field.Type.ResolveProtobufType }}Enum{{end}} {{$field.SnakeCaseName}} = {{ $counter }};
-      {{- end}}
-    }
+{{- if $type.Type.IsStruct }}
 message {{$type.Name}} {
   {{- $counter := 0 }}
   {{- range $i, $field := $type.Type.Struct.Fields }}
     {{- $counter = add $counter 1 }}
-    {{ if or $field.Type.IsArray $field.Type.IsVec }}repeated {{ end }}{{ if $field.Type.IsOption }}optional {{ end }}{{$field.Type.ResolveProtobufType}} {{$field.SnakeCaseName}} = {{ $counter }};
-    {{- end}}
+    {{ if or $field.Type.IsArray $field.Type.IsVec }} repeated {{ end }} {{ if $field.Type.IsOption }} optional {{ end }} {{$field.Type.ResolveProtobufType}}{{ if $.Idl.IsTypeEnum $field.Type.ResolveProtobufType }}Enum{{end}} {{$field.SnakeCaseName}} = {{ $counter }};
+  {{- end}}
 }
-  {{- else }}
+{{- else }}
 enum {{$type.Name}}Enum {
     {{- range $i, $variant := $type.Type.Enum.Variants }}
     {{ $type.SnakeCaseNameUpperCase }}_{{ $variant.SnakeCaseName }} = {{ $i }};
     {{- end}}
 }
-  {{- end }}
+{{- end }}
 {{- end}}
