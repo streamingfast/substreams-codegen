@@ -49,7 +49,7 @@ func runTest(generatorName string) error {
 
 	// Set the command to execute
 	cmd := exec.Command("substreams", "init", "--state-file", fmt.Sprintf("%s.json", generatorName))
-	cmd.Env = append(os.Environ(), "SUBSTREAMS_CODEGEN_ENDPOINT=https://localhost:9000")
+	cmd.Env = append(os.Environ(), "SUBSTREAMS_CODEGEN_ENDPOINT=http://localhost:9000")
 	cmd.Dir = tempDir
 
 	// Run the command and capture the output
@@ -63,7 +63,7 @@ func runTest(generatorName string) error {
 
 	// Execute build
 	cmd1 := exec.Command("substreams", "build")
-	cmd.Dir = tempDir
+	cmd1.Dir = tempDir
 
 	output1, err := cmd1.CombinedOutput()
 	if err != nil {
