@@ -81,6 +81,34 @@ func TestIntegration(t *testing.T) {
 			name:      "sol-anchor-pump-fun",
 			stateFile: "./sol-anchor/pump-fun.json",
 		},
+		{
+			name:      "sol-anchor-jupiter-governance",
+			stateFile: "./sol-anchor/jupiter-governance.json",
+		},
+		{
+			name:      "sol-anchor-jupiter-staking",
+			stateFile: "./sol-anchor/jupiter-staking.json",
+		},
+		{
+			name:      "sol-anchor-raydium-cp-swap.json",
+			stateFile: "./sol-anchor/raydium-cp-swap.json",
+		},
+		{
+			name:      "sol-anchor-oasis.json",
+			stateFile: "./sol-anchor/oasis.json",
+		},
+		{
+			name:      "sol-anchor-lifinity.json",
+			stateFile: "./sol-anchor/lifinity.json",
+		},
+		{
+			name:      "sol-anchor-bonkswap.json",
+			stateFile: "./sol-anchor/bonkswap.json",
+		},
+		{
+			name:      "sol-anchor-sanctum.json",
+			stateFile: "./sol-anchor/sanctum.json",
+		},
 	}
 
 	var zlog, _ = logging.RootLogger("test", "test")
