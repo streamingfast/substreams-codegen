@@ -1,7 +1,6 @@
 package solanchor
 
 import (
-	"fmt"
 	"unicode"
 )
 
