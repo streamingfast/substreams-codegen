@@ -21,6 +21,7 @@ jobs:
       CI: "true"
       CODEGEN_MAINNET_API_KEY: ${{ secrets.CODEGEN_MAINNET_API_KEY }}
       REGISTRY: ghcr.io
+      BUF_TOKEN: ${{ secrets.BUF_TOKEN }}
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -54,7 +55,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Tests
-        run: go test -v ./...
+        run: go test -v ./... -timeout 1800s
 
       - name: Build
         run: go build ./...
