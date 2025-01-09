@@ -15,11 +15,13 @@ use pb::substreams::v1::program::{{$instruction.PascalCaseName}};
 {{- end}}
 
 {{- range $i, $type := .Idl.Types }}
+{{ if $.Idl.IsTypeUsed $type.Name }}
 {{ if $type.Type.IsEnum }}
 use pb::substreams::v1::program::{{$type.Name}}Enum;
 {{ else }}
 use pb::substreams::v1::program::{{$type.Name}};
 {{ end }}
+{{- end}}
 {{- end}}
 
 use sologger_log_context::programs_selector::ProgramsSelector;

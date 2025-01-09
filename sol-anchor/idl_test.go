@@ -59,6 +59,19 @@ func TestJupiterV4Swap(t *testing.T) {
 	assert.True(t, result.IsTypeEnum("SwapLeg"))
 }
 
+func TestOrbitLen(t *testing.T) {
+	idl := readFromFile("orbit_len")
+
+	result := &IDL{}
+	err := json.Unmarshal(idl, &result)
+
+	fmt.Println(result.IsTypeUsed("LendingAccount"))
+
+	assert.Nil(t, err)
+	assert.Equal(t, "QoB7dVkkZr3oLb95DMpSptvUF8mTygDHNjFQh5y5RAb", result.Address)
+	
+}
+
 func readFromFile(idlName string) []byte {
 	data, err := os.ReadFile("idls/" + idlName + ".json")
 	if err != nil {
