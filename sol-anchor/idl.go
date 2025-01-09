@@ -22,15 +22,31 @@ func (i *IDL) ProgramID() string {
 func (i *IDL) IsTypeUsed(typeName string) bool {
 	for _, instruction := range i.Instructions {
 		for _, arg := range instruction.Args {
-			if arg.Type.IsTypeUsed(typeName) == true {
+			if arg.Type.IsTypeUsed(typeName) {
 				return true
+			}
+		}
+	}
+
+	for _, tp := range i.Types {
+		if tp.Type.IsStruct() {
+			for _, arg := range tp.Type.Struct.Fields {
+				if arg.Type.IsTypeUsed(typeName) && i.IsTypeUsed(tp.Name) {
+					return true
+				}
+			}
+		} else {
+			for _, arg := range tp.Type.Enum.Variants {
+				if arg.Name == typeName && i.IsTypeUsed(tp.Name) {
+					return true
+				}
 			}
 		}
 	}
 
 	for _, event := range i.Events {
 		for _, field := range event.Fields {
-			if field.Type.IsTypeUsed(typeName) == true {
+			if field.Type.IsTypeUsed(typeName) {
 				return true
 			}
 		}

@@ -42,6 +42,7 @@ message {{$instruction.PascalCaseName}} {
 {{- end}}
 
 {{ range $i, $type := .Idl.Types }}
+{{- if $.Idl.IsTypeUsed $type.Name }}
 {{- if $type.Type.IsStruct }}
 message {{$type.Name}} {
   {{- $counter := 0 }}
@@ -57,4 +58,5 @@ enum {{$type.Name}}Enum {
     {{- end}}
 }
 {{- end }}
-{{- end}}
+{{- end }}
+{{- end }}
