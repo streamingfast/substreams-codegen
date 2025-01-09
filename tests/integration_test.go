@@ -153,7 +153,7 @@ func TestIntegration(t *testing.T) {
 			}
 			runTestLocally(t, c.stateFile)
 
-			time.Sleep(2 * time.Second)
+			time.Sleep(6 * time.Second)
 		})
 	}
 }
