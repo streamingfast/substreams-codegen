@@ -152,6 +152,8 @@ func TestIntegration(t *testing.T) {
 				t.Parallel()
 			}
 			runTestLocally(t, c.stateFile)
+
+			time.Sleep(2 * time.Second)
 		})
 	}
 }
