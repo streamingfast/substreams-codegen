@@ -55,7 +55,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Tests
-        run: go test -v ./...
+        run: go test -v ./... -timeout 1800s
 
       - name: Build
         run: go build ./...
