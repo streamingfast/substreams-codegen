@@ -42,6 +42,7 @@ func (c *Convo) contextEventDesc() *eventDesc {
 
 func (c *Convo) NextStep() (out loop.Cmd) {
 	p := c.State
+	p.DataType = "events"
 
 	if p.Name == "" {
 		return cmd(codegen.AskProjectName{})
