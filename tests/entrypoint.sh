@@ -3,7 +3,7 @@ set -euxo pipefail
 
 substreams init --state-file /app/generator.json --force-download-cwd
 
-cat > myfile.yaml <<EOF
+cat > buf.gen.yaml <<EOF
 
 version: v1
 plugins:
