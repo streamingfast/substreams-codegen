@@ -22,7 +22,10 @@ EOF
 
 ls
 cat buf.gen.yaml
+ls src/pb
 
+
+rm -r src/pb
 substreams build
 
 ## To validate the manifest
