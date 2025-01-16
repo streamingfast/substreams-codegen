@@ -9,10 +9,10 @@ COPY entrypoint.sh /app/entrypoint.sh
 COPY --from=substreams /app/substreams /usr/local/bin/substreams
 COPY --from=buf /usr/local/bin/buf /usr/local/bin/buf
 
-RUN curl -LO https://github.com/neoeinstein/protoc-gen-prost/archive/refs/tags/protoc-gen-tonic-v0.4.1.tar.gz \
-&& tar -xzf protoc-gen-tonic-v0.4.1.tar.gz \
-&& rm protoc-gen-tonic-v0.4.1.tar.gz
-RUN cd protoc-gen-prost-protoc-gen-tonic-v0.4.1 && cargo build --release --locked
+RUN curl -LO https://github.com/neoeinstein/protoc-gen-prost/archive/refs/tags/protoc-gen-prost-v0.3.1.tar.gz \
+&& tar -xzf protoc-gen-prost-v0.3.1.tar.gz \
+&& rm protoc-gen-prost-v0.3.1.tar.gz
+RUN cd protoc-gen-prost-protoc-gen-prost-v0.3.1 && cargo build --release --locked
 
 RUN rustup target add wasm32-unknown-unknown
 
