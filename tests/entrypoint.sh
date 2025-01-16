@@ -30,6 +30,7 @@ cat buf.gen.yaml
 #ls src/pb
 substreams protogen
 ls src/pb
+substreams build
 
 ## To validate the manifest
 substreams info
