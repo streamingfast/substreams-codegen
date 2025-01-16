@@ -22,6 +22,14 @@ EOF
 
 ls
 cat buf.gen.yaml
+ls src/pb
+
+
+#rm -r src/pb
+#ls src
+#ls src/pb
+substreams build
+#ls src/pb
 
 ## To validate the manifest
 substreams info
