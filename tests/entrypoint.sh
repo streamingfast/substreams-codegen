@@ -18,7 +18,7 @@ plugins:
   out: ./src/pb
   opt:
     - no_features
-  path: /app/protoc-gen-prost-protoc-gen-tonic-v0.4.1/target/release/protoc-gen-crate
+  path: /app/protoc-gen-prost-protoc-gen-tonic-v0.4.1/target/release/protoc-gen-prost-crate
 EOF
 
 substreams build
