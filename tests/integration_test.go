@@ -35,7 +35,7 @@ func TestIntegration(t *testing.T) {
 		explorerApiKeyEnvName string
 		apiKeyNeeded          bool
 	}{
-		/*{
+		{
 			name:                  "evm-events-calls",
 			stateFile:             "./evm-events-calls/generator.json",
 			explorerApiKeyEnvName: "CODEGEN_MAINNET_API_KEY",
@@ -76,11 +76,11 @@ func TestIntegration(t *testing.T) {
 		{
 			name:      "sol-anchor-orca",
 			stateFile: "./sol-anchor/orca.json",
-		},*/
+		},
 		{
 			name:      "sol-anchor-pump-fun",
 			stateFile: "./sol-anchor/pump-fun.json",
-		},/*
+		},
 		{
 			name:      "sol-anchor-jupiter-governance",
 			stateFile: "./sol-anchor/jupiter-governance.json",
@@ -108,7 +108,7 @@ func TestIntegration(t *testing.T) {
 		{
 			name:      "sol-anchor-sanctum.json",
 			stateFile: "./sol-anchor/sanctum.json",
-		},*/
+		},
 	}
 
 	var zlog, _ = logging.RootLogger("test", "test")
