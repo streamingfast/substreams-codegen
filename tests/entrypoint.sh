@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-set -euxo pipefail
+#set -euxo pipefail
 
-substreams init --state-file /app/generator.json --force-download-cwd
-
-substreams build
-
-## To validate the manifest
-substreams info
+echo buf token len is ${#BUF_TOKEN}
+#substreams init --state-file /app/generator.json --force-download-cwd
+#
+#substreams build
+#
+### To validate the manifest
+#substreams info
+#
