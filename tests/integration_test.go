@@ -215,6 +215,8 @@ func runTestsInDocker(t *testing.T, cases []struct {
 				fmt.Sprintf("%s:/app/generator.json", c.stateFile),
 				"-e",
 				"SUBSTREAMS_CODEGEN_ENDPOINT=" + endpoint,
+				"-e",
+				"BUF_TOKEN=" + os.Getenv("BUF_TOKEN"),
 				"substreams-test-image",
 			}
 
