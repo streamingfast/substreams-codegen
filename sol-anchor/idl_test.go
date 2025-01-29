@@ -69,7 +69,18 @@ func TestOrbitLen(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, "QoB7dVkkZr3oLb95DMpSptvUF8mTygDHNjFQh5y5RAb", result.Address)
-	
+
+}
+
+func TestRaydiumAmmV3(t *testing.T) {
+	idl := readFromFile("raydium_amm_v3")
+
+	result := &IDL{}
+	err := json.Unmarshal(idl, &result)
+
+	fmt.Println(result.IsTypeUsed("Test"))
+	fmt.Println(len(result.Instructions))
+	assert.Nil(t, err)
 }
 
 func readFromFile(idlName string) []byte {

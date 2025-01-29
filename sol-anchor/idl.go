@@ -1,6 +1,7 @@
 package solanchor
 
 import (
+	"fmt"
 	"unicode"
 )
 
@@ -35,8 +36,9 @@ func (i *IDL) IsTypeUsed(typeName string) bool {
 					return true
 				}
 			}
-		} else {
+		} else if tp.Type.IsEnum() {
 			for _, arg := range tp.Type.Enum.Variants {
+				fmt.Println(arg.Name)
 				if arg.Name == typeName && i.IsTypeUsed(tp.Name) {
 					return true
 				}
