@@ -24,6 +24,7 @@ func init() {
 		"Create an Mantra Substreams module from specific events",
 		codegen.ConversationFactory(New),
 		70,
+		"cosmos",
 	)
 }
 

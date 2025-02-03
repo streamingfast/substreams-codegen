@@ -27,6 +27,7 @@ func init() {
 		"Given a list of contracts and their ABIs, this will build an Ethereum substreams that decodes events and/or calls",
 		codegen.ConversationFactory(New),
 		82,
+		"evm",
 	)
 }
 

@@ -20,6 +20,7 @@ func init() {
 		`Supported networks: `+strings.Join(supportedChains, ", "),
 		codegen.ConversationFactory(New),
 		83,
+		"evm",
 	)
 }
 

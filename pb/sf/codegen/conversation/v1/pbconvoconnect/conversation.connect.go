@@ -41,13 +41,6 @@ const (
 	ConversationServiceDiscoverProcedure = "/sf.codegen.conversation.v1.ConversationService/Discover"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	conversationServiceServiceDescriptor        = v1.File_sf_codegen_conversation_v1_conversation_proto.Services().ByName("ConversationService")
-	conversationServiceConverseMethodDescriptor = conversationServiceServiceDescriptor.Methods().ByName("Converse")
-	conversationServiceDiscoverMethodDescriptor = conversationServiceServiceDescriptor.Methods().ByName("Discover")
-)
-
 // ConversationServiceClient is a client for the sf.codegen.conversation.v1.ConversationService
 // service.
 type ConversationServiceClient interface {
@@ -65,17 +58,18 @@ type ConversationServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewConversationServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ConversationServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	conversationServiceMethods := v1.File_sf_codegen_conversation_v1_conversation_proto.Services().ByName("ConversationService").Methods()
 	return &conversationServiceClient{
 		converse: connect.NewClient[v1.UserInput, v1.SystemOutput](
 			httpClient,
 			baseURL+ConversationServiceConverseProcedure,
-			connect.WithSchema(conversationServiceConverseMethodDescriptor),
+			connect.WithSchema(conversationServiceMethods.ByName("Converse")),
 			connect.WithClientOptions(opts...),
 		),
 		discover: connect.NewClient[v1.DiscoveryRequest, v1.DiscoveryResponse](
 			httpClient,
 			baseURL+ConversationServiceDiscoverProcedure,
-			connect.WithSchema(conversationServiceDiscoverMethodDescriptor),
+			connect.WithSchema(conversationServiceMethods.ByName("Discover")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -110,16 +104,17 @@ type ConversationServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewConversationServiceHandler(svc ConversationServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	conversationServiceMethods := v1.File_sf_codegen_conversation_v1_conversation_proto.Services().ByName("ConversationService").Methods()
 	conversationServiceConverseHandler := connect.NewBidiStreamHandler(
 		ConversationServiceConverseProcedure,
 		svc.Converse,
-		connect.WithSchema(conversationServiceConverseMethodDescriptor),
+		connect.WithSchema(conversationServiceMethods.ByName("Converse")),
 		connect.WithHandlerOptions(opts...),
 	)
 	conversationServiceDiscoverHandler := connect.NewUnaryHandler(
 		ConversationServiceDiscoverProcedure,
 		svc.Discover,
-		connect.WithSchema(conversationServiceDiscoverMethodDescriptor),
+		connect.WithSchema(conversationServiceMethods.ByName("Discover")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/sf.codegen.conversation.v1.ConversationService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

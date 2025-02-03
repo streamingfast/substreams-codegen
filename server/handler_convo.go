@@ -41,6 +41,7 @@ func (s *server) Discover(ctx context.Context, req *connect.Request[pbconvo.Disc
 			Id:          conv.ID,
 			Title:       conv.Title,
 			Description: conv.Description,
+			Group:       conv.Group,
 		})
 
 	}
