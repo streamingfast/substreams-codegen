@@ -24,6 +24,7 @@ func init() {
 		"This creating the most simple substreams on Starknet",
 		codegen.ConversationFactory(New),
 		59,
+		"starknet",
 	)
 }
 

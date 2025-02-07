@@ -37,12 +37,6 @@ const (
 	BuildServiceBuildProcedure = "/sf.remotebuild.v1.BuildService/Build"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	buildServiceServiceDescriptor     = v1.File_sf_codegen_remotebuild_v1_remotebuild_proto.Services().ByName("BuildService")
-	buildServiceBuildMethodDescriptor = buildServiceServiceDescriptor.Methods().ByName("Build")
-)
-
 // BuildServiceClient is a client for the sf.remotebuild.v1.BuildService service.
 type BuildServiceClient interface {
 	Build(context.Context, *connect.Request[v1.BuildRequest]) (*connect.ServerStreamForClient[v1.BuildResponse], error)
@@ -57,11 +51,12 @@ type BuildServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewBuildServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) BuildServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	buildServiceMethods := v1.File_sf_codegen_remotebuild_v1_remotebuild_proto.Services().ByName("BuildService").Methods()
 	return &buildServiceClient{
 		build: connect.NewClient[v1.BuildRequest, v1.BuildResponse](
 			httpClient,
 			baseURL+BuildServiceBuildProcedure,
-			connect.WithSchema(buildServiceBuildMethodDescriptor),
+			connect.WithSchema(buildServiceMethods.ByName("Build")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -88,10 +83,11 @@ type BuildServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewBuildServiceHandler(svc BuildServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	buildServiceMethods := v1.File_sf_codegen_remotebuild_v1_remotebuild_proto.Services().ByName("BuildService").Methods()
 	buildServiceBuildHandler := connect.NewServerStreamHandler(
 		BuildServiceBuildProcedure,
 		svc.Build,
-		connect.WithSchema(buildServiceBuildMethodDescriptor),
+		connect.WithSchema(buildServiceMethods.ByName("Build")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/sf.remotebuild.v1.BuildService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

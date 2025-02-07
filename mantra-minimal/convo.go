@@ -22,6 +22,7 @@ func init() {
 		"This creating the most simple substreams on Mantra Mainnet",
 		codegen.ConversationFactory(New),
 		72,
+		"cosmos",
 	)
 }
 

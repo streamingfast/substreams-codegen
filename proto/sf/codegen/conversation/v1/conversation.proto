@@ -155,5 +155,6 @@ message DiscoveryResponse {
     string description = 3;
     string icon_url = 4;
     string endpoint = 5; // if not the same as this one
+    string group = 6;
   }
 }

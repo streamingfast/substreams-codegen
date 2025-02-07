@@ -10,6 +10,7 @@ type ConversationHandler struct {
 	ID          string
 	Title       string
 	Description string
+	Group       string
 
 	// Weight is used to sort the list of conversations, higher weight first
 	// EVM: 80+
@@ -23,13 +24,14 @@ type ConversationHandler struct {
 	Factory ConversationFactory
 }
 
-func RegisterConversation(conversationID string, title, description string, newFunc ConversationFactory, weight int) {
+func RegisterConversation(conversationID string, title, description string, newFunc ConversationFactory, weight int, group string) {
 	handler := ConversationHandler{
 		ID:          conversationID,
 		Title:       title,
 		Description: description,
 		Factory:     newFunc,
 		Weight:      weight,
+		Group:       group,
 	}
 	Registry[conversationID] = &handler
 }
