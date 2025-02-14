@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package mydata.v1;
+
+import "proto/cosmos/v1/events.proto";
+
+message MyData {
+  repeated .sf.substreams.cosmos.v1.Event events = 1;
+}

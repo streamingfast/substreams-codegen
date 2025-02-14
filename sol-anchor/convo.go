@@ -3,6 +3,7 @@ package solanchor
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -34,6 +35,7 @@ func init() {
 }
 
 var cmd = codegen.Cmd
+var IdlFilepathPrefix = "file://"
 
 func (c *Convo) NextStep() loop.Cmd {
 	p := c.State
@@ -120,12 +122,25 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case AskIdl:
 		return c.Action(InputIdl{}).
-			TextInput("Input the Anchor IDL in JSON format\n", "Submit").
+			TextInput(fmt.Sprintf("Paste the Anchor IDL in JSON format OR input the path of the JSON IDL in your filesystem using %sPATH_TO_YOUR_IDL/MY_IDL.json\n", IdlFilepathPrefix), "Submit").
 			Cmd()
 
 	case InputIdl:
+		var rawMessage string;
+		if strings.Contains(msg.Value, IdlFilepathPrefix) {
+			idlPath := strings.TrimPrefix(msg.Value, IdlFilepathPrefix)
+
+			fileBytes, err := os.ReadFile(idlPath)
+			if err != nil {
+				return loop.Seq(c.Msg().Messagef("Cannot read the IDL file %q: %s", idlPath, err).Cmd(), cmd(InputIdl{}))
+			}
+			rawMessage = string(fileBytes)
+		} else {
+			rawMessage = msg.Value
+		}
+
 		idl := &IDL{}
-		err := json.Unmarshal([]byte(msg.Value), &idl)
+		err := json.Unmarshal([]byte(rawMessage), &idl)
 		if err != nil {
 			fmt.Println("Error unmarshaling JSON:", err)
 			return loop.Quit(fmt.Errorf("could not decode IDL"))
@@ -200,7 +215,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 		c.State.IdlString = newIDLString
 
-		c.State.idl.Metadata.Address = msg.Value
+		c.State.idl.Metadata.Address = strings.TrimSpace(msg.Value)
 		b, err := base58.Decode(msg.Value)
 		if err != nil || len(b) != 32 {
 			return loop.Seq(

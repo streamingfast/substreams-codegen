@@ -4,7 +4,21 @@ package:
   version: v0.1.0
 
 imports:
-  injective: https://spkg.io/streamingfast/injective-common-v0.2.2.spkg
+  injective: https://github.com/streamingfast/substreams-foundational-modules/releases/download/injective-common-v0.2.5/injective-common-v0.2.5.spkg
+
+binaries:
+  default:
+    type: wasm/rust-v1
+    file: ./target/wasm32-unknown-unknown/release/substreams.wasm
+
+protobuf:
+  files:
+    - mydata.proto
+  importPaths:
+    - ./proto
+  excludePaths:
+    - sf/substreams
+    - google
 
 modules:
   - name: {{ .ModuleName }}
@@ -12,8 +26,6 @@ modules:
     use: injective:filtered_events{{ if .HasAttributeValues }}_by_attribute_value{{ end }}
 {{- else if .IsEventGroups }}
     use: injective:filtered_event_groups{{ if .HasAttributeValues }}_by_attribute_value{{ end }}
-{{- else }}
-    use: injective:filtered_trx_by_events{{ if .HasAttributeValues }}_attribute_value{{ end }}
 {{- end }}
     initialBlock: {{ .InitialBlock }}
 {{- if .HasAttributeValues }}
@@ -22,6 +34,12 @@ modules:
       query:
         string: {{ .GetEventsIndexQuery }}
 {{- end }}
+  - name: map_my_data
+    kind: map
+    inputs:
+    - map: {{ .ModuleName }}
+    output:
+     type: proto:mydata.v1.MyData
 
 params:
   {{ .ModuleName }}: {{ .GetEventsQuery }}

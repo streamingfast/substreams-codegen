@@ -6,6 +6,20 @@ package:
 imports:
   mantra: https://spkg.io/streamingfast/mantra-common-v0.1.0.spkg
 
+binaries:
+  default:
+    type: wasm/rust-v1
+    file: ./target/wasm32-unknown-unknown/release/substreams.wasm
+
+protobuf:
+  files:
+    - mydata.proto
+  importPaths:
+    - ./proto
+  excludePaths:
+    - sf/substreams
+    - google
+
 modules:
   - name: {{ .ModuleName }}
 {{- if .IsEvents }}
@@ -22,6 +36,13 @@ modules:
       query:
         string: {{ .GetEventsIndexQuery }}
 {{- end }}
+
+  - name: map_my_data
+    kind: map
+    inputs:
+    - map: {{ .ModuleName }}
+    output:
+     type: proto:mydata.v1.MyData
 
 params:
   {{ .ModuleName }}: {{ .GetEventsQuery }}
