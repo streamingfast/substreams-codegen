@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/dustin/go-humanize"
@@ -86,6 +87,10 @@ func (c *Convo) NextStep() loop.Cmd {
 			return notifyContext(cmd(RunDecodeContractABI{}))
 		}
 
+		if contract.InitialBlock == nil {
+			return notifyContext(cmd(AskContractInitialBlock{}))
+		}
+
 		// TODO: can we infer the name from what we find through the ABI discovery?
 		// otherwise, ask for a shortname
 		if contract.Name == "" {
@@ -135,6 +140,26 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			abi, err := contract.fetchABI(config)
 			return ReturnFetchContractABI{abi: abi, err: err}
 		}
+
+	case AskContractInitialBlock:
+		return c.Action(InputContractInitialBlock{}).TextInput("Please enter the contract initial block number", "Submit").
+			Validation(`^\d+$`, "Please enter a valid block number").
+			Cmd()
+
+	case InputContractInitialBlock:
+		contract := c.contextContract()
+		if contract == nil {
+			return QuitInvalidContext
+		}
+		blk, err := strconv.ParseUint(msg.Value, 10, 64)
+		if err != nil {
+			return loop.Seq(
+				c.Msg().Messagef("Cannot parse the block number %q: %s", msg.Value, err).Cmd(),
+				cmd(AskContractInitialBlock{}),
+			)
+		}
+		contract.InitialBlock = &blk
+		return c.NextStep()
 
 	case ReturnFetchContractABI:
 		contract := c.contextContract()
@@ -272,7 +297,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 		peekABI := c.Msg().Message(codegen.MarkdownEscape(string(contract.RawABI))).Cmd()
 
-		informMessage := c.Msg().Message("The ABI is retrieved from the latest block. Changes to the contract's ABI since its deployment are not currently handled.").Cmd()
+		informMessage := c.Msg().Message("The ABI is retrieved from the latest block. Previous versions of the ABI are not supported. If you have an older ABI don't proceed and copy paste.").Cmd()
 		return loop.Seq(peekABI, informMessage, cmd(AskConfirmContractABI{}))
 
 	case AskContractAddress:

@@ -28,6 +28,7 @@ modules:
 {{- range $i, $contract := .Contracts }}
 - name: map_{{ $contract.Identifier }}_events
   kind: map
+  initialBlock: {{ $contract.InitialBlock }}
   inputs:
     - map: starknet:filtered_transactions
   output:
