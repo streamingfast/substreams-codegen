@@ -35,7 +35,7 @@ func (i *IDL) IsTypeUsed(typeName string) bool {
 					return true
 				}
 			}
-		} else {
+		} else if tp.Type.IsEnum() {
 			for _, arg := range tp.Type.Enum.Variants {
 				if arg.Name == typeName && i.IsTypeUsed(tp.Name) {
 					return true
