@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/NethermindEth/juno/core/felt"
@@ -49,6 +50,32 @@ func (c *Contract) IdentifierCapitalize() string {
 	return strings.ToUpper(string(c.Name[0])) + c.Name[1:]
 }
 func (c *Contract) SetAliases() {
+	c.setAliasesForEvents()
+	c.setAliasesForOtherItems()
+}
+
+// This is a bit hacky, but it works for now!
+func (c *Contract) setAliasesForOtherItems() {
+	otherItems := c.Abi.otherItems
+
+	seen := make(map[string]int)
+	for _, item := range otherItems {
+		splittedName := strings.Split(item.Name, "::")
+		lastPart := splittedName[len(splittedName)-1]
+
+		count, found := seen[lastPart]
+		if !found {
+			seen[lastPart] = 1
+			continue
+		}
+
+		newName := lastPart + "V" + strconv.Itoa(count)
+		alias := NewAlias(item.Name, newName)
+		c.Aliases = append(c.Aliases, alias)
+		seen[lastPart] = count + 1
+	}
+}
+func (c *Contract) setAliasesForEvents() {
 	events := c.Abi.decodedEvents
 
 	aliases := make([]*Alias, 0)

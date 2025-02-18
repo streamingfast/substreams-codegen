@@ -2,16 +2,21 @@ package starknet_events
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/streamingfast/substreams-codegen/loop"
 )
 
 type ABI struct {
 	decodedEvents StarknetEvents
-	raw           string
+	// Those items are processed to set aliases when generating the abi in Rust
+	otherItems StarknetOtherItems
+	raw        string
 }
 
 type StarknetEvents []*StarknetEvent
+
+type StarknetOtherItems []*OtherItem
 
 type StarknetEvent struct {
 	CommonAttribute
@@ -32,7 +37,7 @@ const (
 	EventType = "event"
 )
 
-func (s *StarknetEvents) ExtractEvents(data []byte) error {
+func (a *ABI) ExtractItemsFromABI(data []byte) error {
 	var Attributes []CommonAttribute
 	if err := json.Unmarshal(data, &Attributes); err != nil {
 		return err
@@ -45,6 +50,7 @@ func (s *StarknetEvents) ExtractEvents(data []byte) error {
 		case EventType:
 			items = append(items, &StarknetEvent{})
 		default:
+			fmt.Printf("ATTRIBUTE: %+v\n", attribute)
 			items = append(items, &OtherItem{})
 		}
 	}
@@ -56,7 +62,9 @@ func (s *StarknetEvents) ExtractEvents(data []byte) error {
 	for _, item := range items {
 		switch i := item.(type) {
 		case *StarknetEvent:
-			*s = append(*s, i)
+			a.decodedEvents = append(a.decodedEvents, i)
+		case *OtherItem:
+			a.otherItems = append(a.otherItems, i)
 		default:
 			continue
 		}
@@ -67,12 +75,17 @@ func (s *StarknetEvents) ExtractEvents(data []byte) error {
 
 func CmdDecodeABI(contract *Contract) loop.Cmd {
 	return func() loop.Msg {
-		events := StarknetEvents{}
-		err := events.ExtractEvents(contract.RawABI)
+		abi := &ABI{
+			decodedEvents: StarknetEvents{},
+			otherItems:    StarknetOtherItems{},
+			raw:           string(contract.RawABI),
+		}
+
+		err := abi.ExtractItemsFromABI(contract.RawABI)
 		if err != nil {
 			panic("decoding contract abi")
 		}
 
-		return ReturnRunDecodeContractABI{Abi: &ABI{events, string(contract.RawABI)}, Err: err}
+		return ReturnRunDecodeContractABI{Abi: abi, Err: err}
 	}
 }
