@@ -126,8 +126,11 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			Cmd()
 
 	case InputIdl:
-		var rawMessage string;
-		if strings.Contains(msg.Value, IdlFilepathPrefix) {
+		var rawMessage string
+
+		if decoderToken, _ := json.NewDecoder(strings.NewReader(msg.Value)).Token(); decoderToken != nil {
+			rawMessage = msg.Value
+		} else {
 			idlPath := strings.TrimPrefix(msg.Value, IdlFilepathPrefix)
 
 			fileBytes, err := os.ReadFile(idlPath)
@@ -135,8 +138,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 				return loop.Seq(c.Msg().Messagef("Cannot read the IDL file %q: %s", idlPath, err).Cmd(), cmd(InputIdl{}))
 			}
 			rawMessage = string(fileBytes)
-		} else {
-			rawMessage = msg.Value
 		}
 
 		idl := &IDL{}
