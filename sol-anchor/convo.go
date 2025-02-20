@@ -122,7 +122,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case AskIdl:
 		return c.Action(InputIdl{}).
-			TextInput(fmt.Sprintf("Paste the Anchor IDL in JSON format OR input the path of the JSON IDL in your filesystem using %sPATH_TO_YOUR_IDL/MY_IDL.json\n", IdlFilepathPrefix), "Submit").
+			TextInput(fmt.Sprintf("Paste the Anchor IDL in JSON format OR input the path of the JSON IDL in your filesystem (e.g. PATH_TO_MY_IDL/MY_IDL.json)\n"), "Submit").
 			Cmd()
 
 	case InputIdl:
