@@ -122,12 +122,13 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case AskIdl:
 		return c.Action(InputIdl{}).
-			TextInput(fmt.Sprintf("Paste the Anchor IDL in JSON format OR input the path of the JSON IDL in your filesystem (e.g. PATH_TO_MY_IDL/MY_IDL.json)\n"), "Submit").
+			TextInput("Paste the Anchor IDL in JSON format OR input the path of the JSON IDL in your filesystem (e.g. PATH_TO_MY_IDL/MY_IDL.json)\n", "Submit").
 			Cmd()
 
 	case InputIdl:
 		var rawMessage string
 
+		// If we are able to decode first JSON token, we assume it's JSON, otherwise, we assume it's a file path
 		if decoderToken, _ := json.NewDecoder(strings.NewReader(msg.Value)).Token(); decoderToken != nil {
 			rawMessage = msg.Value
 		} else {
