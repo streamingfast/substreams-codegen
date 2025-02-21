@@ -71,8 +71,6 @@ func (c *Conversation[X]) CmdDownloadFiles(msg ReturnGenerate) loop.Cmd {
 substreams build
 substreams auth
 substreams gui       			  # Get streaming!
-substreams registry login         # Login to substreams.dev
-substreams registry publish       # Publish your Substreams to substreams.dev
 `+"```"+`
 
 Build Subgraphs and other sinks with:
@@ -81,6 +79,14 @@ Build Subgraphs and other sinks with:
 substreams codegen subgraph
 substreams codegen sql
 `+"```"+`
+
+Optionally, publish your Substreams to the Substreams Registry (https://substreams.dev) with:
+
+`+"```"+`bash
+substreams registry login         # Login to substreams.dev
+substreams registry publish       # Publish your Substreams to substreams.dev
+`+"```"+`
+
 `).Cmd(),
 		loop.Quit(nil),
 	)

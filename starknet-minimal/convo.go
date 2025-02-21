@@ -20,8 +20,8 @@ func New() codegen.Converser {
 func init() {
 	codegen.RegisterConversation(
 		"starknet-minimal",
-		"Simplest Substreams to get you started on Starknet",
-		"This creating the most simple substreams on Starknet",
+		"Creates a Substreams project which indexes the full Starknet Block.",
+		"You will get a project that indexes all the data contained in the Block.",
 		codegen.ConversationFactory(New),
 		59,
 		"starknet",

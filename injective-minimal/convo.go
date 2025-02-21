@@ -18,8 +18,8 @@ type Convo struct {
 func init() {
 	codegen.RegisterConversation(
 		"injective-minimal",
-		"Simplest Substreams to get you started on Injective Mainnet",
-		"This creating the most simple substreams on Injective Mainnet",
+		"Creates a Substreams project which indexes the full Injective Block.",
+		"You will get a project that indexes all the data contained in the Block.",
 		codegen.ConversationFactory(New),
 		72,
 		"cosmos",

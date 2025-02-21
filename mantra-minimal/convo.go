@@ -18,8 +18,8 @@ type Convo struct {
 func init() {
 	codegen.RegisterConversation(
 		"mantra-minimal",
-		"Simplest Substreams to get you started on Mantra Mainnet",
-		"This creating the most simple substreams on Mantra Mainnet",
+		"Creates a Substreams project which indexes the full Mantra Block.",
+		"You will get a project that indexes all the data contained in the Block.",
 		codegen.ConversationFactory(New),
 		72,
 		"cosmos",

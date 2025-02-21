@@ -1,0 +1,9 @@
+mod pb;
+use pb::{mydata::v1 as mydata, sf::substreams::cosmos::v1::EventList};
+
+#[substreams::handlers::map]
+fn map_my_data(events: EventList) -> mydata::MyData {
+    let mut my_data = mydata::MyData::default();
+    my_data.events = events.events;
+    my_data
+}

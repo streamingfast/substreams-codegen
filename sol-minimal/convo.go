@@ -11,8 +11,8 @@ import (
 func init() {
 	codegen.RegisterConversation(
 		"sol-minimal",
-		"Simplest Substreams to get you started on solana",
-		"This creating the most simple substreams on Solana",
+		"Creates a Substreams project which indexes the full Solana Block.",
+		"You will get a project that indexes all the data contained in the Block.",
 		codegen.ConversationFactory(New),
 		2002,
 		"solana",
