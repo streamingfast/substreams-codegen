@@ -72,6 +72,15 @@ func TestOrbitLen(t *testing.T) {
 	
 }
 
+func TestIthaca(t *testing.T) {
+	idl := readFromFile("ithaca")
+
+	result := &IDL{}
+	err := json.Unmarshal(idl, &result)
+
+	assert.Nil(t, err)
+}
+
 func readFromFile(idlName string) []byte {
 	data, err := os.ReadFile("idls/" + idlName + ".json")
 	if err != nil {

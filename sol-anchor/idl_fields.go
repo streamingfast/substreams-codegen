@@ -322,9 +322,48 @@ func unmarshalVec(data []byte) (bool, string) {
 		Vec DefinedType `json:"vec"`
 	}
 	err = json.Unmarshal(data, &vecDefinedType)
-	//fmt.Printf("%s", string(vecDefinedType.Vec.Defined))
 	if err == nil {
 		return true, vecDefinedType.Vec.Defined
+	}
+
+	/*
+		There are two known formats:
+
+		```
+		"name": "position_params",
+		"type": {
+			"vec": {
+				"defined": "PositionsParam"
+			}
+		}
+		```
+		or
+		```
+		"name": "position_params",
+		"type": {
+			"vec": {
+				"defined": {
+					"name": "PositionsParam"
+				}
+			}
+		}
+		```
+
+		In the last format, the "PositionParam" string is contained within a "name" wrapper.
+	*/
+
+	type TypeName struct {
+		Name string `json:"name"`
+	}
+	type DefinedTypeWithName struct {
+		Defined TypeName `json:"defined"`
+	}
+	var vecDefinedTypeWithName struct {
+		Vec DefinedTypeWithName `json:"vec"`
+	}
+	err = json.Unmarshal(data, &vecDefinedTypeWithName)
+	if err == nil {
+		return true, vecDefinedTypeWithName.Vec.Defined.Name
 	}
 
 	return false, ""
