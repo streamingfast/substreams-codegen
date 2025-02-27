@@ -163,6 +163,17 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 			}
 			return codegen.IncomingMessage{Msg: newMsg.Elem().Interface()}
 
+		case *pbconvo.UserInput_LocalFile_:
+			cnt, err := proto.Marshal(entry.LocalFile)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("marshal type %T: %w", entry.LocalFile, err))
+			}
+			err = proto.Unmarshal(cnt, newProtoMsg)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("unmarshal into type %T from %T: %w", newProtoMsg, entry.LocalFile, err))
+			}
+			return codegen.IncomingMessage{Msg: newMsg.Elem().Interface()}
+
 		case *pbconvo.UserInput_DownloadedFiles_:
 			cnt, err := proto.Marshal(entry.DownloadedFiles)
 			if err != nil {
