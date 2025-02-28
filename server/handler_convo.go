@@ -91,7 +91,8 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 	if !ok {
 		return fmt.Errorf("begin with UserInput_Start message")
 	}
-	if start.Start.Version < 1 {
+
+	if start.Start.Version < 1 || (start.Start.GeneratorId == "sol-anchor-beta" && start.Start.Version <= 1) {
 		return fmt.Errorf("unsupported protocol version %d, please upgrade your `substreams` client", start.Start.Version)
 	}
 
