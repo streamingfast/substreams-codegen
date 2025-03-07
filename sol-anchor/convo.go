@@ -155,7 +155,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			Cmd()
 
 	case InputIDLFile:
-		return inputIDLStep(c, msg.Value)
+		return inputIDLStep(c, string(msg.Value))
 
 	case AskConfirmIDL:
 		return c.Action(InputConfirmIDL{}).

@@ -93,7 +93,7 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 	}
 
 	if start.Start.Version < 1 || (start.Start.GeneratorId == "sol-anchor-beta" && start.Start.Version <= 1) {
-		return fmt.Errorf("\nunsupported protocol version %d, please upgrade your `substreams` CLI to the latest version\n\n- If you are on Mac have used `brew` to install it, just execute:\n`brew upgrade substreams`.\n\n- You can also upgrade the CLI using one of the releases in GitHub: `https://github.com/streamingfast/substreams/releases`\n\n", start.Start.Version)
+		return fmt.Errorf("\nunsupported protocol version %d, please upgrade your `substreams` CLI to the latest version\n\n- If you installed it through Brew, just execute:\n`brew upgrade substreams`.\n\n- You can also upgrade the CLI using one of the releases in GitHub: `https://github.com/streamingfast/substreams/releases`\n\n", start.Start.Version)
 	}
 
 	convo := codegen.Registry[start.Start.GeneratorId]
