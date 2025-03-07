@@ -91,8 +91,9 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 	if !ok {
 		return fmt.Errorf("begin with UserInput_Start message")
 	}
-	if start.Start.Version < 1 {
-		return fmt.Errorf("unsupported protocol version %d, please upgrade your `substreams` client", start.Start.Version)
+
+	if start.Start.Version < 1 || (start.Start.GeneratorId == "sol-anchor-beta" && start.Start.Version <= 1) {
+		return fmt.Errorf("\nunsupported protocol version %d, please upgrade your `substreams` CLI to the latest version\n\n- If you installed it through Brew, just execute:\n`brew upgrade substreams`.\n\n- You can also upgrade the CLI using one of the releases in GitHub: `https://github.com/streamingfast/substreams/releases`\n", start.Start.Version)
 	}
 
 	convo := codegen.Registry[start.Start.GeneratorId]
@@ -160,6 +161,17 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 			err = proto.Unmarshal(cnt, newProtoMsg)
 			if err != nil {
 				return loop.NewQuitMsg(fmt.Errorf("unmarshal into type %T from %T: %w", newProtoMsg, entry.TextInput, err))
+			}
+			return codegen.IncomingMessage{Msg: newMsg.Elem().Interface()}
+
+		case *pbconvo.UserInput_LocalFile_:
+			cnt, err := proto.Marshal(entry.LocalFile)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("marshal type %T: %w", entry.LocalFile, err))
+			}
+			err = proto.Unmarshal(cnt, newProtoMsg)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("unmarshal into type %T from %T: %w", newProtoMsg, entry.LocalFile, err))
 			}
 			return codegen.IncomingMessage{Msg: newMsg.Elem().Interface()}
 
