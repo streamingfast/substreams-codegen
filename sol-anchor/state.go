@@ -11,7 +11,6 @@ type Project struct {
 	Download        bool   `json:"download,omitempty"`
 	InitialBlock    uint64 `json:"initialBlock,omitempty"`
 	InitialBlockSet bool   `json:"initialBlockSet,omitempty"`
-	IdlFormat       string `json:"idlFormat,omitempty"`
 	idl             *IDL
 	IdlString       string `json:"idlString,omitempty"`
 }
