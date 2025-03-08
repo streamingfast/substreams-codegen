@@ -201,16 +201,6 @@ func (w *MsgWrap) TextInput(prompt string, submitButtonLabel string) *MsgWrap {
 	return w
 }
 
-func (w *MsgWrap) LocalFile(prompt string, submitButtonLabel string) *MsgWrap {
-	w.Msg.Entry = &pbconvo.SystemOutput_LocalFile_{
-		LocalFile: &pbconvo.SystemOutput_LocalFile{
-			Prompt:            prompt,
-			SubmitButtonLabel: submitButtonLabel,
-		},
-	}
-	return w
-}
-
 func (w *MsgWrap) DefaultValue(value string) *MsgWrap {
 	switch entry := w.Msg.Entry.(type) {
 	case *pbconvo.SystemOutput_TextInput_:
