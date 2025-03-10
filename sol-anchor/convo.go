@@ -137,7 +137,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			Cmd()
 
 	case InputIDLFormat:
-		fmt.Println("----------------------- ", msg.Value)
 		c.State.IdlFormat = msg.Value
 		return c.NextStep()
 
