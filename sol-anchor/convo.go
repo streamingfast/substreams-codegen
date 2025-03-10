@@ -3,7 +3,6 @@ package solanchor
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 
@@ -43,8 +42,17 @@ func (c *Convo) NextStep() loop.Cmd {
 		return cmd(codegen.AskProjectName{})
 	}
 
+	if p.IdlFormat == "" {
+		return cmd(AskIDLFormat{})
+	}
+
 	if p.idl == nil {
-		return cmd(AskIdl{})
+		switch p.IdlFormat {
+		case "string":
+			return cmd(AskIDLJSON{})
+		case "file":
+			return cmd(AskIDLFile{})
+		}
 	}
 
 	if p.ChainName == "" {
@@ -120,76 +128,34 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		c.State.InitialBlockSet = true
 		return c.NextStep()
 
-	case AskIdl:
-		return c.Action(InputIdl{}).
-			TextInput("Paste the Anchor IDL in JSON format OR input the path of the JSON IDL in your filesystem (e.g. PATH_TO_MY_IDL/MY_IDL.json)\n", "Submit").
+	case AskIDLFormat:
+		return c.Action(InputIDLFormat{}).
+			ListSelect("How do you want to provide the JSON IDL?").
+			Labels("JSON string", "JSON in a local file").
+			Values("string", "file").
+			DefaultValue("string").
 			Cmd()
 
-	case InputIdl:
-		var rawMessage string
+	case InputIDLFormat:
+		fmt.Println("----------------------- ", msg.Value)
+		c.State.IdlFormat = msg.Value
+		return c.NextStep()
 
-		// If we are able to decode first JSON token, we assume it's JSON, otherwise, we assume it's a file path
-		if decoderToken, _ := json.NewDecoder(strings.NewReader(msg.Value)).Token(); decoderToken != nil {
-			rawMessage = msg.Value
-		} else {
-			idlPath := strings.TrimPrefix(msg.Value, IdlFilepathPrefix)
+	case AskIDLJSON:
+		return c.Action(InputIDLJSON{}).
+			TextInput("Paste the Anchor IDL in JSON format\n", "Submit").
+			Cmd()
 
-			fileBytes, err := os.ReadFile(idlPath)
-			if err != nil {
-				return loop.Seq(c.Msg().Messagef("Cannot read the IDL file %q: %s", idlPath, err).Cmd(), cmd(InputIdl{}))
-			}
-			rawMessage = string(fileBytes)
-		}
+	case InputIDLJSON:
+		return inputIDLStep(c, msg.Value)
 
-		idl := &IDL{}
-		err := json.Unmarshal([]byte(rawMessage), &idl)
-		if err != nil {
-			fmt.Println("Error unmarshaling JSON:", err)
-			return loop.Quit(fmt.Errorf("could not decode IDL"))
-		}
-		if idl.Metadata.Name == "" {
-			idl.Metadata.Name = c.State.Name // we need a name so anchor can compile
-		}
-		c.State.idl = idl
-		c.State.IdlString = msg.Value
+	case AskIDLFile:
+		return c.Action(InputIDLFile{}).
+			LocalFile("Input the full path of your JSON IDL in your filesystem (e.g. PATH_TO_MY_IDL/MY_IDL.json)\n", "Submit").
+			Cmd()
 
-		descString := "# Instructions\n\n"
-		for _, inst := range idl.Instructions {
-			descString += fmt.Sprintf("## %s (%s)\n", inst.Name, arrayToHex(inst.Discriminator))
-			if len(inst.Args) != 0 {
-				argNames := make([]string, len(inst.Args))
-				for i, field := range inst.Args {
-					argNames[i] = field.Name
-				}
-				descString += fmt.Sprintf("* Args: (%s)\n", strings.Join(argNames, ", "))
-			}
-			if len(inst.Accounts) != 0 {
-				accNames := make([]string, len(inst.Accounts))
-				for i, field := range inst.Accounts {
-					accNames[i] = field.Name
-					if field.Address != "" {
-						accNames[i] = "_" + field.Name + "_"
-					}
-				}
-				descString += fmt.Sprintf("* Accounts: (%s)\n", strings.Join(accNames, ", "))
-			}
-			descString += "\n"
-		}
-
-		if len(idl.Events) != 0 {
-			descString += fmt.Sprintf("# %s\n", "Events")
-			for _, evt := range idl.Events {
-				fieldNames := make([]string, len(evt.Fields))
-				for i, field := range evt.Fields {
-					fieldNames[i] = field.Name
-				}
-				descString += fmt.Sprintf("* %s (%s)\n", evt.Name, strings.Join(fieldNames, ", "))
-				descString += "\n"
-			}
-		}
-
-		peekIDL := c.Msg().Message(descString).Cmd()
-		return loop.Seq(peekIDL, cmd(AskConfirmIDL{}))
+	case InputIDLFile:
+		return inputIDLStep(c, string(msg.Value))
 
 	case AskConfirmIDL:
 		return c.Action(InputConfirmIDL{}).
@@ -198,12 +164,19 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			Cmd()
 
 	case InputConfirmIDL:
+		returnStep := func() loop.Cmd {
+			if c.State.IdlFormat == "string" {
+				return cmd(AskIDLFile{})
+			}
+			return cmd(AskIDLJSON{})
+		}
+
 		if msg.Affirmative {
 			return c.NextStep()
 		}
 		c.State.idl = nil
 		c.State.IdlString = ""
-		return loop.Seq(c.Msg().Message("Modify your JSON IDL and try again...").Cmd(), cmd(AskIdl{}))
+		return loop.Seq(c.Msg().Message("Modify your JSON IDL and try again...").Cmd(), returnStep())
 
 	case AskProgramID:
 		return c.Action(InputProgramID{}).
@@ -246,4 +219,72 @@ func arrayToHex(arr []uint8) (out string) {
 		out = fmt.Sprintf("%s %02x", out, v)
 	}
 	return out
+}
+
+func inputIDLStep(c *Convo, msgValue string) loop.Cmd {
+	idl, err := createIDLFromJSON(msgValue)
+	if err != nil {
+		return loop.Quit(fmt.Errorf("could not decode IDL"))
+	}
+	if idl.Metadata.Name == "" {
+		idl.Metadata.Name = c.State.Name // we need a name so anchor can compile
+	}
+
+	c.State.idl = idl
+	c.State.IdlString = msgValue
+
+	descString := descriptionFromIDL(idl)
+
+	peekIDL := c.Msg().Message(descString).Cmd()
+	return loop.Seq(peekIDL, cmd(AskConfirmIDL{}))
+}
+
+func createIDLFromJSON(text string) (*IDL, error) {
+	idl := &IDL{}
+	err := json.Unmarshal([]byte(text), &idl)
+	if err != nil {
+		fmt.Println("Error unmarshaling JSON:", err)
+		return nil, err
+	}
+
+	return idl, nil
+}
+
+func descriptionFromIDL(idl *IDL) string {
+	descString := "# Instructions\n\n"
+	for _, inst := range idl.Instructions {
+		descString += fmt.Sprintf("## %s (%s)\n", inst.Name, arrayToHex(inst.Discriminator))
+		if len(inst.Args) != 0 {
+			argNames := make([]string, len(inst.Args))
+			for i, field := range inst.Args {
+				argNames[i] = field.Name
+			}
+			descString += fmt.Sprintf("* Args: (%s)\n", strings.Join(argNames, ", "))
+		}
+		if len(inst.Accounts) != 0 {
+			accNames := make([]string, len(inst.Accounts))
+			for i, field := range inst.Accounts {
+				accNames[i] = field.Name
+				if field.Address != "" {
+					accNames[i] = "_" + field.Name + "_"
+				}
+			}
+			descString += fmt.Sprintf("* Accounts: (%s)\n", strings.Join(accNames, ", "))
+		}
+		descString += "\n"
+	}
+
+	if len(idl.Events) != 0 {
+		descString += fmt.Sprintf("# %s\n", "Events")
+		for _, evt := range idl.Events {
+			fieldNames := make([]string, len(evt.Fields))
+			for i, field := range evt.Fields {
+				fieldNames[i] = field.Name
+			}
+			descString += fmt.Sprintf("* %s (%s)\n", evt.Name, strings.Join(fieldNames, ", "))
+			descString += "\n"
+		}
+	}
+
+	return descString
 }
