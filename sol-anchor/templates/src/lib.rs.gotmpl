@@ -59,8 +59,9 @@ fn map_program_data(blk: Block) -> Data {
                         let slice_u8: &mut &[u8] = &mut &decoded[..];
                         let slice_discriminator: [u8; 8] =
                             slice_u8[0..8].try_into().expect("error");
+                        let static_discriminator_slice: &'static [u8] = Box::leak(Box::new(slice_discriminator));
 
-                        match slice_discriminator {
+                        match static_discriminator_slice {
                             {{- range $i, $event := .Idl.Events }}
                             idl::idl::program::events::{{$event.Name}}::DISCRIMINATOR => {
                                 if let Ok(event) =
@@ -93,8 +94,8 @@ fn map_program_data(blk: Block) -> Data {
         .for_each(|inst| {
             let slice_u8: &[u8] = &inst.data()[..];
 
-            {{- range $i, $instruction := .Idl.Instructions -}}
-            if slice_u8[0..8] == idl::idl::program::client::args::{{ $instruction.PascalCaseName }}::DISCRIMINATOR {
+            {{- range $i, $instruction := .Idl.Instructions }}
+            if &slice_u8[0..8] == idl::idl::program::client::args::{{ $instruction.PascalCaseName }}::DISCRIMINATOR {
                 if let Ok(instruction) =
                     idl::idl::program::client::args::{{ $instruction.PascalCaseName }}::deserialize(&mut &slice_u8[8..])
                 {
