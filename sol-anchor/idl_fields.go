@@ -70,7 +70,7 @@ func (t *FieldType) IsSimple() bool {
 }
 
 func (t *FieldType) IsSimplePubKey() bool {
-	return t.Simple == "publicKey" || t.Simple == "pubkey"
+	return IsPublicKey(t.Simple)
 }
 
 func (t *FieldType) IsDefined() bool {
@@ -188,16 +188,16 @@ func PrintDefined(typeName string, fieldName string, variableName string, types 
 				return fmt.Sprintf("%s: map_enum_%s(%s.%s),", toSnakeCase(fieldName, false), t.SnakeCaseName(), toSnakeCase(variableName, true), toSnakeCase(fieldName, true))
 			} else {
 				var fieldsInString strings.Builder
+				var fieldString string
+
+				if isOption {
+					return fmt.Sprintf("%s: map_option_%s(%s.%s),", toSnakeCase(fieldName, true), toSnakeCase(typeName, true), toSnakeCase(variableName, true), toSnakeCase(fieldName, true))
+				}
+
 				for _, structField := range t.Type.Struct.Fields {
-					fieldString := fmt.Sprintf("%s.%s", toSnakeCase(variableName, true), toSnakeCase(fieldName, true))
+					fieldString = fmt.Sprintf("%s.%s", toSnakeCase(variableName, true), toSnakeCase(fieldName, true))
 					if variableName == "" {
 						fieldString = toSnakeCase(fieldName, true)
-					}
-
-					if isOption {
-						fieldString = fmt.Sprintf("%s: map_option_%s(%s.%s),", toSnakeCase(fieldName, true), toSnakeCase(fieldName, true), toSnakeCase(variableName, true), toSnakeCase(fieldName, true))
-						fieldsInString.WriteString(fieldString)
-						continue
 					}
 
 					fieldsInString.WriteString(structField.Type.Print(structField.Name, fieldString, types))
@@ -207,10 +207,6 @@ func PrintDefined(typeName string, fieldName string, variableName string, types 
 					return fmt.Sprintf(`%s {
 						%s
 					}`, t.Name, fieldsInString.String())
-				}
-
-				if isOption {
-					return fieldsInString.String()
 				}
 
 				return fmt.Sprintf(`%s: Some(%s {
@@ -240,6 +236,10 @@ func (f *FieldType) Print(fieldName string, variableName string, types []Type) s
 	}
 
 	if f.IsArray() {
+		if IsPublicKey(f.Array.Type) {
+			return fmt.Sprintf("%s: %s.%s.into_iter().map(|f| f.to_string()).collect(),", fieldNameSnakeCaseWithoutInitialUnderscore, variableName, fieldNameSnakeCase)
+		}
+
 		cast := CastInRustIfNeeded(f.Array.Type)
 		if cast == "" {
 			return fmt.Sprintf("%s: %s.%s.to_vec(),", fieldNameSnakeCaseWithoutInitialUnderscore, variableName, fieldNameSnakeCase)

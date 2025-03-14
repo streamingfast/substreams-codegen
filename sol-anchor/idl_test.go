@@ -14,7 +14,7 @@ func TestPumpFunIDL(t *testing.T) {
 
 	result := &IDL{}
 	err := json.Unmarshal(idl, &result)
-
+	fmt.Println(len(result.Accounts))
 	assert.Nil(t, err)
 	assert.Equal(t, "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P", result.Metadata.Address)
 	assert.Equal(t, 6, len(result.Instructions))
@@ -69,7 +69,7 @@ func TestOrbitLen(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, "QoB7dVkkZr3oLb95DMpSptvUF8mTygDHNjFQh5y5RAb", result.Address)
-	
+
 }
 
 func TestIthaca(t *testing.T) {
@@ -77,6 +77,31 @@ func TestIthaca(t *testing.T) {
 
 	result := &IDL{}
 	err := json.Unmarshal(idl, &result)
+
+	assert.Nil(t, err)
+}
+
+func TestRaydiumAMM(t *testing.T) {
+	idl := readFromFile("raydium_amm")
+
+	result := &IDL{}
+	err := json.Unmarshal(idl, &result)
+
+	for _, i := range result.Instructions {
+		if i.Name == "simulateInfo" {
+			for _, a := range i.Args {
+				if a.Type.IsOption() && a.Type.Option.Defined != nil {
+					fmt.Println(*a.Type.Option.Defined)
+				}
+
+				fmt.Printf("%s\n", a.Name)
+			}
+		}
+	}
+
+	fmt.Println("-------------------------")
+
+	fmt.Println(PrintDefined("SwapInstructionBaseIn", "instruction", "instruction", result.Types, false, true))
 
 	assert.Nil(t, err)
 }

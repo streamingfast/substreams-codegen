@@ -6,16 +6,16 @@ message Data {
   {{- $counter := 0 }}
   {{- range $i, $event := .Idl.Events }}
     {{- $counter = add $counter 1 }}
-    repeated {{ $event.Name }} {{ $event.SnakeCaseName }}_list = {{ $counter }};
+    repeated {{ $event.Name }}_Event {{ $event.SnakeCaseName }}_event_list = {{ $counter }};
   {{- end}}
 
   {{- range $i, $instruction := .Idl.Instructions -}}
     {{- $counter = add $counter 1 }}
-    repeated {{ $instruction.PascalCaseName }} {{ $instruction.SnakeCaseName }}_list = {{ $counter }};
+    repeated {{ $instruction.PascalCaseName }}_Instruction {{ $instruction.SnakeCaseName }}_instruction_list = {{ $counter }};
   {{- end }}
 }
 {{ range $i, $event := .Idl.Events -}}
-message {{$event.Name}} {
+message {{$event.Name}}_Event {
   string trx_hash = 1;
   {{- $counter := 1 }}
   {{- range $i, $field := $event.Fields }}
@@ -25,7 +25,7 @@ message {{$event.Name}} {
 }
 {{- end}}
 {{ range $i, $instruction := .Idl.Instructions }}
-message {{$instruction.PascalCaseName}} {
+message {{$instruction.PascalCaseName}}_Instruction {
   string trx_hash = 1;
   {{- $counter := 1 }}
   {{- range $i, $arg := $instruction.Args }}
@@ -41,7 +41,7 @@ message {{$instruction.PascalCaseName}} {
 }
 {{- end}}
 
-{{ range $i, $type := .Idl.Types }}
+{{ range $i, $type := .Idl.AccountsAndTypes }}
 {{- if $.Idl.IsTypeUsed $type.Name }}
 {{- if $type.Type.IsStruct }}
 message {{$type.Name}} {

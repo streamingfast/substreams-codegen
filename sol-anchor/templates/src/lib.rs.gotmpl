@@ -7,14 +7,14 @@ use base64::prelude::*;
 use pb::substreams::v1::program::Data;
 
 {{- range $i, $event := .Idl.Events }}
-use pb::substreams::v1::program::{{$event.Name}};
+use pb::substreams::v1::program::{{$event.Name}}Event;
 {{- end}}
 
 {{- range $i, $instruction := .Idl.Instructions }}
-use pb::substreams::v1::program::{{$instruction.PascalCaseName}};
+use pb::substreams::v1::program::{{$instruction.PascalCaseName}}Instruction;
 {{- end}}
 
-{{- range $i, $type := .Idl.Types }}
+{{- range $i, $type := .Idl.AccountsAndTypes }}
 {{ if $.Idl.IsTypeUsed $type.Name }}
 {{ if $type.Type.IsEnum }}
 use pb::substreams::v1::program::{{$type.Name}}Enum;
@@ -34,11 +34,11 @@ const PROGRAM_ID: &str = "{{.Idl.ProgramID}}";
 fn map_program_data(blk: Block) -> Data {
 
     {{- range $i, $event := .Idl.Events }}
-    let mut {{ $event.SnakeCaseName }}_list: Vec<{{$event.Name}}> = Vec::new();
+    let mut {{ $event.SnakeCaseName }}_event_list: Vec<{{$event.Name}}Event> = Vec::new();
     {{- end}}
 
     {{- range $i, $instruction := .Idl.Instructions }}
-    let mut {{ $instruction.SnakeCaseName }}_list: Vec<{{$instruction.PascalCaseName}}> = Vec::new();
+    let mut {{ $instruction.SnakeCaseName }}_instruction_list: Vec<{{$instruction.PascalCaseName}}Instruction> = Vec::new();
     {{- end}}
 
     blk.transactions().for_each(|transaction| {
@@ -69,10 +69,10 @@ fn map_program_data(blk: Block) -> Data {
                                         &mut &slice_u8[8..],
                                     )
                                 {
-                                    {{ $event.SnakeCaseName }}_list.push({{ $event.Name }} {
+                                    {{ $event.SnakeCaseName }}_event_list.push({{ $event.Name }}Event {
                                         trx_hash: transaction.id(),
                                         {{- range $i, $arg := $event.Fields }}
-                                        {{ $arg.Type.Print $arg.Name "event" $.Idl.Types }}
+                                        {{ $arg.Type.Print $arg.Name "event" $.Idl.AccountsAndTypes }}
                                         {{- end}}
                                     });
                                 }
@@ -100,10 +100,10 @@ fn map_program_data(blk: Block) -> Data {
                     idl::idl::program::client::args::{{ $instruction.PascalCaseName }}::deserialize(&mut &slice_u8[8..])
                 {
                     let accts = inst.accounts();
-                    {{ $instruction.SnakeCaseName }}_list.push({{ $instruction.PascalCaseName }} {
+                    {{ $instruction.SnakeCaseName }}_instruction_list.push({{ $instruction.PascalCaseName }}Instruction {
                         trx_hash: transaction.id(),
                         {{- range $i, $arg := $instruction.Args }}
-                        {{ $arg.Type.Print $arg.Name "instruction" $.Idl.Types }}
+                        {{ $arg.Type.Print $arg.Name "instruction" $.Idl.AccountsAndTypes }}
                         {{- end }}
                         {{- range $i, $acc := $instruction.Accounts }}
                         {{- if not $acc.Address }}
@@ -121,11 +121,11 @@ fn map_program_data(blk: Block) -> Data {
 
     Data {
         {{- range $i, $event := .Idl.Events }}
-        {{ $event.SnakeCaseName }}_list,
+        {{ $event.SnakeCaseName }}_event_list,
         {{- end }}
 
         {{- range $i, $instruction := .Idl.Instructions }}
-        {{ $instruction.SnakeCaseName }}_list,
+        {{ $instruction.SnakeCaseName }}_instruction_list,
         {{- end }}
     }
 }
@@ -147,7 +147,37 @@ fn map_option_{{$type.SnakeCaseName}}(value: Option<idl::idl::program::types::{{
         Some({{$type.SnakeCaseName}}) => {
             return Some({{$type.PascalCaseName}} {
                 {{- range $i, $field := $type.Type.Struct.Fields }}
-                {{ $field.Type.Print $field.Name $type.SnakeCaseName $.Idl.Types }}
+                {{ $field.Type.Print $field.Name $type.SnakeCaseName $.Idl.AccountsAndTypes }}
+                {{- end}}
+            })
+        },
+        None => {
+            return None;
+        }
+    }
+}
+{{ end }}
+{{ end }}
+{{- end }}
+
+{{ range $i, $type := .Idl.Accounts }}
+{{- if $type.Type.IsEnum -}}
+fn map_enum_{{$type.SnakeCaseName}}(value: idl::idl::program::accounts::{{ $type.Name }}) -> i32 {
+    match value {
+        {{- range $j, $variant := $type.Type.Enum.Variants }}
+        idl::idl::program::types::{{ $type.Name }}::{{ $variant.Name }} => return {{ $j }},
+        {{- end}}
+        _ => 0,
+    }
+}
+{{ else }}
+{{ if $.Idl.IsTypeUsed $type.Name }}
+fn map_option_{{$type.SnakeCaseName}}(value: Option<idl::idl::program::accounts::{{ $type.Name }}>) -> Option<{{ $type.Name }}> {
+    match value {
+        Some({{$type.SnakeCaseName}}) => {
+            return Some({{$type.PascalCaseName}} {
+                {{- range $i, $field := $type.Type.Struct.Fields }}
+                {{ $field.Type.Print $field.Name $type.SnakeCaseName $.Idl.AccountsAndTypes }}
                 {{- end}}
             })
         },
