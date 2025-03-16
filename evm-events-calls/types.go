@@ -57,8 +57,12 @@ type ReturnFetchDynamicContractABI struct {
 	err error
 }
 
-type AskContractABI struct{}
-type InputContractABI struct{ pbconvo.UserInput_TextInput }
+type AskContractABIType struct{}
+type InputContractABIType struct{ pbconvo.UserInput_Selection }
+type AskContractABIString struct{}
+type InputContractABIString struct{ pbconvo.UserInput_TextInput }
+type AskContractABIFile struct{}
+type InputContractABIFile struct{ pbconvo.UserInput_LocalFile }
 
 type AskDynamicContractABI struct{}
 type InputDynamicContractABI struct{ pbconvo.UserInput_TextInput }
