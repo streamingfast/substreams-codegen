@@ -77,6 +77,10 @@ func TestConvoUpdate(t *testing.T) {
 	assert.Equal(t, AskContractABIType{}, seq[1]())
 
 	next = conv.Update(InputContractABIType{UserInput_Selection: pbconvo.UserInput_Selection{Value: "file"}})
+	assert.Equal(t, FetchContractABI{}, next())
+
+	abi := "[]"
+	next = conv.Update(InputContractABIFile{UserInput_LocalFile: pbconvo.UserInput_LocalFile{Value: []byte(abi)}})
 	assert.Equal(t, RunDecodeContractABI{}, next())
 
 	next = conv.Update(RunDecodeContractABI{})

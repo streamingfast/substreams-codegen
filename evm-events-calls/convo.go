@@ -89,7 +89,6 @@ func (c *Convo) NextStep() (out loop.Cmd) {
 				return notifyContext(cmd(AskContractAddress{}))
 			}
 			if contract.RawABI == nil {
-				fmt.Println("----------------------- fetchcontractabi")
 				return notifyContext(cmd(FetchContractABI{}))
 			}
 			return notifyContext(cmd(RunDecodeContractABI{}))
@@ -304,8 +303,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		if contract == nil {
 			return QuitInvalidContext
 		}
-
-		fmt.Println("--------------------------------------")
 
 		contract.AbiType = msg.Value
 
