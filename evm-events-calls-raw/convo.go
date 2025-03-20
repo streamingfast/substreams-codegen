@@ -18,7 +18,7 @@ var QuitInvalidContext = loop.Quit(fmt.Errorf("invalid state context: no current
 func init() {
 	codegen.RegisterConversation(
 		"evm-events-calls-raw",
-		"Get raw (WITHOUT an ABI) Ethereum events/calls and create a Substreams as source",
+		"(without ABI) Get raw Ethereum events/calls and create a Substreams as source",
 		"Given a list of contract addresses, ge the raw events and calls, without using an ABI",
 		codegen.ConversationFactory(New),
 		82,
