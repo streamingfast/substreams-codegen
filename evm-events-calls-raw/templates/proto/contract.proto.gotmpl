@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "sf/ethereum/type/v2/type.proto";
+
+package contract.v1;
+
+{{ if $.TrackAnyEvents }}
+message Events {
+    repeated .sf.ethereum.type.v2.Log logs = 1;
+}
+{{ end }}
+
+{{- if $.TrackAnyCalls }}
+message Calls {
+    repeated .sf.ethereum.type.v2.Call calls = 1;
+}
+{{ end }}
+
+message EventsCalls {
+    {{ if $.TrackAnyEvents }}
+    Events events = 1;
+    {{ end }}
+    {{ if $.TrackAnyCalls }}
+    Calls calls = 2;
+    {{ end }}
+}

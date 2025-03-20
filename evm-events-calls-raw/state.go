@@ -1,9 +1,6 @@
-package evm_events_calls
+package evm_events_calls_raw
 
 import (
-	"context"
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"math"
 	"regexp"
@@ -12,7 +9,6 @@ import (
 	"github.com/codemodus/kace"
 	"github.com/golang-cz/textcase"
 	"github.com/huandu/xstrings"
-	"github.com/streamingfast/eth-go"
 )
 
 type Project struct {
@@ -243,12 +239,6 @@ type BaseContract struct {
 	Name        string          `json:"name,omitempty"`
 	TrackEvents bool            `json:"trackEvents"`
 	TrackCalls  bool            `json:"trackCalls"`
-	RawABI      json.RawMessage `json:"rawAbi,omitempty"`
-
-	abiFetchedInThisSession bool
-	Abi                     *ABI
-	emptyABI                bool
-	AbiType                 string
 }
 
 func (c *BaseContract) Identifier() string { return c.Name }
@@ -258,34 +248,6 @@ func (c *BaseContract) IdentifierSnakeCase() string {
 func (c *BaseContract) IdentifierPascalCase() string { return textcase.PascalCase(c.Name) }
 func (c *BaseContract) IdentityCamelCase() string    { return textcase.CamelCase(c.Name) }
 func (c *BaseContract) IdentifierUpper() string      { return strings.ToUpper(c.Name) }
-
-func (c *BaseContract) EventFields(event string) ([]*eth.LogParameter, error) {
-	hash, err := hex.DecodeString(event)
-	if err != nil {
-		return nil, fmt.Errorf("invalid event ID %q: %w", event, err)
-	}
-	eventDef := c.Abi.abi.FindLogByTopic(hash)
-	if eventDef == nil {
-		return nil, fmt.Errorf("cannot find event definition for %q", event)
-	}
-	return eventDef.Parameters, nil
-}
-
-func (c *BaseContract) CallModels() []codegenCall {
-	calls, err := c.Abi.BuildCallModels()
-	if err != nil {
-		panic(err)
-	}
-	return calls
-}
-
-func (c *BaseContract) EventModels() []codegenEvent {
-	evts, err := c.Abi.BuildEventModels()
-	if err != nil {
-		panic(err)
-	}
-	return evts
-}
 
 type Contract struct {
 	BaseContract
@@ -298,36 +260,6 @@ type Contract struct {
 }
 
 func (c *Contract) PlainAddress() string { return strings.TrimPrefix(c.Address, "0x") }
-
-func (c *Contract) FactoryCreationEventName() string {
-	for _, ev := range c.EventModels() {
-		if ev.Proto.MessageHash == c.FactoryCreationEvent {
-			return ev.Proto.MessageName
-		}
-	}
-	panic("not found")
-}
-
-func (c *Contract) FactoryCreationEventFieldName() string {
-	for _, ev := range c.EventModels() {
-		if ev.Proto.MessageHash == c.FactoryCreationEvent {
-			return ev.Proto.Fields[int(*c.FactoryCreationEventFieldIdx)].Name
-		}
-	}
-	panic("not found")
-}
-
-func (c *Contract) FetchABI(chainConfig *ChainConfig) (abi string, err error) {
-	a, err := getContractABIFollowingProxy(context.Background(), c.Address, chainConfig)
-	if err != nil {
-		return "", err
-	}
-	return a.raw, nil
-}
-
-func (c *Contract) FetchInitialBlock(chainConfig *ChainConfig) (initialBlock uint64, err error) {
-	return getContractInitialBlock(context.Background(), chainConfig, c.Address)
-}
 
 // That's a contract that is _created by a Factory_. It doesn't have a start block because it
 // is dynamically created at some future blocks, based on its parent Factory contract, tracked
@@ -349,13 +281,6 @@ func (d DynamicContract) GenerateStoreQuery() string {
 func (d DynamicContract) ParentContract() *Contract   { return d.parentContract }
 func (d DynamicContract) Identifier() string          { return d.Name }
 func (d DynamicContract) IdentifierSnakeCase() string { return kace.Snake(d.Name) }
-func (d DynamicContract) FetchABI(chainConfig *ChainConfig) (abi string, err error) {
-	a, err := getContractABIFollowingProxy(context.Background(), d.ReferenceContractAddress, chainConfig)
-	if err != nil {
-		return "", err
-	}
-	return a.raw, nil
-}
 
 func validateContractName(p *Project, name string) error {
 	if !regexp.MustCompile(`^([a-z][a-z0-9_]{0,63})$`).MatchString(name) {
