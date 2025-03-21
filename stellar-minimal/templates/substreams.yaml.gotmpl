@@ -4,7 +4,7 @@ package:
   version: v0.1.0
 
 imports:
-  starknet: https://spkg.io/streamingfast/starknet-foundational-v0.1.4.spkg
+  stellar: https://github.com/streamingfast/substreams-foundational-modules/releases/download/stellar-foundational-v0.3.0/stellar-foundational-v0.3.0.spkg
 
 protobuf:
   files:
@@ -23,22 +23,10 @@ binaries:
 modules:
  - name: map_my_data
    kind: map
+   initialBlock: 55411000
    inputs:
-   - source: sf.starknet.type.v1.Block
+   - source: sf.stellar.type.v1.Block
    output:
     type: proto:mydata.v1.MyData
-
-# For performance, you should use a blockFilter whenever possible, like this:
-# imports:
-#   starknet: https://spkg.io/streamingfast/starknet-foundational-v0.1.4.spkg
-#
-# modules:
-#   - name: (...)
-#     blockFilter:
-#      module: starknet:index_transactions
-#      query:
-#          string: (tx:class_hash:0x0000000 && rc:type:0)
-#
-# see https://substreams.dev/streamingfast/starknet-foundational for details
 
 network: {{ .ChainNetwork }}

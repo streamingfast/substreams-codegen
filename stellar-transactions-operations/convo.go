@@ -1,4 +1,4 @@
-package stellarminimal
+package stellartransactionsoperations
 
 import (
 	"encoding/json"
@@ -19,9 +19,9 @@ func New() codegen.Converser {
 }
 func init() {
 	codegen.RegisterConversation(
-		"stellar-minimal",
-		"Creates a Substreams project which indexes the full Stellar Block.",
-		"You will get a project that indexes all the data contained in the Block.",
+		"stellar-transactions-operations",
+		"Creates a Substreams project which filtering transactions or operations.",
+		"You will get a project that indexes transactions or operations by providing a filter.",
 		codegen.ConversationFactory(New),
 		59,
 		"stellar",
@@ -40,6 +40,14 @@ func (c *Convo) NextStep() loop.Cmd {
 
 	if !p.IsValidChainName(p.ChainName) {
 		return loop.Seq(cmd(codegen.MsgInvalidChainName{}), cmd(codegen.AskChainName{}))
+	}
+
+	if p.FilterType == "" {
+		return cmd(AskFilterType{})
+	}
+
+	if p.Filter == "" {
+		return cmd(AskFilter{})
 	}
 
 	return cmd(codegen.RunGenerate{})
@@ -77,6 +85,30 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			Labels(labels...).
 			Values(values...).
 			Cmd()
+	case AskFilterType:
+		return c.Action(InputFilterType{}).ListSelect("What kind of data do you want to index?\n\n- Raw transactions: you can filter the transactions based on source account at the transactions and/or operation level.\n- Operations: you can get operatios filtered by operation name\n\n").
+			Labels("Raw transactions (filtered by source account(s))", "Operations (filtered by operation name)").
+			Values("transactions", "operations").
+			Cmd()
+	case InputFilterType:
+		c.State.FilterType = msg.Value
+
+		return c.NextStep()
+
+	case AskFilter:
+		message := "Input the regex filter for the transactions. You can filter by source account, and use || and && operators. For example, the following filter retrieves transactions containing the specified source accounts:\n(source_account:GADLRTGF4GCU2CNAHYPKAEBGQSBX2M3UYIZZJODZAVC5A5QCAE7AT66C || source_account:GADLWELLJ56NXB76MQGXRXSRCFT5YY2ANWXPKWVY7YP6EJIYYDFKL43W)\n"
+		if c.State.FilterType == "operations" {
+			message = "Input the regex filter for the operations. You can filter by operation name, and use || and && operators. For example, the following filter retrieves operations containing the specified operation names:\n(operation:payment || operation:create_account)\n"
+		}
+
+		return c.Action(InputFilter{}).
+			TextInput(message, "Submit").
+			Cmd()
+
+	case InputFilter:
+		c.State.Filter = msg.Value
+
+		return c.NextStep()
 
 	case codegen.MsgInvalidChainName:
 		return c.Msg().

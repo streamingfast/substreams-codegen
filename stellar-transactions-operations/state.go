@@ -1,14 +1,16 @@
-package stellarminimal
+package stellartransactionsoperations
 
 import (
 	"strings"
 )
 
 type Project struct {
-	Name      string `json:"name"`
-	ChainName string `json:"chainName"`
-	Compile   bool   `json:"compile,omitempty"` // optional field to write in state and automatically compile with no confirmation.
-	Download  bool   `json:"download,omitempty"`
+	Name       string `json:"name"`
+	ChainName  string `json:"chainName"`
+	Compile    bool   `json:"compile,omitempty"` // optional field to write in state and automatically compile with no confirmation.
+	Download   bool   `json:"download,omitempty"`
+	FilterType string `json:"filterType,omitempty"`
+	Filter     string `json:"filter,omitempty"`
 }
 
 func (p *Project) ModuleName() string { return strings.ReplaceAll(p.Name, "-", "_") }

@@ -1,4 +1,4 @@
-package stellarminimal
+package stellartransactionsoperations
 
 import (
 	"embed"
@@ -11,8 +11,6 @@ var templatesFS embed.FS
 
 func (p *Project) Generate() codegen.ReturnGenerate {
 	return codegen.GenerateTemplateTree(p, templatesFS, map[string]string{
-		"proto/mydata.proto.gotmpl":     "proto/mydata.proto",
-		"src/pb/mod.rs.gotmpl":          "src/pb/mod.rs",
 		"src/lib.rs.gotmpl":             "src/lib.rs",
 		"Cargo.toml.gotmpl":             "Cargo.toml",
 		".gitignore.gotmpl":             ".gitignore",

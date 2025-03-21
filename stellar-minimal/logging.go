@@ -1,7 +1,7 @@
-package starknetminimal
+package stellarminimal
 
 import (
 	"github.com/streamingfast/logging"
 )
 
-var zlog, tracer = logging.PackageLogger("starknet-minimal", "github.com/streamingfast/substreams-codegen/codegen/starknet-minimal")
+var zlog, tracer = logging.PackageLogger("stellar-minimal", "github.com/streamingfast/substreams-codegen/codegen/stellar-minimal")

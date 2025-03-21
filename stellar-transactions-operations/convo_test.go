@@ -1,4 +1,4 @@
-package stellarminimal
+package stellartransactionsoperations
 
 import (
 	"testing"
