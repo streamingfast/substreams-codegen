@@ -32,6 +32,7 @@ type FieldTypeArray struct {
 type FieldTypeVec struct {
 	Type      string
 	IsDefined bool
+	IsArray	bool
 }
 
 type FieldTypeOption struct {
@@ -301,8 +302,8 @@ func unmarshalSimple(data []byte) string {
 /*
 Return types:
 
-	bool: isDefined (true/false)
-	string: type (simple/defined)
+	string: "simple/defined/array"
+	string: type
 */
 func unmarshalVec(data []byte) (bool, string) {
 	// Try simple
@@ -310,6 +311,18 @@ func unmarshalVec(data []byte) (bool, string) {
 		Vec string `json:"vec"`
 	}
 	err := json.Unmarshal(data, &vecSimpleType)
+	if err == nil {
+		return false, vecSimpleType.Vec
+	}
+
+	// Try array
+	type ArrayType struct {
+		Array []interface{} `json:"array"`
+	}
+	var vecArrayType struct {
+		Vec ArrayType `json:"vec"`
+	}
+	err = json.Unmarshal(data, &vecArrayType)
 	if err == nil {
 		return false, vecSimpleType.Vec
 	}
