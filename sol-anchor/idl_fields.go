@@ -32,7 +32,7 @@ type FieldTypeArray struct {
 type FieldTypeVec struct {
 	Type      string
 	IsDefined bool
-	IsArray	bool
+	IsArray   bool
 }
 
 type FieldTypeOption struct {
@@ -134,6 +134,9 @@ func (t *FieldType) Resolve() string {
 	}
 
 	if t.IsVec() {
+		if t.Vec.IsArray {
+			return "bytes"
+		}
 		return t.Vec.Type
 	}
 
@@ -249,11 +252,15 @@ func (f *FieldType) Print(fieldName string, variableName string, types []Type) s
 		return fmt.Sprintf("%s: %s.%s.into_iter().map(|f| f as %s).collect(),", fieldNameSnakeCaseWithoutInitialUnderscore, variableName, fieldNameSnakeCase, cast)
 	}
 
+	if f.IsVec() && f.Vec.IsArray {
+		return fmt.Sprintf("%s: %s.%s.into_iter().map(|%s| %s.to_vec()).collect(),", fieldNameSnakeCaseWithoutInitialUnderscore, variableName, fieldNameSnakeCase, fieldNameSnakeCase, fieldNameSnakeCase)
+	}
+
 	if f.IsVec() && f.Vec.IsDefined {
 		return fmt.Sprintf("%s: %s.%s.into_iter().map(|%s| %s).collect(),", fieldNameSnakeCaseWithoutInitialUnderscore, variableName, fieldNameSnakeCase, fieldNameSnakeCase, PrintDefined(f.Vec.Type, fieldNameSnakeCase, "", types, true, false))
 	}
 
-	if f.IsVec() && !f.Vec.IsDefined {
+	if f.IsVec() && !f.Vec.IsDefined && !f.Vec.IsArray {
 		return fmt.Sprintf("%s: %s.%s,", fieldNameSnakeCaseWithoutInitialUnderscore, variableName, fieldNameSnakeCase)
 	}
 
@@ -305,26 +312,14 @@ Return types:
 	string: "simple/defined/array"
 	string: type
 */
-func unmarshalVec(data []byte) (bool, string) {
+func unmarshalVec(data []byte) (string, string) {
 	// Try simple
 	var vecSimpleType struct {
 		Vec string `json:"vec"`
 	}
 	err := json.Unmarshal(data, &vecSimpleType)
 	if err == nil {
-		return false, vecSimpleType.Vec
-	}
-
-	// Try array
-	type ArrayType struct {
-		Array []interface{} `json:"array"`
-	}
-	var vecArrayType struct {
-		Vec ArrayType `json:"vec"`
-	}
-	err = json.Unmarshal(data, &vecArrayType)
-	if err == nil {
-		return false, vecSimpleType.Vec
+		return "simple", vecSimpleType.Vec
 	}
 
 	// Try defined
@@ -335,8 +330,8 @@ func unmarshalVec(data []byte) (bool, string) {
 		Vec DefinedType `json:"vec"`
 	}
 	err = json.Unmarshal(data, &vecDefinedType)
-	if err == nil {
-		return true, vecDefinedType.Vec.Defined
+	if err == nil && vecDefinedType.Vec.Defined != "" {
+		return "defined", vecDefinedType.Vec.Defined
 	}
 
 	/*
@@ -375,11 +370,34 @@ func unmarshalVec(data []byte) (bool, string) {
 		Vec DefinedTypeWithName `json:"vec"`
 	}
 	err = json.Unmarshal(data, &vecDefinedTypeWithName)
-	if err == nil {
-		return true, vecDefinedTypeWithName.Vec.Defined.Name
+	if err == nil && vecDefinedType.Vec.Defined != "" {
+		return "defined", vecDefinedTypeWithName.Vec.Defined.Name
 	}
 
-	return false, ""
+	// Try array
+	type ArrayType struct {
+		Array []interface{} `json:"array"`
+	}
+	var vecArrayType struct {
+		Vec ArrayType `json:"vec"`
+	}
+	err = json.Unmarshal(data, &vecArrayType)
+	if err == nil {
+		if len(vecArrayType.Vec.Array) == 2 {
+			typeStr, ok1 := vecArrayType.Vec.Array[0].(string)
+			_, ok2 := vecArrayType.Vec.Array[1].(float64) // JSON numbers are decoded as float64
+
+			if ok1 && ok2 {
+				return "array", typeStr
+			} else {
+				return "", ""
+			}
+		} else {
+			return "", ""
+		}
+	}
+
+	return "", ""
 }
 
 /*
@@ -462,11 +480,26 @@ func (t *FieldType) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	isDefined, result := unmarshalVec(data)
-	if result != "" {
-		t.Vec = &FieldTypeVec{
-			Type:      result,
-			IsDefined: isDefined,
+	kind, kindType := unmarshalVec(data)
+	if kind != "" && kindType != "" {
+		if kind == "simple" {
+			t.Vec = &FieldTypeVec{
+				Type:      kindType,
+				IsDefined: false,
+				IsArray:   false,
+			}
+		} else if kind == "defined" {
+			t.Vec = &FieldTypeVec{
+				Type:      kindType,
+				IsDefined: true,
+				IsArray:   false,
+			}
+		} else {
+			t.Vec = &FieldTypeVec{
+				Type:      kindType,
+				IsDefined: false,
+				IsArray:   true,
+			}
 		}
 
 		return nil

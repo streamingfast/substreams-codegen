@@ -99,12 +99,21 @@ func TestRaydiumAMM(t *testing.T) {
 		}
 	}
 
-	fmt.Println("-------------------------")
-
 	fmt.Println(PrintDefined("SwapInstructionBaseIn", "instruction", "instruction", result.Types, false, true))
 
 	assert.Nil(t, err)
 }
+
+
+func TestProofOfPlay(t *testing.T) {
+	idl := readFromFile("proof_of_play")
+
+	result := &IDL{}
+	err := json.Unmarshal(idl, &result)
+
+	assert.Nil(t, err)
+}
+
 
 func readFromFile(idlName string) []byte {
 	data, err := os.ReadFile("idls/" + idlName + ".json")
