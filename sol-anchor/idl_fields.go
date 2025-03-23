@@ -370,7 +370,7 @@ func unmarshalVec(data []byte) (string, string) {
 		Vec DefinedTypeWithName `json:"vec"`
 	}
 	err = json.Unmarshal(data, &vecDefinedTypeWithName)
-	if err == nil && vecDefinedType.Vec.Defined != "" {
+	if err == nil && vecDefinedTypeWithName.Vec.Defined.Name != "" {
 		return "defined", vecDefinedTypeWithName.Vec.Defined.Name
 	}
 
