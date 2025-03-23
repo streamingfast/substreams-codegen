@@ -1,0 +1,593 @@
+{
+    "address": "7fohpwD3H5ceMK8xVM4cTPBJa2bxf6qD6FjqEA4FMNj6",
+    "metadata": {
+        "name": "proof_of_play",
+        "version": "0.1.0",
+        "spec": "0.1.0",
+        "description": "Created with Anchor"
+    },
+    "instructions": [
+        {
+            "name": "claim",
+            "discriminator": [
+                62,
+                198,
+                214,
+                193,
+                213,
+                159,
+                108,
+                210
+            ],
+            "accounts": [
+                {
+                    "name": "merkle_root",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    97,
+                                    117,
+                                    116,
+                                    104,
+                                    111,
+                                    114,
+                                    105,
+                                    116,
+                                    121
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "token_mint"
+                },
+                {
+                    "name": "claimer",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "claimer_token_account",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "account",
+                                "path": "claimer"
+                            },
+                            {
+                                "kind": "account",
+                                "path": "token_program"
+                            },
+                            {
+                                "kind": "account",
+                                "path": "token_mint"
+                            }
+                        ],
+                        "program": {
+                            "kind": "const",
+                            "value": [
+                                140,
+                                151,
+                                37,
+                                143,
+                                78,
+                                36,
+                                137,
+                                241,
+                                187,
+                                61,
+                                16,
+                                41,
+                                20,
+                                142,
+                                13,
+                                131,
+                                11,
+                                90,
+                                19,
+                                153,
+                                218,
+                                255,
+                                16,
+                                132,
+                                4,
+                                142,
+                                123,
+                                216,
+                                219,
+                                233,
+                                248,
+                                89
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "claim_record",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    99,
+                                    108,
+                                    97,
+                                    105,
+                                    109,
+                                    95,
+                                    114,
+                                    101,
+                                    99,
+                                    111,
+                                    114,
+                                    100
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "claimer"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "vault_holder",
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    118,
+                                    97,
+                                    117,
+                                    108,
+                                    116,
+                                    95,
+                                    104,
+                                    111,
+                                    108,
+                                    100,
+                                    101,
+                                    114
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "vault",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "account",
+                                "path": "vault_holder"
+                            },
+                            {
+                                "kind": "account",
+                                "path": "token_program"
+                            },
+                            {
+                                "kind": "account",
+                                "path": "token_mint"
+                            }
+                        ],
+                        "program": {
+                            "kind": "const",
+                            "value": [
+                                140,
+                                151,
+                                37,
+                                143,
+                                78,
+                                36,
+                                137,
+                                241,
+                                187,
+                                61,
+                                16,
+                                41,
+                                20,
+                                142,
+                                13,
+                                131,
+                                11,
+                                90,
+                                19,
+                                153,
+                                218,
+                                255,
+                                16,
+                                132,
+                                4,
+                                142,
+                                123,
+                                216,
+                                219,
+                                233,
+                                248,
+                                89
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "associated_token_program",
+                    "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+                },
+                {
+                    "name": "token_program"
+                },
+                {
+                    "name": "system_program",
+                    "address": "11111111111111111111111111111111"
+                }
+            ],
+            "args": [
+                {
+                    "name": "value",
+                    "type": "u64"
+                },
+                {
+                    "name": "proof",
+                    "type": {
+                        "vec": {
+                            "array": [
+                                "u8",
+                                32
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "initialize",
+            "discriminator": [
+                175,
+                175,
+                109,
+                31,
+                13,
+                152,
+                155,
+                237
+            ],
+            "accounts": [
+                {
+                    "name": "merkle_root",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    97,
+                                    117,
+                                    116,
+                                    104,
+                                    111,
+                                    114,
+                                    105,
+                                    116,
+                                    121
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "token_mint"
+                },
+                {
+                    "name": "signer_token_account",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "account",
+                                "path": "signer"
+                            },
+                            {
+                                "kind": "account",
+                                "path": "token_program"
+                            },
+                            {
+                                "kind": "account",
+                                "path": "token_mint"
+                            }
+                        ],
+                        "program": {
+                            "kind": "const",
+                            "value": [
+                                140,
+                                151,
+                                37,
+                                143,
+                                78,
+                                36,
+                                137,
+                                241,
+                                187,
+                                61,
+                                16,
+                                41,
+                                20,
+                                142,
+                                13,
+                                131,
+                                11,
+                                90,
+                                19,
+                                153,
+                                218,
+                                255,
+                                16,
+                                132,
+                                4,
+                                142,
+                                123,
+                                216,
+                                219,
+                                233,
+                                248,
+                                89
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "vault_holder",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    118,
+                                    97,
+                                    117,
+                                    108,
+                                    116,
+                                    95,
+                                    104,
+                                    111,
+                                    108,
+                                    100,
+                                    101,
+                                    114
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "vault",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "account",
+                                "path": "vault_holder"
+                            },
+                            {
+                                "kind": "account",
+                                "path": "token_program"
+                            },
+                            {
+                                "kind": "account",
+                                "path": "token_mint"
+                            }
+                        ],
+                        "program": {
+                            "kind": "const",
+                            "value": [
+                                140,
+                                151,
+                                37,
+                                143,
+                                78,
+                                36,
+                                137,
+                                241,
+                                187,
+                                61,
+                                16,
+                                41,
+                                20,
+                                142,
+                                13,
+                                131,
+                                11,
+                                90,
+                                19,
+                                153,
+                                218,
+                                255,
+                                16,
+                                132,
+                                4,
+                                142,
+                                123,
+                                216,
+                                219,
+                                233,
+                                248,
+                                89
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "signer",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "associated_token_program",
+                    "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+                },
+                {
+                    "name": "token_program"
+                },
+                {
+                    "name": "system_program",
+                    "address": "11111111111111111111111111111111"
+                }
+            ],
+            "args": [
+                {
+                    "name": "root",
+                    "type": {
+                        "array": [
+                            "u8",
+                            32
+                        ]
+                    }
+                },
+                {
+                    "name": "offered_amount",
+                    "type": "u64"
+                }
+            ]
+        }
+    ],
+    "accounts": [
+        {
+            "name": "ClaimRecord",
+            "discriminator": [
+                57,
+                229,
+                0,
+                9,
+                65,
+                62,
+                96,
+                7
+            ]
+        },
+        {
+            "name": "MerkleRoot",
+            "discriminator": [
+                30,
+                240,
+                94,
+                145,
+                74,
+                59,
+                138,
+                185
+            ]
+        },
+        {
+            "name": "TokenVault",
+            "discriminator": [
+                121,
+                7,
+                84,
+                254,
+                151,
+                228,
+                43,
+                144
+            ]
+        }
+    ],
+    "errors": [
+        {
+            "code": 6000,
+            "name": "InvalidRoot",
+            "msg": "Invalid Merkle root"
+        },
+        {
+            "code": 6001,
+            "name": "InvalidProof",
+            "msg": "Invalid Merkle proof provided."
+        },
+        {
+            "code": 6002,
+            "name": "Unauthorized",
+            "msg": "Unauthorized access."
+        },
+        {
+            "code": 6003,
+            "name": "AlreadyClaimed",
+            "msg": "Already claimed."
+        }
+    ],
+    "types": [
+        {
+            "name": "ClaimRecord",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "is_claimed",
+                        "type": "bool"
+                    },
+                    {
+                        "name": "claimer",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "claimed_at",
+                        "type": "i64"
+                    },
+                    {
+                        "name": "bump",
+                        "type": "u8"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "MerkleRoot",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "root",
+                        "type": {
+                            "array": [
+                                "u8",
+                                32
+                            ]
+                        }
+                    },
+                    {
+                        "name": "authority",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "bump",
+                        "type": "u8"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "TokenVault",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "bump",
+                        "type": "u8"
+                    }
+                ]
+            }
+        }
+    ],
+    "constants": [
+        {
+            "name": "AUTHORITY_SEED",
+            "type": "bytes",
+            "value": "[97, 117, 116, 104, 111, 114, 105, 116, 121]"
+        }
+    ]
+}
