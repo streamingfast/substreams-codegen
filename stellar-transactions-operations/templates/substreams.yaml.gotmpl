@@ -44,4 +44,4 @@ modules:
 network: {{ .ChainNetwork }}
 
 params:
-  {{ if eq .FilterType "transactions" }}map_my_filtered_transactions{{ else }}map_my_filtered_operations{{ end }}: {{ .Filter }}
+  {{ if eq .FilterType "transactions" }}map_my_filtered_transactions{{ else }}map_my_filtered_operations{{ end }}: {{ .ComposeFilter }}

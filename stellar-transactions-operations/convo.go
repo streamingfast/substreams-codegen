@@ -2,6 +2,7 @@ package stellartransactionsoperations
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	codegen "github.com/streamingfast/substreams-codegen"
@@ -96,9 +97,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.NextStep()
 
 	case AskFilter:
-		message := "Input the regex filter for the transactions. You can filter by source account, and use || and && operators. For example, the following filter retrieves transactions containing the specified source accounts:\n(source_account:GADLRTGF4GCU2CNAHYPKAEBGQSBX2M3UYIZZJODZAVC5A5QCAE7AT66C || source_account:GADLWELLJ56NXB76MQGXRXSRCFT5YY2ANWXPKWVY7YP6EJIYYDFKL43W)\n"
+		message := "Input the source account(s) that you want to use to filter separated by commas (,). For example:\nGADLRTGF4GCU2CNAHYPKAEBGQSBX2M3UYIZZJODZAVC5A5QCAE7AT66C,GADLWELLJ56NXB76MQGXRXSRCFT5YY2ANWXPKWVY7YP6EJIYYDFKL43W\n"
 		if c.State.FilterType == "operations" {
-			message = "Input the regex filter for the operations. You can filter by operation name, and use || and && operators. For example, the following filter retrieves operations containing the specified operation names:\n(operation:payment || operation:create_account)\n"
+			message = "Input the operation names that you want to use to filter separated by commas (,) For eample:\npayment,create_account\n"
 		}
 
 		return c.Action(InputFilter{}).
@@ -106,9 +107,18 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			Cmd()
 
 	case InputFilter:
+		if isValid := isFilterCorrect(msg.Value); isValid == false {
+			return loop.Seq(cmd(InvalidFilter{errors.New(fmt.Sprintf("ERROR: The specified filter does not have a correct format: %s", msg.Value))}), cmd(AskFilter{}))
+		}
+
 		c.State.Filter = msg.Value
 
 		return c.NextStep()
+
+	case InvalidFilter:
+		return c.Msg().
+			Messagef("%s", msg.Err).
+			Cmd()
 
 	case codegen.MsgInvalidChainName:
 		return c.Msg().

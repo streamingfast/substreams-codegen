@@ -6,4 +6,5 @@ type AskFilterType struct {}
 type InputFilterType struct { pbconvo.UserInput_Selection }
 
 type AskFilter struct {}
+type InvalidFilter struct { Err error }
 type InputFilter struct { pbconvo.UserInput_TextInput }
