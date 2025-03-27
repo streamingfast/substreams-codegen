@@ -35,7 +35,7 @@ func init() {
 		"Given a list of contracts and their ABIs, this will build an Starknet substreams that decodes events",
 		codegen.ConversationFactory(New),
 		72,
-		"starknet",
+		"Starknet",
 	)
 }
 

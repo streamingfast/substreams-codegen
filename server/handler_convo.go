@@ -36,6 +36,10 @@ import (
 )
 
 func (s *server) Discover(ctx context.Context, req *connect.Request[pbconvo.DiscoveryRequest]) (*connect.Response[pbconvo.DiscoveryResponse], error) {
+	if req.Msg.ClientVersion < 1 {
+		return nil, fmt.Errorf("\nUnsupported version. Please upgrade your `substreams` CLI to the latest version\n\n- If you installed it through Brew, just execute:\n`brew upgrade substreams`.\n\n- You can also upgrade the CLI using one of the releases in GitHub: `https://github.com/streamingfast/substreams/releases`\n")
+	}
+
 	var generators []*pbconvo.DiscoveryResponse_Generator
 	for _, conv := range codegen.ListConversationHandlers() {
 		generators = append(generators, &pbconvo.DiscoveryResponse_Generator{
