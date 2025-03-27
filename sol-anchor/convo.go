@@ -79,12 +79,12 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 				return loop.Quit(fmt.Errorf(`something went wrong, here's an error message to share with our devs (%s); we've notified them already`, err))
 			}
 
-			c.State.idl = &IDL{}
-			err := json.Unmarshal([]byte(c.State.IdlString), &c.State.idl)
+			idl, err := createIDLFromJSON(c.State.IdlString)
 			if err != nil {
 				fmt.Println("Error unmarshaling JSON:", err)
 				return loop.Quit(fmt.Errorf("could not decode IDL"))
 			}
+			c.State.idl = idl
 
 			msgCmd = c.Msg().Message("Ok, I reloaded your state.").Cmd()
 		} else {
@@ -245,6 +245,7 @@ func createIDLFromJSON(text string) (*IDL, error) {
 		fmt.Println("Error unmarshaling JSON:", err)
 		return nil, err
 	}
+	idl.MoveEventsIfNecessary()
 
 	return idl, nil
 }

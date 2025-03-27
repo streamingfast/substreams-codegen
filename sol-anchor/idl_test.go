@@ -115,6 +115,17 @@ func TestProofOfPlay(t *testing.T) {
 }
 
 
+func TestStakingRewards(t *testing.T) {
+	idl := readFromFile("staking_rewards")
+
+	result := &IDL{}
+	err := json.Unmarshal(idl, &result)
+
+	assert.Nil(t, err)
+	assert.GreaterOrEqual(t, 0, len(result.Events[0].Fields))
+}
+
+
 func readFromFile(idlName string) []byte {
 	data, err := os.ReadFile("idls/" + idlName + ".json")
 	if err != nil {
