@@ -1,0 +1,32 @@
+specVersion: v0.1.0
+package:
+  name: {{ .ModuleName }}
+  version: v0.1.0
+
+imports:
+  stellar: https://github.com/streamingfast/substreams-foundational-modules/releases/download/stellar-foundational-v0.3.0/stellar-foundational-v0.3.0.spkg
+
+protobuf:
+  files:
+    - mydata.proto
+  importPaths:
+    - ./proto
+  excludePaths:
+    - sf/substreams
+    - google
+
+binaries:
+  default:
+    type: wasm/rust-v1
+    file: ./target/wasm32-unknown-unknown/release/substreams.wasm
+
+modules:
+ - name: map_my_data
+   kind: map
+   initialBlock: 55411000
+   inputs:
+   - source: sf.stellar.type.v1.Block
+   output:
+    type: proto:mydata.v1.MyData
+
+network: {{ .ChainNetwork }}
