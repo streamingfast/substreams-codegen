@@ -36,19 +36,19 @@ func TestUnmarshalSimple(t *testing.T) {
 func TestUnmarshalVecSimple(t *testing.T) {
 	json := []byte(`{"vec": "string"}`)
 
-	isDefined, result := unmarshalVec(json)
+	kind, kindType := unmarshalVec(json)
 
-	assert.Equal(t, false, isDefined)
-	assert.Equal(t, "string", result)
+	assert.Equal(t, "simple", kind)
+	assert.Equal(t, "string", kindType)
 }
 
 func TestUnmarshalVecDefined(t *testing.T) {
 	json := []byte(`{"vec": {"defined": "string"}}`)
 
-	isDefined, result := unmarshalVec(json)
+	kind, kindType := unmarshalVec(json)
 
-	assert.Equal(t, true, isDefined)
-	assert.Equal(t, "string", result)
+	assert.Equal(t, "defined", kind)
+	assert.Equal(t, "string", kindType)
 }
 
 // Test unmarshalOption

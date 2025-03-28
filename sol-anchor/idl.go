@@ -8,8 +8,13 @@ type IDL struct {
 	Address      string        `json:"address"` // seen in the 'secret' program
 	Events       []Event       `json:"events"`
 	Instructions []Instruction `json:"instructions"`
+	Accounts     []Type        `json:"accounts"`
 	Metadata     Metadata      `json:"metadata"`
 	Types        []Type        `json:"types"`
+}
+
+func (i *IDL) AccountsAndTypes() []Type {
+	return append(i.Types, i.Accounts...)
 }
 
 func (i *IDL) ProgramID() string {
@@ -29,6 +34,22 @@ func (i *IDL) IsTypeUsed(typeName string) bool {
 	}
 
 	for _, tp := range i.Types {
+		if tp.Type.IsStruct() {
+			for _, arg := range tp.Type.Struct.Fields {
+				if arg.Type.IsTypeUsed(typeName) && i.IsTypeUsed(tp.Name) {
+					return true
+				}
+			}
+		} else if tp.Type.IsEnum() {
+			for _, arg := range tp.Type.Enum.Variants {
+				if arg.Name == typeName && i.IsTypeUsed(tp.Name) {
+					return true
+				}
+			}
+		}
+	}
+
+	for _, tp := range i.Accounts {
 		if tp.Type.IsStruct() {
 			for _, arg := range tp.Type.Struct.Fields {
 				if arg.Type.IsTypeUsed(typeName) && i.IsTypeUsed(tp.Name) {
@@ -99,6 +120,10 @@ func ToProtobufType(rustType string) string {
 	}
 
 	return rustType
+}
+
+func IsPublicKey(idlType string) bool {
+	return idlType == "publicKey" || idlType == "pubkey"
 }
 
 func CastInRustIfNeeded(rustType string) string {

@@ -248,6 +248,7 @@ type BaseContract struct {
 	abiFetchedInThisSession bool
 	Abi                     *ABI
 	emptyABI                bool
+	AbiType                 string
 }
 
 func (c *BaseContract) Identifier() string { return c.Name }

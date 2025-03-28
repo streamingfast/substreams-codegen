@@ -25,7 +25,7 @@ func init() {
 		"You will get a project that indexes transactions or operations by providing a filter.",
 		codegen.ConversationFactory(New),
 		59,
-		"stellar",
+		"Stellar",
 	)
 }
 

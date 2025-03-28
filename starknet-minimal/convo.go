@@ -24,7 +24,7 @@ func init() {
 		"You will get a project that indexes all the data contained in the Block.",
 		codegen.ConversationFactory(New),
 		59,
-		"starknet",
+		"Starknet",
 	)
 }
 

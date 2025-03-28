@@ -3,7 +3,6 @@ package evm_events_calls
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -23,11 +22,11 @@ var AbiFilepathPrefix = "file://"
 func init() {
 	codegen.RegisterConversation(
 		"evm-events-calls",
-		"Decode Ethereum events/calls and create a substreams as source",
+		"(with ABI) Decode Ethereum events/calls using an ABI and create a Substreams as source",
 		"Given a list of contracts and their ABIs, this will build an Ethereum substreams that decodes events and/or calls",
 		codegen.ConversationFactory(New),
 		82,
-		"evm",
+		"EVM",
 	)
 }
 
@@ -280,9 +279,94 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 		return c.NextStep()
 
-	case AskContractABI:
-		return c.Action(InputContractABI{}).TextInput(fmt.Sprintf("Please paste the contract ABI or the full JSON ABI file path starting with %sfullpath/to/Abi.json", AbiFilepathPrefix), "Submit").
+	case AskContractABIType:
+		contract := c.contextContract()
+		if contract == nil {
+			return QuitInvalidContext
+		}
+
+		if contract.AbiType == "string" {
+			return loop.Seq(cmd(AskContractABIString{}))
+		} else if contract.AbiType == "file" {
+			return loop.Seq(cmd(AskContractABIFile{}))
+		}
+
+		return c.Action(InputContractABIType{}).
+			ListSelect("How do you want to provide the JSON ABI?").
+			Labels("JSON string", "JSON in a local file").
+			Values("string", "file").
+			DefaultValue("string").
 			Cmd()
+
+	case InputContractABIType:
+		contract := c.contextContract()
+		if contract == nil {
+			return QuitInvalidContext
+		}
+
+		contract.AbiType = msg.Value
+
+		return c.NextStep()
+
+	case AskContractABIString:
+		contract := c.contextContract()
+		if contract == nil {
+			return QuitInvalidContext
+		}
+
+		return c.Action(InputContractABIString{}).
+			TextInput("Paste the JSON ABI in JSON format\n", "Submit").
+			Cmd()
+
+	case InputContractABIString:
+		contract := c.contextContract()
+		if contract == nil {
+			return QuitInvalidContext
+		}
+
+		if msg.Value == "" {
+			contract.emptyABI = true
+			return c.NextStep()
+		}
+
+		rawAbi, err := abiToJson(msg.Value)
+		if err != nil {
+			return loop.Seq(c.Msg().Messagef("ABI %q isn't valid: %q", msg.Value, err).Cmd(), cmd(AskContractABIString{}))
+		}
+
+		contract.RawABI = rawAbi
+
+		return c.NextStep()
+
+	case AskContractABIFile:
+		contract := c.contextContract()
+		if contract == nil {
+			return QuitInvalidContext
+		}
+
+		return c.Action(InputContractABIFile{}).
+			LocalFile("Input the full path of the JSON ABI in your filesystem (e.g. PATH_TO_MY_ABI/MY_ABI.json)\n", "Submit").
+			Cmd()
+
+	case InputContractABIFile:
+		contract := c.contextContract()
+		if contract == nil {
+			return QuitInvalidContext
+		}
+
+		if string(msg.Value) == "" {
+			contract.emptyABI = true
+			return c.NextStep()
+		}
+
+		rawAbi, err := abiToJson(string(msg.Value))
+		if err != nil {
+			return loop.Seq(c.Msg().Messagef("ABI %q isn't valid: %q", msg.Value, err).Cmd(), cmd(AskContractABIFile{}))
+		}
+
+		contract.RawABI = rawAbi
+
+		return c.NextStep()
 
 	case AskDynamicContractABI:
 		contract := c.contextContract()
@@ -292,42 +376,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 		return c.Action(InputDynamicContractABI{}).TextInput(fmt.Sprintf("Please paste the ABI for contracts that will be created by the event %q", contract.FactoryCreationEventName()), "Submit").
 			Cmd()
-
-	case InputContractABI:
-		contract := c.contextContract()
-		if contract == nil {
-			return QuitInvalidContext
-		}
-
-		// if the user pasted and empty string or hit the enter button by not supplying anything,
-		// we want to go back to the ABI question
-		if msg.Value == "" {
-			contract.emptyABI = true
-			return c.NextStep()
-		}
-
-		var rawMessage json.RawMessage
-
-		if strings.HasPrefix(msg.Value, AbiFilepathPrefix) {
-			abiPath := strings.TrimPrefix(msg.Value, AbiFilepathPrefix)
-
-			fileBytes, err := os.ReadFile(abiPath)
-			if err != nil {
-				return loop.Seq(c.Msg().Messagef("Cannot read the ABI file %q: %s", abiPath, err).Cmd(), cmd(AskContractABI{}))
-			}
-
-			rawMessage = json.RawMessage(fileBytes)
-		} else {
-			rawMessage = json.RawMessage(msg.Value)
-		}
-
-		if _, err := json.Marshal(rawMessage); err != nil {
-			return loop.Seq(c.Msg().Messagef("ABI %q isn't valid: %q", msg.Value, err).Cmd(), cmd(AskContractABI{}))
-		}
-
-		contract.RawABI = rawMessage
-
-		return c.NextStep()
 
 	case InputDynamicContractABI:
 		factory := c.contextContract()
@@ -339,7 +387,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 		rawMessage := json.RawMessage(msg.Value)
 		if _, err := json.Marshal(rawMessage); err != nil {
-			return loop.Seq(c.Msg().Messagef("ABI %q isn't valid: %q", msg.Value, err).Cmd(), cmd(AskContractABI{}))
+			return loop.Seq(c.Msg().Messagef("ABI %q isn't valid: %q", msg.Value, err).Cmd(), cmd(AskDynamicContractABI{}))
 		}
 
 		contract.RawABI = rawMessage
@@ -377,7 +425,13 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 		config := c.State.ChainConfig()
 		if config.ApiEndpoint == "" {
-			return cmd(AskContractABI{})
+			/*if contract.AbiType == "string" {
+				return cmd(AskContractABIString{})
+			} else if contract.AbiType == "file" {
+				return cmd(AskContractABIFile{})
+			}*/
+
+			return cmd(AskContractABIType{})
 		}
 
 		return func() loop.Msg {
@@ -393,7 +447,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		if msg.err != nil {
 			return loop.Seq(
 				c.Msg().Messagef("Cannot fetch the ABI for contract %q (%s)", contract.Address, msg.err).Cmd(),
-				cmd(AskContractABI{}),
+				cmd(AskContractABIType{}),
 			)
 		}
 		contract.RawABI = []byte(msg.abi)
@@ -496,7 +550,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		}
 		contract.RawABI = nil
 		contract.abiFetchedInThisSession = false
-		return cmd(AskContractABI{})
+		return cmd(AskContractABIType{})
 
 	case RunDecodeDynamicContractABI:
 		factory := c.contextContract()
@@ -865,3 +919,13 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 }
 
 var cmd = codegen.Cmd
+
+func abiToJson(abi string) (json.RawMessage, error) {
+	var rawMessage json.RawMessage = json.RawMessage(abi)
+
+	if _, err := json.Marshal(rawMessage); err != nil {
+		return nil, err
+	}
+
+	return rawMessage, nil
+}

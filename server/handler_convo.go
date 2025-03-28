@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	_ "github.com/streamingfast/substreams-codegen/evm-events-calls"
+	_ "github.com/streamingfast/substreams-codegen/evm-events-calls-raw"
 	_ "github.com/streamingfast/substreams-codegen/evm-minimal"
 	_ "github.com/streamingfast/substreams-codegen/injective-events"
 	_ "github.com/streamingfast/substreams-codegen/injective-minimal"
@@ -37,8 +38,7 @@ import (
 )
 
 func (s *server) Discover(ctx context.Context, req *connect.Request[pbconvo.DiscoveryRequest]) (*connect.Response[pbconvo.DiscoveryResponse], error) {
-	// TEMPORARY FIX: Using the "searchTerms" field as version to enforce breaking changes in the CLI (even before we send the generators)
-	if req.Msg.SearchTerms == "" {
+	if req.Msg.ClientVersion < 1 {
 		return nil, fmt.Errorf("\nUnsupported version. Please upgrade your `substreams` CLI to the latest version\n\n- If you installed it through Brew, just execute:\n`brew upgrade substreams`.\n\n- You can also upgrade the CLI using one of the releases in GitHub: `https://github.com/streamingfast/substreams/releases`\n")
 	}
 
@@ -99,7 +99,7 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 		return fmt.Errorf("begin with UserInput_Start message")
 	}
 
-	if start.Start.Version < 1 || (start.Start.GeneratorId == "sol-anchor-beta" && start.Start.Version <= 1) {
+	if start.Start.Version < 1 || (start.Start.GeneratorId == "sol-anchor-beta" && start.Start.Version <= 1) || (start.Start.GeneratorId == "evm-events-calls" && start.Start.Version <= 1) {
 		return fmt.Errorf("\nunsupported protocol version %d, please upgrade your `substreams` CLI to the latest version\n\n- If you installed it through Brew, just execute:\n`brew upgrade substreams`.\n\n- You can also upgrade the CLI using one of the releases in GitHub: `https://github.com/streamingfast/substreams/releases`\n", start.Start.Version)
 	}
 
