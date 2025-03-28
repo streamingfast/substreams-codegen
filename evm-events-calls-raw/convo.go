@@ -22,7 +22,7 @@ func init() {
 		"Given a list of contract addresses, ge the raw events and calls, without using an ABI",
 		codegen.ConversationFactory(New),
 		82,
-		"evm",
+		"EVM",
 	)
 }
 

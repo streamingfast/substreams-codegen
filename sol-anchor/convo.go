@@ -29,7 +29,7 @@ func init() {
 		"Allows you to decode data based on an Anchor JSON IDL",
 		codegen.ConversationFactory(New),
 		2000,
-		"solana",
+		"Solana",
 	)
 }
 
