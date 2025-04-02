@@ -23,7 +23,7 @@ binaries:
 modules:
  - name: map_my_data
    kind: map
-   initialBlock: 55411000
+   initialBlock: {{ if eq .ChainNetwork "stellar" }}55411000{{ else }}1000{{ end }}
    inputs:
    - source: sf.stellar.type.v1.Block
    output:
