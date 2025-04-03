@@ -11,9 +11,9 @@ type ChainConfig struct {
 var ChainConfigs []*ChainConfig
 
 var ChainConfigByID = map[string]*ChainConfig{
-	"stellar-mainnet": {
+	"stellar": {
 		DisplayName: "Stellar Mainnet",
-		Network:     "stellar-mainnet",
+		Network:     "stellar",
 	},
 	"stellar-testnet": {
 		DisplayName: "Stellar Testnet",

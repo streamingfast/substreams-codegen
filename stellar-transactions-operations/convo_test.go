@@ -19,7 +19,7 @@ func TestConvoNextStep(t *testing.T) {
 	p.Name = "my-proj"
 
 	assert.Equal(t, codegen.AskChainName{}, next())
-	p.ChainName = "stellar-mainnet"
+	p.ChainName = "stellar"
 
 	res := p.Generate()
 	assert.NoError(t, res.Err)
