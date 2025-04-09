@@ -114,7 +114,6 @@ func TestProofOfPlay(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-
 func readFromFile(idlName string) []byte {
 	data, err := os.ReadFile("idls/" + idlName + ".json")
 	if err != nil {
