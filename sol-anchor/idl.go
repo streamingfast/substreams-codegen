@@ -76,6 +76,34 @@ func (i *IDL) IsTypeUsed(typeName string) bool {
 	return false
 }
 
+/*
+	Some IDLs have the event fields defined in the `types` section of the JSON.
+	In this function we check wether we should looks in "events" or "types" to find out the events.
+*/
+
+func (i *IDL) MoveEventsIfNecessary() {
+	for _, event := range i.Events {
+		if len(event.Fields) > 0 {
+			continue
+		}
+
+		for _, t := range i.Types {
+			if event.Name == t.Name && t.Type.IsStruct() {
+				MoveTypeToEvent(event, t)
+			}
+		}
+	}
+}
+
+func MoveTypeToEvent(event Event, t Type) {
+	for _, f := range t.Type.Struct.Fields {
+		event.Fields = append(event.Fields, Field{
+			Name: f.Name,
+			Type: f.Type,
+		})
+	}
+}
+
 func (i *IDL) IsTypeEnum(typeName string) bool {
 	for _, typeObj := range i.Types {
 		if typeObj.Name == typeName {
