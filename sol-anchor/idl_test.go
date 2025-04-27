@@ -120,9 +120,10 @@ func TestStakingRewards(t *testing.T) {
 
 	result := &IDL{}
 	err := json.Unmarshal(idl, &result)
+	result.MoveEventsIfNecessary()
 
 	assert.Nil(t, err)
-	assert.GreaterOrEqual(t, 0, len(result.Events[0].Fields))
+	assert.GreaterOrEqual(t, len(result.Events[0].Fields), 1)
 }
 
 
