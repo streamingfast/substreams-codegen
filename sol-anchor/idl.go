@@ -82,20 +82,22 @@ func (i *IDL) IsTypeUsed(typeName string) bool {
 */
 
 func (i *IDL) MoveEventsIfNecessary() {
-	for _, event := range i.Events {
+	for idx := range i.Events {
+		event := &i.Events[idx]
+
 		if len(event.Fields) > 0 {
 			continue
 		}
 
 		for _, t := range i.Types {
-			if event.Name == t.Name && t.Type.IsStruct() {
+			if event.Name == t.Name {
 				MoveTypeToEvent(event, t)
 			}
 		}
 	}
 }
 
-func MoveTypeToEvent(event Event, t Type) {
+func MoveTypeToEvent(event *Event, t Type) {
 	for _, f := range t.Type.Struct.Fields {
 		event.Fields = append(event.Fields, Field{
 			Name: f.Name,
