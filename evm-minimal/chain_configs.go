@@ -106,6 +106,13 @@ var ChainConfigByID = map[string]*ChainConfig{
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
 	},
+	"unichain": {
+		DisplayName:          "Unichain Mainnet",
+		FirstStreamableBlock: 0,
+		Network:              "unichain",
+		initialBlockCache:    make(map[string]uint64),
+		SupportsCalls:        true,
+	},
 }
 
 func init() {

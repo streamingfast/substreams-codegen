@@ -151,6 +151,13 @@ var ChainConfigByID = map[string]*ChainConfig{
 		SupportsCalls:        true,
 		APIKeyEnvVar:         "CODEGEN_BASE_API_KEY",
 	},
+	"unichain": {
+		DisplayName:          "Unichain Mainnet",
+		FirstStreamableBlock: 0,
+		Network:              "unichain",
+		initialBlockCache:    make(map[string]uint64),
+		SupportsCalls:        true,
+	},
 }
 
 func init() {
