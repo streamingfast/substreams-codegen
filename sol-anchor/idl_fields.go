@@ -190,7 +190,7 @@ func PrintDefined(typeName string, fieldName string, variableName string, types 
 		if t.Name == typeName {
 			if t.Type.IsEnum() {
 				return fmt.Sprintf("%s: map_enum_%s(%s.%s),", toSnakeCase(fieldName, false), t.SnakeCaseName(), toSnakeCase(variableName, true), toSnakeCase(fieldName, true))
-			} else {
+			} else if t.Type.IsStruct() {
 				var fieldsInString strings.Builder
 				var fieldString string
 
@@ -414,7 +414,7 @@ func unmarshalOption(data []byte) (string, string) {
 		return "simple", optionSimpleType.Option
 	}
 
-	// Try defined
+	// Try defined - without nested "name"
 	type DefinedType struct {
 		Defined string `json:"defined"`
 	}
@@ -423,6 +423,21 @@ func unmarshalOption(data []byte) (string, string) {
 	}
 	if err := json.Unmarshal(data, &optionDefinedType); err == nil && optionDefinedType.Option.Defined != "" {
 		return "defined", optionDefinedType.Option.Defined
+	}
+
+	// Try defined - with nested "name"
+	type TypeName struct {
+		Name string `json:"name"`
+	}
+	type DefinedTypeWithName struct {
+		Defined TypeName `json:"defined"`
+	}
+	var optionDefinedWithNameType struct {
+		Option DefinedTypeWithName `json:"option"`
+	}
+	err := json.Unmarshal(data, &optionDefinedWithNameType)
+	if err == nil && optionDefinedWithNameType.Option.Defined.Name != "" {
+		return "defined", optionDefinedWithNameType.Option.Defined.Name
 	}
 
 	// Try vec simple
@@ -436,7 +451,7 @@ func unmarshalOption(data []byte) (string, string) {
 		return "vecSimple", optionVecSimpleType.Option.Vec
 	}
 
-	// Try vec defined
+	// Try vec defined - without nested name
 	type VecTypeDefined struct {
 		Vec DefinedType `json:"vec"`
 	}
@@ -445,6 +460,18 @@ func unmarshalOption(data []byte) (string, string) {
 	}
 	if err := json.Unmarshal(data, &optionVecDefinedType); err == nil && optionVecDefinedType.Option.Vec.Defined != "" {
 		return "vecDefined", optionVecDefinedType.Option.Vec.Defined
+	}
+
+	// Try defined - with nested "name"
+	type VecDefinedTypeWithName struct {
+		Vec DefinedTypeWithName `json:"vec"`
+	}
+	var optionVecDefinedWithNameType struct {
+		Option VecDefinedTypeWithName `json:"option"`
+	}
+	err = json.Unmarshal(data, &optionVecDefinedWithNameType)
+	if err == nil && optionVecDefinedWithNameType.Option.Vec.Defined.Name != "" {
+		return "defined", optionVecDefinedWithNameType.Option.Vec.Defined.Name
 	}
 
 	// TODO: Try array?

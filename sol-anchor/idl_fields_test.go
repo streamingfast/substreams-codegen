@@ -70,6 +70,15 @@ func TestUnmarshalOptionDefined(t *testing.T) {
 	assert.Equal(t, "string", result)
 }
 
+func TestUnmarshalOptionDefinedWithName(t *testing.T) {
+	json := []byte(`{"option": {"defined": {"name": "string"}}}`)
+
+	optionType, result := unmarshalOption(json)
+
+	assert.Equal(t, "defined", optionType)
+	assert.Equal(t, "string", result)
+}
+
 func TestUnmarshalOptionVecSimple(t *testing.T) {
 	json := []byte(`{"option": {"vec": "string"}}`)
 

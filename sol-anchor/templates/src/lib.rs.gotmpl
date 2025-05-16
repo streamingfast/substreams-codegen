@@ -18,7 +18,7 @@ use pb::substreams::v1::program::{{$instruction.PascalCaseName}}Instruction;
 {{ if $.Idl.IsTypeUsed $type.Name }}
 {{ if $type.Type.IsEnum }}
 use pb::substreams::v1::program::{{$type.Name}}Enum;
-{{ else }}
+{{ else if $type.Type.IsStruct }}
 use pb::substreams::v1::program::{{$type.Name}};
 {{ end }}
 {{- end}}
@@ -97,22 +97,24 @@ fn map_program_data(blk: Block) -> Data {
             /*
                 CPI events are contained inside the instruction data
             */
-            {{- range $i, $event := .Idl.Events }}
-            if &slice_u8[8..16] == idl::idl::program::events::{{$event.Name}}::DISCRIMINATOR {
-                if let Ok(event) =
-                    idl::idl::program::events::{{$event.Name}}::deserialize(
-                        &mut &slice_u8[16..],
-                    )
-                {
-                    {{ $event.SnakeCaseName }}_event_list.push({{ $event.Name }}Event {
-                        trx_hash: transaction.id(),
-                        {{- range $i, $arg := $event.Fields }}
-                        {{ $arg.Type.Print $arg.Name "event" $.Idl.AccountsAndTypes }}
-                        {{- end}}
-                    });
+            if slice_u8.len() >= 16 {
+                {{- range $i, $event := .Idl.Events }}
+                if &slice_u8[8..16] == idl::idl::program::events::{{$event.Name}}::DISCRIMINATOR {
+                    if let Ok(event) =
+                        idl::idl::program::events::{{$event.Name}}::deserialize(
+                            &mut &slice_u8[16..],
+                        )
+                    {
+                        {{ $event.SnakeCaseName }}_event_list.push({{ $event.Name }}Event {
+                            trx_hash: transaction.id(),
+                            {{- range $i, $arg := $event.Fields }}
+                            {{ $arg.Type.Print $arg.Name "event" $.Idl.AccountsAndTypes }}
+                            {{- end}}
+                        });
+                    }
                 }
+                {{- end}}
             }
-            {{- end}}
 
             {{- range $i, $instruction := .Idl.Instructions }}
             if &slice_u8[0..8] == idl::idl::program::client::args::{{ $instruction.PascalCaseName }}::DISCRIMINATOR {
@@ -160,7 +162,7 @@ fn map_enum_{{$type.SnakeCaseName}}(value: idl::idl::program::types::{{ $type.Na
         _ => 0,
     }
 }
-{{ else }}
+{{ else if $type.Type.IsStruct }}
 {{ if $.Idl.IsTypeUsed $type.Name }}
 fn map_option_{{$type.SnakeCaseName}}(value: Option<idl::idl::program::types::{{ $type.Name }}>) -> Option<{{ $type.Name }}> {
     match value {
