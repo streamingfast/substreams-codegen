@@ -99,11 +99,37 @@ func TestRaydiumAMM(t *testing.T) {
 		}
 	}
 
-	fmt.Println(PrintDefined("SwapInstructionBaseIn", "instruction", "instruction", result.Types, false, true))
-
 	assert.Nil(t, err)
 }
 
+func TestMeteoraBondingCurve(t *testing.T) {
+	idl := readFromFile("metereoa_boding_curve")
+
+	result := &IDL{}
+	err := json.Unmarshal(idl, &result)
+
+	//result.MoveEventsIfNecessary()
+
+	/*for _, a := range result.Events {
+		fmt.Println(len(a.Fields))
+		for _, field := range a.Fields {
+			fmt.Println(field.Name)
+			field.Type.Print("event", "event", result.AccountsAndTypes())
+		}
+		fmt.Println("----------------")
+		//fmt.Printf("---- %s // %s\n", a.Type.Kind, a.Name)
+	}*/
+
+	for _, a := range result.Types {
+		if a.Type.IsStruct() {
+			fmt.Println(a.Name)
+			fmt.Println("----------------")
+			//fmt.Printf("---- %s // %s\n", a.Type.Kind, a.Name)
+		}
+	}
+
+	assert.Nil(t, err)
+}
 
 func TestProofOfPlay(t *testing.T) {
 	idl := readFromFile("proof_of_play")
@@ -113,7 +139,6 @@ func TestProofOfPlay(t *testing.T) {
 
 	assert.Nil(t, err)
 }
-
 
 func TestStakingRewards(t *testing.T) {
 	idl := readFromFile("staking_rewards")
@@ -125,7 +150,6 @@ func TestStakingRewards(t *testing.T) {
 	assert.Nil(t, err)
 	assert.GreaterOrEqual(t, len(result.Events[0].Fields), 1)
 }
-
 
 func readFromFile(idlName string) []byte {
 	data, err := os.ReadFile("idls/" + idlName + ".json")

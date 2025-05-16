@@ -51,7 +51,7 @@ message {{$type.Name}} {
     {{ if or $field.Type.IsArray $field.Type.IsVec }} repeated {{ end }} {{ if $field.Type.IsOption }} optional {{ end }} {{$field.Type.ResolveProtobufType}}{{ if $.Idl.IsTypeEnum $field.Type.ResolveProtobufType }}Enum{{end}} {{$field.SnakeCaseName}} = {{ $counter }};
   {{- end}}
 }
-{{- else }}
+{{- else if $type.Type.IsEnum }}
 enum {{$type.Name}}Enum {
     {{- range $i, $variant := $type.Type.Enum.Variants }}
     {{ $type.SnakeCaseNameUpperCase }}_{{ $variant.SnakeCaseName }} = {{ $i }};

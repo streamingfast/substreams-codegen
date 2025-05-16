@@ -18,7 +18,7 @@ use pb::substreams::v1::program::{{$instruction.PascalCaseName}}Instruction;
 {{ if $.Idl.IsTypeUsed $type.Name }}
 {{ if $type.Type.IsEnum }}
 use pb::substreams::v1::program::{{$type.Name}}Enum;
-{{ else }}
+{{ else if $type.Type.IsStruct }}
 use pb::substreams::v1::program::{{$type.Name}};
 {{ end }}
 {{- end}}
@@ -162,7 +162,7 @@ fn map_enum_{{$type.SnakeCaseName}}(value: idl::idl::program::types::{{ $type.Na
         _ => 0,
     }
 }
-{{ else }}
+{{ else if $type.Type.IsStruct }}
 {{ if $.Idl.IsTypeUsed $type.Name }}
 fn map_option_{{$type.SnakeCaseName}}(value: Option<idl::idl::program::types::{{ $type.Name }}>) -> Option<{{ $type.Name }}> {
     match value {
