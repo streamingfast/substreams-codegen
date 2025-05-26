@@ -53,6 +53,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 		return loop.Seq(msgCmd, c.NextStep())
 
+	case codegen.InputSubstreamsConsumptionChoice:
+		return c.HandleSubstreamsConsumptionChoice(msg.Value)
+
 	case codegen.AskProjectName:
 		return c.CmdAskProjectName()
 

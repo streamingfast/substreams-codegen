@@ -144,6 +144,8 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.Msg().
 			Messagef(`Hmm, %q seems like an invalid chain name. Maybe it was supported and is not anymore?`, c.State.ChainName).
 			Cmd()
+	case codegen.InputSubstreamsConsumptionChoice:
+		return c.HandleSubstreamsConsumptionChoice(msg.Value)
 
 	case codegen.InputChainName:
 		c.State.ChainName = msg.Value

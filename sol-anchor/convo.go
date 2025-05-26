@@ -107,6 +107,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			Values(values...).
 			Cmd()
 
+	case codegen.InputSubstreamsConsumptionChoice:
+		return c.HandleSubstreamsConsumptionChoice(msg.Value)
+
 	case codegen.InputChainName:
 		c.State.ChainName = msg.Value
 		return c.NextStep()

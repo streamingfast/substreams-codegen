@@ -218,6 +218,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 		return c.NextStep()
 
+	case codegen.InputSubstreamsConsumptionChoice:
+		return c.HandleSubstreamsConsumptionChoice(msg.Value)
+
 	case StartFirstContract:
 		c.State.Contracts = append(c.State.Contracts, &Contract{})
 		return c.NextStep()

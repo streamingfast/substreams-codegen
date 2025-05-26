@@ -45,6 +45,13 @@ func (c *Conversation[X]) CmdAskProjectName() loop.Cmd {
 		Cmd()
 }
 
+func (c *Conversation[X]) HandleSubstreamsConsumptionChoice(value string) loop.Cmd {
+	return loop.Seq(
+		c.Msg().Messagef(`You chose the %s`, value).Cmd(),
+		loop.Quit(nil),
+	)
+}
+
 func (c *Conversation[X]) CmdDownloadFiles(msg ReturnGenerate) loop.Cmd {
 	if msg.Err != nil {
 		return loop.Seq(
@@ -62,6 +69,13 @@ func (c *Conversation[X]) CmdDownloadFiles(msg ReturnGenerate) loop.Cmd {
 		}
 		downloadCmd.AddFile(fileName, msg.ProjectFiles[fileName], "text/plain", fileDescription)
 	}
+
+	values := []string{"sql", "pubsub"}
+	labels := []string{"SQL", "Through PubSub messaging"}
+
+	act := c.Action(InputSubstreamsConsumptionChoice{}).ListSelect("How would you like to consume the Substreams?").
+		Labels(labels...).
+		Values(values...)
 
 	return loop.Seq(
 		downloadCmd.Cmd(),
@@ -88,6 +102,6 @@ substreams registry publish       # Publish your Substreams to substreams.dev
 `+"```"+`
 
 `).Cmd(),
-		loop.Quit(nil),
+		act.Cmd(),
 	)
 }

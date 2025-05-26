@@ -21,6 +21,9 @@ type InputConfirmCompile struct{ pbconvo.UserInput_Confirmation } // SQL specifi
 type AskInitialStartBlockType struct{}
 type InputAskInitialStartBlockType struct{ pbconvo.UserInput_TextInput }
 
+type AskSubstreamsConsumptionChoice struct{}
+type InputSubstreamsConsumptionChoice struct{ pbconvo.UserInput_Selection }
+
 func InputAskInitialStartBlockTypeTextInput() string {
 	return "At what block do you want to start indexing data?"
 }
