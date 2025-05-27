@@ -133,7 +133,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			labels = append(labels, conf.DisplayName)
 			values = append(values, conf.ID)
 		}
-		act := c.Action(codegen.InputChainName{}).ListSelect("Please select the chain").
+		act := c.Action(codegen.InputChainName{}).ListSelect("Please select the chain", "chain").
 			Labels(labels...).
 			Values(values...)
 		act.DefaultValue("mainnet")
@@ -301,7 +301,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			return c.NextStep()
 		}
 		act := c.Action(InputContractTrackWhat{}).
-			ListSelect("What do you want to track for this contract?").
+			ListSelect("What do you want to track for this contract?", "calls_or_events").
 			Labels("Events", "Calls", "Both events and calls").
 			Values("events", "calls", "both")
 		if contract.Address == UNISWAP_V3_FACTORY_ADDRESS {

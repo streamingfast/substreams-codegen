@@ -83,7 +83,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			labels = append(labels, conf.DisplayName)
 			values = append(values, conf.ID)
 		}
-		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain").
+		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain", "chain").
 			Labels(labels...).
 			Values(values...).
 			Cmd()

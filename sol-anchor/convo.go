@@ -102,7 +102,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 	case codegen.AskChainName:
 		labels := []string{"Solana Mainnet", "Solana Devnet"}
 		values := []string{"solana-mainnet", "solana-devnet"}
-		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain").
+		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain", "chain").
 			Labels(labels...).
 			Values(values...).
 			Cmd()
@@ -133,7 +133,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case AskIDLFormat:
 		return c.Action(InputIDLFormat{}).
-			ListSelect("How do you want to provide the JSON IDL?").
+			ListSelect("How do you want to provide the JSON IDL?", "idl_format").
 			Labels("JSON string", "JSON in a local file").
 			Values("string", "file").
 			DefaultValue("string").

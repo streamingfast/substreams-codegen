@@ -95,7 +95,7 @@ func (c *Conversation[X]) CmdDownloadFiles(msg ReturnGenerate) loop.Cmd {
 	values := []string{"sql", "csv", "json", "parquet", "golang", "rust", "javascript", "pubsub"}
 	labels := []string{"To SQL", "To CSV Files", "To JSON Files", "To Parquet Files", "Stream using Golang", "Stream using Rust", "Stream using JavaScript/TypeScript", "Stream to Pub/Sub"}
 
-	act := c.Action(InputSubstreamsConsumptionChoice{}).ListSelect("How would you like to consume the Substreams?").
+	act := c.Action(InputSubstreamsConsumptionChoice{}).ListSelect("How would you like to consume the Substreams?", "consumption").
 		Labels(labels...).
 		Values(values...)
 

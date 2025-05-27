@@ -127,7 +127,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			labels = append(labels, conf.DisplayName)
 			values = append(values, conf.ID)
 		}
-		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain").
+		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain", "chain").
 			Labels(labels...).
 			Values(values...).
 			Cmd()
@@ -183,8 +183,8 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 		values := []string{EVENTS_DATA_TYPE, EVENT_GROUPS_DATA_TYPE}
 		return c.Action(InputDataType{}).
-			ListSelect(fmt.Sprintf("This codegen will build a substreams that filters data based on events.\n" +
-				"Do you want to target:")).
+			ListSelect(fmt.Sprintf("This codegen will build a substreams that filters data based on events.\n"+
+				"Do you want to target:"), "target_type").
 			Labels(labels...).
 			Values(values...).
 			Cmd()
@@ -259,7 +259,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return loop.Seq(
 			c.Msg().Messagef("Current filtering event types %q", c.State.GetEventsQuery()).Cmd(),
 			c.Action(InputAskAnotherEventType{}).
-				ListSelect("Do you want to add another event type").
+				ListSelect("Do you want to add another event type", "other_event_type").
 				Labels("Yes", "No").
 				Values("yes", "no").Cmd(),
 		)
