@@ -46,8 +46,31 @@ func (c *Conversation[X]) CmdAskProjectName() loop.Cmd {
 }
 
 func (c *Conversation[X]) HandleSubstreamsConsumptionChoice(value string) loop.Cmd {
+
+	var sinkMessage *MsgWrap
+	switch value {
+	case "sql":
+		sinkMessage = c.Msg().Message("Sink to SQL: See https://docs.substreams.dev/how-to-guides/sinks/sql-sink")
+	case "csv":
+		sinkMessage = c.Msg().Message("Sink to CSV file: See https://docs.substreams.dev/how-to-guides/sinks/community-sinks/files")
+	case "json":
+		sinkMessage = c.Msg().Message("Sink to JSON file: See https://docs.substreams.dev/how-to-guides/sinks/community-sinks/files")
+	case "parquet":
+		sinkMessage = c.Msg().Message("Sink to Parquet file: See https://docs.substreams.dev/how-to-guides/sinks/community-sinks/files")
+	case "golang":
+		sinkMessage = c.Msg().Message("Stream using Go: https://docs.substreams.dev/how-to-guides/sinks/stream/go")
+	case "rust":
+		sinkMessage = c.Msg().Message("Stream using Rust: https://github.com/streamingfast/substreams-sink-examples/tree/master/rust#readme")
+	case "javascript":
+		sinkMessage = c.Msg().Message("Stream using JavaScript: https://docs.substreams.dev/how-to-guides/sinks/stream/javascript")
+	case "pubsub":
+		sinkMessage = c.Msg().Message("Stream using Pub/Sub: https://docs.substreams.dev/how-to-guides/sinks/pubsub")
+	default:
+		sinkMessage = c.Msg().Message("Invalid choice")
+	}
+
 	return loop.Seq(
-		c.Msg().Messagef(`You chose the %s`, value).Cmd(),
+		sinkMessage.Cmd(),
 		loop.Quit(nil),
 	)
 }
@@ -69,9 +92,8 @@ func (c *Conversation[X]) CmdDownloadFiles(msg ReturnGenerate) loop.Cmd {
 		}
 		downloadCmd.AddFile(fileName, msg.ProjectFiles[fileName], "text/plain", fileDescription)
 	}
-
-	values := []string{"sql", "pubsub"}
-	labels := []string{"SQL", "Through PubSub messaging"}
+	values := []string{"sql", "csv", "json", "parquet", "golang", "rust", "javascript", "pubsub"}
+	labels := []string{"To SQL", "To CSV Files", "To JSON Files", "To Parquet Files", "Stream using Golang", "Stream using Rust", "Stream using JavaScript/TypeScript", "Stream to Pub/Sub"}
 
 	act := c.Action(InputSubstreamsConsumptionChoice{}).ListSelect("How would you like to consume the Substreams?").
 		Labels(labels...).
