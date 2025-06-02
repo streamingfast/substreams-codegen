@@ -1,0 +1,47 @@
+specVersion: v0.1.0
+package:
+  name: {{ .ModuleName }}
+  version: v0.1.0
+
+imports:
+  stellar: https://github.com/streamingfast/substreams-foundational-modules/releases/download/stellar-foundational-v0.3.0/stellar-foundational-v0.3.0.spkg
+
+protobuf:
+  excludePaths:
+    - sf/substreams
+    - google
+
+binaries:
+  default:
+    type: wasm/rust-v1
+    file: ./target/wasm32-unknown-unknown/release/substreams.wasm
+
+modules:
+{{ if eq .FilterType "transactions" }}
+ - name: map_my_filtered_transactions
+   use: stellar:filtered_transactions
+
+ - name: map_my_data
+   kind: map
+   initialBlock: {{ if eq .ChainNetwork "stellar" }}55411000{{ else }}1000{{ end }}
+   inputs:
+   - map: map_my_filtered_transactions
+   output:
+    type: proto:sf.substreams.stellar.type.v1.Transactions
+{{ else }}
+ - name: map_my_filtered_operations
+   use: stellar:filtered_operations
+
+ - name: map_my_data
+   kind: map
+   initialBlock: 55411000
+   inputs:
+   - map: map_my_filtered_operations
+   output:
+    type: proto:sf.substreams.stellar.type.v1.Operations
+{{ end }}
+
+network: {{ .ChainNetwork }}
+
+params:
+  {{ if eq .FilterType "transactions" }}map_my_filtered_transactions{{ else }}map_my_filtered_operations{{ end }}: {{ .ComposeFilter }}

@@ -35,6 +35,7 @@ import (
 	_ "github.com/streamingfast/substreams-codegen/starknet-minimal"
 	_ "github.com/streamingfast/substreams-codegen/stellar-minimal"
 	_ "github.com/streamingfast/substreams-codegen/stellar-transactions-operations"
+	_ "github.com/streamingfast/substreams-codegen/tron-minimal"
 )
 
 func (s *server) Discover(ctx context.Context, req *connect.Request[pbconvo.DiscoveryRequest]) (*connect.Response[pbconvo.DiscoveryResponse], error) {
