@@ -104,6 +104,7 @@ func (c *Convo) NextStep() (out loop.Cmd) {
 func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 	switch msg := msg.(type) {
 	case codegen.MsgStart:
+		c.SetClientVersion(msg.Version)
 		var msgCmd loop.Cmd
 		if msg.Hydrate != nil {
 			if err := json.Unmarshal([]byte(msg.Hydrate.SavedState), &c.State); err != nil {
@@ -133,7 +134,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			labels = append(labels, conf.DisplayName)
 			values = append(values, conf.ID)
 		}
-		act := c.Action(codegen.InputChainName{}).ListSelect("Please select the chain").
+		act := c.Action(codegen.InputChainName{}).ListSelect("Please select the chain", "chain").
 			Labels(labels...).
 			Values(values...)
 		act.DefaultValue("mainnet")
@@ -144,6 +145,11 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.Msg().
 			Messagef(`Hmm, %q seems like an invalid chain name. Maybe it was supported and is not anymore?`, c.State.ChainName).
 			Cmd()
+	case codegen.InputSubstreamsConsumptionChoice:
+		return c.HandleSubstreamsConsumptionChoice(msg.Value)
+
+	case codegen.InputSourceDownloaded:
+		return c.HandleDownloaded(msg.Value)
 
 	case codegen.InputChainName:
 		c.State.ChainName = msg.Value
@@ -299,7 +305,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			return c.NextStep()
 		}
 		act := c.Action(InputContractTrackWhat{}).
-			ListSelect("What do you want to track for this contract?").
+			ListSelect("What do you want to track for this contract?", "calls_or_events").
 			Labels("Events", "Calls", "Both events and calls").
 			Values("events", "calls", "both")
 		if contract.Address == UNISWAP_V3_FACTORY_ADDRESS {

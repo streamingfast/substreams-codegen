@@ -53,6 +53,7 @@ func (c *Convo) NextStep() loop.Cmd {
 func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 	switch msg := msg.(type) {
 	case codegen.MsgStart:
+		c.SetClientVersion(msg.Version)
 		var msgCmd loop.Cmd
 		if msg.Hydrate != nil {
 			if err := json.Unmarshal([]byte(msg.Hydrate.SavedState), &c.State); err != nil {
@@ -67,6 +68,12 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case codegen.AskProjectName:
 		return c.CmdAskProjectName()
+
+	case codegen.InputSubstreamsConsumptionChoice:
+		return c.HandleSubstreamsConsumptionChoice(msg.Value)
+
+	case codegen.InputSourceDownloaded:
+		return c.HandleDownloaded(msg.Value)
 
 	case codegen.InputProjectName:
 		c.State.Name = msg.Value

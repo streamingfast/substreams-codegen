@@ -57,6 +57,7 @@ func (c *Convo) NextStep() loop.Cmd {
 func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 	switch msg := msg.(type) {
 	case codegen.MsgStart:
+		c.SetClientVersion(msg.Version)
 		var msgCmd loop.Cmd
 		if msg.Hydrate != nil {
 			if err := json.Unmarshal([]byte(msg.Hydrate.SavedState), &c.State); err != nil {
@@ -82,7 +83,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			labels = append(labels, conf.DisplayName)
 			values = append(values, conf.ID)
 		}
-		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain").
+		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain", "chain").
 			Labels(labels...).
 			Values(values...).
 			Cmd()
@@ -91,6 +92,12 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.Msg().
 			Messagef(`Hmm, %q seems like an invalid chain name. Maybe it was supported and is not anymore?`, c.State.ChainName).
 			Cmd()
+
+	case codegen.InputSubstreamsConsumptionChoice:
+		return c.HandleSubstreamsConsumptionChoice(msg.Value)
+
+	case codegen.InputSourceDownloaded:
+		return c.HandleDownloaded(msg.Value)
 
 	case codegen.InputChainName:
 		c.State.ChainName = msg.Value

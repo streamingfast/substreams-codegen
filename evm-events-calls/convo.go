@@ -167,6 +167,7 @@ func (c *Convo) NextStep() (out loop.Cmd) {
 func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 	switch msg := msg.(type) {
 	case codegen.MsgStart:
+		c.SetClientVersion(msg.Version)
 		var msgCmd loop.Cmd
 		if msg.Hydrate != nil {
 			if err := json.Unmarshal([]byte(msg.Hydrate.SavedState), &c.State); err != nil {
@@ -196,7 +197,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			labels = append(labels, conf.DisplayName)
 			values = append(values, conf.ID)
 		}
-		act := c.Action(codegen.InputChainName{}).ListSelect("Please select the chain").
+		act := c.Action(codegen.InputChainName{}).ListSelect("Please select the chain", "chain").
 			Labels(labels...).
 			Values(values...)
 		act.DefaultValue("mainnet")
@@ -217,6 +218,12 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			)
 		}
 		return c.NextStep()
+
+	case codegen.InputSubstreamsConsumptionChoice:
+		return c.HandleSubstreamsConsumptionChoice(msg.Value)
+
+	case codegen.InputSourceDownloaded:
+		return c.HandleDownloaded(msg.Value)
 
 	case StartFirstContract:
 		c.State.Contracts = append(c.State.Contracts, &Contract{})
@@ -292,7 +299,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 
 		return c.Action(InputContractABIType{}).
-			ListSelect("How do you want to provide the JSON ABI?").
+			ListSelect("How do you want to provide the JSON ABI?", "ABI type").
 			Labels("JSON string", "JSON in a local file").
 			Values("string", "file").
 			DefaultValue("string").
@@ -725,7 +732,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 			return c.NextStep()
 		}
 		act := c.Action(InputContractTrackWhat{}).
-			ListSelect("What do you want to track for this contract?").
+			ListSelect("What do you want to track for this contract?", "track").
 			Labels("Events", "Calls", "Both events and calls").
 			Values("events", "calls", "both")
 		if contract.Address == UNISWAP_V3_FACTORY_ADDRESS {
@@ -758,7 +765,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		}
 
 		act := c.Action(InputDynamicContractTrackWhat{}).
-			ListSelect("What do you want to track for the contracts that will be created by this factory ?").
+			ListSelect("What do you want to track for the contracts that will be created by this factory?", "track_subcontract").
 			Labels("Events", "Calls", "Both events and calls").
 			Values("events", "calls", "both")
 		act = act.DefaultValue("both")
@@ -825,7 +832,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 			values = append(values, events[k])
 		}
 		act := c.Action(InputFactoryCreationEvent{}).
-			ListSelect("Choose the event signaling a new contract deployment").
+			ListSelect("Choose the event signaling a new contract deployment", "event").
 			Labels(values...).
 			Values(keys...)
 		act.DefaultValue("PoolCreated")
@@ -867,7 +874,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 				Message("Great, now which field in the event payload contains the address of the newly created contract?").
 				Cmd(),
 			c.Action(InputFactoryCreationEventField{}).
-				ListSelect("Choose the field containing the contract address").
+				ListSelect("Choose the field containing the contract address", "field").
 				DefaultValue(defaultValue).
 				Labels(params...).
 				Values(indexes...).

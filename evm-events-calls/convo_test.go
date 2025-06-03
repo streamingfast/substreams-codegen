@@ -142,20 +142,23 @@ func TestConvoUpdate(t *testing.T) {
 	next = conv.Update(codegen.ReturnGenerate{ProjectFiles: nil})
 	seq = next().(loop.SeqMsg)
 
-	//cmds := next()
-	msg1 := seq[1]().(*pbconvo.SystemOutput)
+	// First part of sequence should be the download files command
+	downloadMsg := seq[0]().(*pbconvo.SystemOutput)
+	assert.NotNil(t, downloadMsg.GetDownloadFiles())
 
+	// Second part should trigger InputSourceDownloaded which leads to the project ready message
+	next = conv.Update(codegen.InputSourceDownloaded{pbconvo.UserInput_TextInput{Value: "{project folder}"}})
+	seq = next().(loop.SeqMsg)
+	
+	// Now the project ready message should be in the first part of this new sequence
+	msg1 := seq[0]().(*pbconvo.SystemOutput)
 	assert.Contains(t, msg1.GetMessage().Markdown, "substreams build\nsubstreams auth\nsubstreams gui")
 	assert.Contains(t, msg1.GetMessage().Markdown, "substreams registry login")
 	assert.Contains(t, msg1.GetMessage().Markdown, "substreams registry publish")
-	//msg2 := seq[1]().(*pbconvo.SystemOutput)
-	//assert.NotNil(t, msg2.GetDownloadFiles())
-	//
-	//next = conv.Update(codegen.InputSourceDownloaded{})
-	//assert.Equal(t, codegen.AskConfirmCompile{}, next())
-	//
-	//next = conv.Update(codegen.InputConfirmCompile{UserInput_Confirmation: pbconvo.UserInput_Confirmation{Affirmative: true}})
-	//assert.Equal(t, codegen.RunBuild{}, next())
+	
+	// Second part should be the consumption choice selection
+	consumptionMsg := seq[1]().(*pbconvo.SystemOutput)
+	assert.NotNil(t, consumptionMsg.GetListSelect())
 
 }
 

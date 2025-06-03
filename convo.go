@@ -10,11 +10,16 @@ import (
 type Conversation[X any] struct {
 	State X
 
-	factory *MsgWrapFactory
+	clientVersion uint32
+	factory       *MsgWrapFactory
 }
 
 func (c *Conversation[X]) SetFactory(f *MsgWrapFactory) {
 	c.factory = f
+}
+
+func (c *Conversation[X]) SetClientVersion(version uint32) {
+	c.clientVersion = version
 }
 
 func (c *Conversation[X]) GetState() any {
@@ -45,6 +50,113 @@ func (c *Conversation[X]) CmdAskProjectName() loop.Cmd {
 		Cmd()
 }
 
+func (c *Conversation[X]) HandleSubstreamsConsumptionChoice(value string) loop.Cmd {
+	var sinkMessage *MsgWrap
+	switch value {
+	case "sql":
+		sinkMessage = c.Msg().Message(`Sink to SQL:
+		1. Get the binary from https://github.com/streamingfast/substreams-sink-sql/ (version 4.6.1 or above)
+		2. Run ` + "`substreams-sink-sql from-proto psql://db_user:db_password@db_host:5432/db_name ./substreams.yaml {output_module}`" +
+			` See https://docs.substreams.dev/how-to-guides/sinks/sql-sink"`)
+	case "parquet":
+		sinkMessage = c.Msg().Message(`Sink to Parquet file:
+			1. Get the binary from https://github.com/streamingfast/substreams-sink-files/ (version 2.1.0 or above)
+			2. Run ` + "`substreams-sink-files run {endpoint} substreams.yaml {output_module} ./output`" +
+			` See https://docs.substreams.dev/how-to-guides/sinks/sql-sink"`)
+	case "golang":
+		sinkMessage = c.Msg().Message(`Sink using Golang
+
+    		We provide a Substreams Golang SDK to streamline consumption of Substreams data
+    		refer to https://github.com/streamingfast/substreams-sink for more details and examples.`)
+	case "rust":
+		sinkMessage = c.Msg().Message(`Sink using Rust
+
+			Here is an example of a Rust sink: https://github.com/streamingfast/substreams-sink-examples/tree/master/rust#readme`)
+	case "javascript":
+		sinkMessage = c.Msg().Message(`Sink using Javascript
+
+		Here is an example of a JS sink: https://github.com/streamingfast/substreams-sink-examples/blob/master/javascript/README.md`)
+
+	case "python":
+		sinkMessage = c.Msg().Message(`Sink using Python
+
+			Here is an example of a Python sink: https://github.com/streamingfast/substreams-sink-examples/blob/master/python/README.md`)
+
+	//case "pubsub":
+	//	sinkMessage = c.Msg().Message("Stream using Pub/Sub: (Not implemented yet)")
+	//case "json":
+	//	sinkMessage = c.Msg().Message("Sink to JSON file: (Not implemented yet)")
+	//case "csv":
+	//	sinkMessage = c.Msg().Message("Sink to CSV file: (Not implemented yet)")
+	default:
+		sinkMessage = c.Msg().Message("Invalid choice")
+	}
+
+	return loop.Seq(
+		sinkMessage.Cmd(),
+		loop.Quit(nil),
+	)
+}
+
+func (c *Conversation[X]) downloadedCommands(destDir string) []loop.Cmd {
+
+	values := []string{
+		"sql",
+		//"csv",
+		//"json",
+		"parquet",
+		"golang",
+		"rust",
+		"javascript",
+		"python",
+		//"pubsub",
+	}
+	labels := []string{
+		"To SQL",
+		//"To CSV Files",
+		//"To JSON Files",
+		"To Parquet Files",
+		"Write a custom sink in Go",
+		"Write a custom sink in Rust",
+		"Write a custom sink in JavaScript/TypeScript",
+		"Write a custom sink in Python",
+		//"Stream to Pub/Sub",
+	}
+
+	act := c.Action(InputSubstreamsConsumptionChoice{}).ListSelect("How would you like to consume the Substreams?", "consumption").
+		Labels(labels...).
+		Values(values...)
+
+	return []loop.Cmd{
+		c.Msg().Messagef(`Your Substreams project is ready! Start streaming with:
+
+`+"```"+`bash
+
+cd %s
+substreams build
+substreams auth
+substreams gui       			  # Get streaming!
+`+"```"+`
+
+Optionally, publish your Substreams to the Substreams Registry (https://substreams.dev) with:
+
+`+"```"+`bash
+substreams registry login         # Login to substreams.dev
+substreams registry publish       # Publish your Substreams to substreams.dev
+`+"```"+`
+
+`, destDir).Cmd(),
+		act.Cmd(),
+	}
+}
+
+func (c *Conversation[X]) HandleDownloaded(destDir string) loop.Cmd {
+	return loop.Seq(
+		c.downloadedCommands(destDir)...,
+	)
+
+}
+
 func (c *Conversation[X]) CmdDownloadFiles(msg ReturnGenerate) loop.Cmd {
 	if msg.Err != nil {
 		return loop.Seq(
@@ -63,31 +175,13 @@ func (c *Conversation[X]) CmdDownloadFiles(msg ReturnGenerate) loop.Cmd {
 		downloadCmd.AddFile(fileName, msg.ProjectFiles[fileName], "text/plain", fileDescription)
 	}
 
+	if c.clientVersion >= 4 {
+		return downloadCmd.Cmd()
+	}
+
 	return loop.Seq(
 		downloadCmd.Cmd(),
-		c.Msg().Messagef(`Your Substreams project is ready! Start streaming with:
-
-`+"```"+`bash
-substreams build
-substreams auth
-substreams gui       			  # Get streaming!
-`+"```"+`
-
-Build Subgraphs and other sinks with:
-
-`+"```"+`bash
-substreams codegen subgraph
-substreams codegen sql
-`+"```"+`
-
-Optionally, publish your Substreams to the Substreams Registry (https://substreams.dev) with:
-
-`+"```"+`bash
-substreams registry login         # Login to substreams.dev
-substreams registry publish       # Publish your Substreams to substreams.dev
-`+"```"+`
-
-`).Cmd(),
-		loop.Quit(nil),
+		c.HandleDownloaded("{project folder}"),
 	)
+
 }

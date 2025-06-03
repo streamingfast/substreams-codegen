@@ -73,6 +73,7 @@ func (c *Convo) NextStep() loop.Cmd {
 func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 	switch msg := msg.(type) {
 	case codegen.MsgStart:
+		c.SetClientVersion(msg.Version)
 		var msgCmd loop.Cmd
 		if msg.Hydrate != nil {
 			if err := json.Unmarshal([]byte(msg.Hydrate.SavedState), &c.State); err != nil {
@@ -102,10 +103,16 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 	case codegen.AskChainName:
 		labels := []string{"Solana Mainnet", "Solana Devnet"}
 		values := []string{"solana-mainnet", "solana-devnet"}
-		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain").
+		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain", "chain").
 			Labels(labels...).
 			Values(values...).
 			Cmd()
+
+	case codegen.InputSubstreamsConsumptionChoice:
+		return c.HandleSubstreamsConsumptionChoice(msg.Value)
+
+	case codegen.InputSourceDownloaded:
+		return c.HandleDownloaded(msg.Value)
 
 	case codegen.InputChainName:
 		c.State.ChainName = msg.Value
@@ -130,7 +137,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case AskIDLFormat:
 		return c.Action(InputIDLFormat{}).
-			ListSelect("How do you want to provide the JSON IDL?").
+			ListSelect("How do you want to provide the JSON IDL?", "idl_format").
 			Labels("JSON string", "JSON in a local file").
 			Values("string", "file").
 			DefaultValue("string").
