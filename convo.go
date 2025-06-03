@@ -10,11 +10,16 @@ import (
 type Conversation[X any] struct {
 	State X
 
-	factory *MsgWrapFactory
+	clientVersion uint32
+	factory       *MsgWrapFactory
 }
 
 func (c *Conversation[X]) SetFactory(f *MsgWrapFactory) {
 	c.factory = f
+}
+
+func (c *Conversation[X]) SetClientVersion(version uint32) {
+	c.clientVersion = version
 }
 
 func (c *Conversation[X]) GetState() any {
@@ -46,7 +51,6 @@ func (c *Conversation[X]) CmdAskProjectName() loop.Cmd {
 }
 
 func (c *Conversation[X]) HandleSubstreamsConsumptionChoice(value string) loop.Cmd {
-
 	var sinkMessage *MsgWrap
 	switch value {
 	case "sql":
@@ -75,6 +79,45 @@ func (c *Conversation[X]) HandleSubstreamsConsumptionChoice(value string) loop.C
 	)
 }
 
+func (c *Conversation[X]) downloadedCommands(destDir string) []loop.Cmd {
+
+	values := []string{"sql", "csv", "json", "parquet", "golang", "rust", "javascript", "pubsub"}
+	labels := []string{"To SQL", "To CSV Files", "To JSON Files", "To Parquet Files", "Stream using Golang", "Stream using Rust", "Stream using JavaScript/TypeScript", "Stream to Pub/Sub"}
+
+	act := c.Action(InputSubstreamsConsumptionChoice{}).ListSelect("How would you like to consume the Substreams?", "consumption").
+		Labels(labels...).
+		Values(values...)
+
+	return []loop.Cmd{
+		c.Msg().Messagef(`Your Substreams project is ready! Start streaming with:
+
+`+"```"+`bash
+
+cd %s
+substreams build
+substreams auth
+substreams gui       			  # Get streaming!
+`+"```"+`
+
+Optionally, publish your Substreams to the Substreams Registry (https://substreams.dev) with:
+
+`+"```"+`bash
+substreams registry login         # Login to substreams.dev
+substreams registry publish       # Publish your Substreams to substreams.dev
+`+"```"+`
+
+`, destDir).Cmd(),
+		act.Cmd(),
+	}
+}
+
+func (c *Conversation[X]) HandleDownloaded(destDir string) loop.Cmd {
+	return loop.Seq(
+		c.downloadedCommands(destDir)...,
+	)
+
+}
+
 func (c *Conversation[X]) CmdDownloadFiles(msg ReturnGenerate) loop.Cmd {
 	if msg.Err != nil {
 		return loop.Seq(
@@ -92,38 +135,14 @@ func (c *Conversation[X]) CmdDownloadFiles(msg ReturnGenerate) loop.Cmd {
 		}
 		downloadCmd.AddFile(fileName, msg.ProjectFiles[fileName], "text/plain", fileDescription)
 	}
-	values := []string{"sql", "csv", "json", "parquet", "golang", "rust", "javascript", "pubsub"}
-	labels := []string{"To SQL", "To CSV Files", "To JSON Files", "To Parquet Files", "Stream using Golang", "Stream using Rust", "Stream using JavaScript/TypeScript", "Stream to Pub/Sub"}
 
-	act := c.Action(InputSubstreamsConsumptionChoice{}).ListSelect("How would you like to consume the Substreams?", "consumption").
-		Labels(labels...).
-		Values(values...)
+	if c.clientVersion >= 4 {
+		return downloadCmd.Cmd()
+	}
 
 	return loop.Seq(
 		downloadCmd.Cmd(),
-		c.Msg().Messagef(`Your Substreams project is ready! Start streaming with:
-
-`+"```"+`bash
-substreams build
-substreams auth
-substreams gui       			  # Get streaming!
-`+"```"+`
-
-Build Subgraphs and other sinks with:
-
-`+"```"+`bash
-substreams codegen subgraph
-substreams codegen sql
-`+"```"+`
-
-Optionally, publish your Substreams to the Substreams Registry (https://substreams.dev) with:
-
-`+"```"+`bash
-substreams registry login         # Login to substreams.dev
-substreams registry publish       # Publish your Substreams to substreams.dev
-`+"```"+`
-
-`).Cmd(),
-		act.Cmd(),
+		c.HandleDownloaded("{project folder}"),
 	)
+
 }

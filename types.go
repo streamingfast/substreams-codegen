@@ -12,7 +12,7 @@ type AskChainName struct{}
 type MsgInvalidChainName struct{}
 type InputChainName struct{ pbconvo.UserInput_Selection }
 
-type InputSourceDownloaded struct{ pbconvo.UserInput_Confirmation }
+type InputSourceDownloaded struct{ pbconvo.UserInput_TextInput }
 type PackageDownloaded struct{ pbconvo.UserInput_Confirmation }
 
 type AskConfirmCompile struct{}
