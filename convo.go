@@ -54,21 +54,40 @@ func (c *Conversation[X]) HandleSubstreamsConsumptionChoice(value string) loop.C
 	var sinkMessage *MsgWrap
 	switch value {
 	case "sql":
-		sinkMessage = c.Msg().Message("Sink to SQL: See https://docs.substreams.dev/how-to-guides/sinks/sql-sink")
-	case "csv":
-		sinkMessage = c.Msg().Message("Sink to CSV file: See https://docs.substreams.dev/how-to-guides/sinks/community-sinks/files")
-	case "json":
-		sinkMessage = c.Msg().Message("Sink to JSON file: See https://docs.substreams.dev/how-to-guides/sinks/community-sinks/files")
+		sinkMessage = c.Msg().Message(`Sink to SQL:
+		1. Get the binary from https://github.com/streamingfast/substreams-sink-sql/ (version 4.6.1 or above)
+		2. Run ` + "`substreams-sink-sql from-proto psql://db_user:db_password@db_host:5432/db_name ./substreams.yaml {output_module}`" +
+			` See https://docs.substreams.dev/how-to-guides/sinks/sql-sink"`)
 	case "parquet":
-		sinkMessage = c.Msg().Message("Sink to Parquet file: See https://docs.substreams.dev/how-to-guides/sinks/community-sinks/files")
+		sinkMessage = c.Msg().Message(`Sink to Parquet file:
+			1. Get the binary from https://github.com/streamingfast/substreams-sink-files/ (version 2.1.0 or above)
+			2. Run ` + "`substreams-sink-files run {endpoint} substreams.yaml {output_module} ./output`" +
+			` See https://docs.substreams.dev/how-to-guides/sinks/sql-sink"`)
 	case "golang":
-		sinkMessage = c.Msg().Message("Stream using Go: https://docs.substreams.dev/how-to-guides/sinks/stream/go")
+		sinkMessage = c.Msg().Message(`Sink using Golang
+
+    		We provide a Substreams Golang SDK to streamline consumption of Substreams data
+    		refer to https://github.com/streamingfast/substreams-sink for more details and examples.`)
 	case "rust":
-		sinkMessage = c.Msg().Message("Stream using Rust: https://github.com/streamingfast/substreams-sink-examples/tree/master/rust#readme")
+		sinkMessage = c.Msg().Message(`Sink using Rust
+
+			Here is an example of a Rust sink: https://github.com/streamingfast/substreams-sink-examples/tree/master/rust#readme`)
 	case "javascript":
-		sinkMessage = c.Msg().Message("Stream using JavaScript: https://docs.substreams.dev/how-to-guides/sinks/stream/javascript")
-	case "pubsub":
-		sinkMessage = c.Msg().Message("Stream using Pub/Sub: https://docs.substreams.dev/how-to-guides/sinks/pubsub")
+		sinkMessage = c.Msg().Message(`Sink using Javascript
+
+		Here is an example of a JS sink: https://github.com/streamingfast/substreams-sink-examples/blob/master/javascript/README.md`)
+
+	case "python":
+		sinkMessage = c.Msg().Message(`Sink using Python
+
+			Here is an example of a Python sink: https://github.com/streamingfast/substreams-sink-examples/blob/master/python/README.md`)
+
+	//case "pubsub":
+	//	sinkMessage = c.Msg().Message("Stream using Pub/Sub: (Not implemented yet)")
+	//case "json":
+	//	sinkMessage = c.Msg().Message("Sink to JSON file: (Not implemented yet)")
+	//case "csv":
+	//	sinkMessage = c.Msg().Message("Sink to CSV file: (Not implemented yet)")
 	default:
 		sinkMessage = c.Msg().Message("Invalid choice")
 	}
@@ -81,8 +100,28 @@ func (c *Conversation[X]) HandleSubstreamsConsumptionChoice(value string) loop.C
 
 func (c *Conversation[X]) downloadedCommands(destDir string) []loop.Cmd {
 
-	values := []string{"sql", "csv", "json", "parquet", "golang", "rust", "javascript", "pubsub"}
-	labels := []string{"To SQL", "To CSV Files", "To JSON Files", "To Parquet Files", "Stream using Golang", "Stream using Rust", "Stream using JavaScript/TypeScript", "Stream to Pub/Sub"}
+	values := []string{
+		"sql",
+		//"csv",
+		//"json",
+		"parquet",
+		"golang",
+		"rust",
+		"javascript",
+		"python",
+		//"pubsub",
+	}
+	labels := []string{
+		"To SQL",
+		//"To CSV Files",
+		//"To JSON Files",
+		"To Parquet Files",
+		"Write a custom sink in Go",
+		"Write a custom sink in Rust",
+		"Write a custom sink in JavaScript/TypeScript",
+		"Write a custom sink in Python",
+		//"Stream to Pub/Sub",
+	}
 
 	act := c.Action(InputSubstreamsConsumptionChoice{}).ListSelect("How would you like to consume the Substreams?", "consumption").
 		Labels(labels...).
