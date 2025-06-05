@@ -65,8 +65,6 @@ func TestOrbitLen(t *testing.T) {
 	result := &IDL{}
 	err := json.Unmarshal(idl, &result)
 
-	fmt.Println(result.IsTypeUsed("LendingAccount"))
-
 	assert.Nil(t, err)
 	assert.Equal(t, "QoB7dVkkZr3oLb95DMpSptvUF8mTygDHNjFQh5y5RAb", result.Address)
 
@@ -91,7 +89,7 @@ func TestRaydiumAMM(t *testing.T) {
 	for _, inst := range result.Instructions {
 		argsString := ""
 		for _, arg := range inst.Args {
-			argsString += fmt.Sprintf("%s %s\n", arg.Type.ResolveRustType(), arg.SnakeCaseName())
+			argsString += fmt.Sprintf("%s %s\n", "arg.Type.ResolveRustType()", arg.SnakeCaseName())
 		}
 		output += fmt.Sprintf(`pub struct %s {
 			%s
@@ -121,8 +119,6 @@ func TestMarginfi(t *testing.T) {
 	for _, t := range result.AccountsAndTypes() {
 		fmt.Println(t.Name)
 	}
-
-	fmt.Println(result.IsTypeUsed("EmodeEntry"))
 
 	assert.Nil(t, err)
 }

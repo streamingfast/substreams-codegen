@@ -43,12 +43,17 @@ func (i *IDL) PrintProtobufNestedTypes() string {
 	// Get all types that we should generate
 	rustTypes := make([]string, 0)
 	for _, f := range allFields {
-		rustTypes = append(rustTypes, f.Type.ResolveRustType())
+		resolvedType, err := f.Type.GetResolvedFieldType()
+		if err != nil {
+			continue
+		}
+
+		rustTypes = append(rustTypes, resolvedType.ResolveRustType())
 	}
 	// remove duplicates
 	rustTypes = uniqueStrings(rustTypes)
 
-	output := "";
+	output := ""
 
 	return output
 }
@@ -60,7 +65,7 @@ func (i *IDL) ProgramID() string {
 	return i.Address
 }
 
-func (i *IDL) IsTypeUsed(typeName string) bool {
+/*func (i *IDL) IsTypeUsed(typeName string) bool {
 	for _, instruction := range i.Instructions {
 		for _, arg := range instruction.Args {
 			if arg.Type.IsTypeUsed(typeName) {
@@ -111,6 +116,7 @@ func (i *IDL) IsTypeUsed(typeName string) bool {
 
 	return false
 }
+*/
 
 /*
 	Some IDLs have the event fields defined in the `types` section of the JSON.

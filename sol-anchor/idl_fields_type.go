@@ -2,113 +2,324 @@ package solanchor
 
 import "fmt"
 
-/*const (
-	Simple ResolvedFieldType = iota
-	SimplePubKey
-
-	Defined
-
-	VecSimple
-	VecDefined
-	VecOptionSimple
-	VecOptionDefined
-
-	OptionSimple
-	OptionDefined
-	OptionVecSimple
-	OptionVecDefined
-	OptionArraySimple
-	OptionArrayDefined
-	OptionArrayArraySimple
-	OptionArrayArrayDefined
-
-	ArraySimple
-	ArrayDefined
-	ArrayArraySimple
-	ArrayArrayDefined
-)*/
-
 // Parent struct
-type ResolvedFieldType struct {
+type ResolvedFieldTypeCommon struct {
 	Type string
+}
+type ResolvedFieldType interface {
+	ResolveRustType() string
+	PrintNecessaryProtobufMessages() string
 }
 
 // simple and defiend
 type Simple struct {
-	ResolvedFieldType
+	ResolvedFieldTypeCommon
 }
+
+func (f *Simple) ResolveRustType() string {
+	if f.Type == "pubkey" {
+		return "PubKey"
+	}
+
+	return f.Type
+}
+func (f *Simple) PrintNecessaryProtobufMessages() string {
+	return ""
+}
+
 type Defined struct {
-	ResolvedFieldType
+	ResolvedFieldTypeCommon
+}
+
+func (f *Defined) ResolveRustType() string {
+	return f.Type
+}
+func (f *Defined) PrintNecessaryProtobufMessages() string {
+	return ""
 }
 
 // vec
 type VecSimple struct {
-	ResolvedFieldType
+	ResolvedFieldTypeCommon
 }
+
+func (f *VecSimple) ResolveRustType() string {
+	return fmt.Sprintf("Vec<%s>", f.Type)
+}
+func (f *VecSimple) PrintNecessaryProtobufMessages() string {
+	return ""
+}
+
 type VecDefined struct {
-	ResolvedFieldType
+	ResolvedFieldTypeCommon
 }
+
+func (f *VecDefined) ResolveRustType() string {
+	return fmt.Sprintf("Vec<%s>", f.Type)
+}
+func (f *VecDefined) PrintNecessaryProtobufMessages() string {
+	return ""
+}
+
 type VecOptionSimple struct {
-	ResolvedFieldType
+	ResolvedFieldTypeCommon
 }
+
+func (f *VecOptionSimple) ResolveRustType() string {
+	return fmt.Sprintf("Vec<Option<%s>>", f.Type)
+}
+func (f *VecOptionSimple) PrintNecessaryProtobufMessages() string {
+	return ""
+}
+
 type VecOptionDefined struct {
-	ResolvedFieldType
+	ResolvedFieldTypeCommon
+}
+
+func (f *VecOptionDefined) ResolveRustType() string {
+	return fmt.Sprintf("Vec<Option<%s>>", f.Type)
+}
+func (f *VecOptionDefined) PrintNecessaryProtobufMessages() string {
+	return ""
 }
 
 // option
 type OptionSimple struct {
-	ResolvedFieldType
+	ResolvedFieldTypeCommon
 }
+
+func (f *OptionSimple) ResolveRustType() string {
+	return fmt.Sprintf("Option<%s>", f.Type)
+}
+func (f *OptionSimple) PrintNecessaryProtobufMessages() string {
+	return ""
+}
+
 type OptionDefined struct {
-	ResolvedFieldType
+	ResolvedFieldTypeCommon
 }
+
+func (f *OptionDefined) ResolveRustType() string {
+	return fmt.Sprintf("Option<%s>", f.Type)
+}
+func (f *OptionDefined) PrintNecessaryProtobufMessages() string {
+	return ""
+}
+
 type OptionVecSimple struct {
-	ResolvedFieldType
+	ResolvedFieldTypeCommon
 }
+
+func (f *OptionVecSimple) ResolveRustType() string {
+	return fmt.Sprintf("Option<Vec<%s>>", f.Type)
+}
+func (f *OptionVecSimple) ResolveProtobufType() string {
+	return fmt.Sprintf("OptionVecSimple%s", f.Type)
+}
+func (f *OptionVecSimple) PrintNecessaryProtobufMessages() string {
+	innerMessageName := fmt.Sprintf("OptionVecSimple%sInner", f.Type)
+	return fmt.Sprintf(`
+		message %s {
+			repeated %s value = 1;
+		}
+
+		message OptionVecSimple%s {
+			optional %s inner = 1;
+		}
+	`, innerMessageName, f.Type, f.Type, innerMessageName)
+}
+
 type OptionVecDefined struct {
-	ResolvedFieldType
+	ResolvedFieldTypeCommon
 }
+
+func (f *OptionVecDefined) ResolveRustType() string {
+	return fmt.Sprintf("Option<Vec<%s>>", f.Type)
+}
+func (f *OptionVecDefined) ResolveProtobufType() string {
+	return fmt.Sprintf("OptionVecSimple%s", f.Type)
+}
+func (f *OptionVecDefined) PrintNecessaryProtobufMessages() string {
+	messageName := fmt.Sprintf("OptionVecDefined%s", f.Type)
+	innerMessageName := fmt.Sprintf("OptionVecDefined%sInner", f.Type)
+	return fmt.Sprintf(`
+		message %s {
+			repeated %s value = 1;
+		}
+
+		message %s {
+			optional %s inner = 1;
+		}
+	`, innerMessageName, f.Type, messageName, innerMessageName)
+}
+
 type OptionArraySimple struct {
-	ResolvedFieldType
+	ResolvedFieldTypeCommon
 	Length int
 }
+
+func (f *OptionArraySimple) ResolveRustType() string {
+	return fmt.Sprintf("Option<[%s;%d]>", f.Type, f.Length)
+}
+func (f *OptionArraySimple) ResolveProtobufType() string {
+	return fmt.Sprintf("OptionArraySimple%s", f.Type)
+}
+func (f *OptionArraySimple) PrintNecessaryProtobufMessages() string {
+	innerMessageName := fmt.Sprintf("OptionArraySimple%sInner", f.Type)
+	return fmt.Sprintf(`
+		message %s {
+			repeated %s value = 1;
+		}
+
+		message OptionArraySimple%s {
+			optional %s inner = 1;
+		}
+	`, innerMessageName, f.Type, f.Type, innerMessageName)
+}
+
 type OptionArrayDefined struct {
-	ResolvedFieldType
+	ResolvedFieldTypeCommon
 	Length int
 }
-type OptionArrayArraySimple struct {
-	ResolvedFieldType
-	LengthX int
-	LengthY int
+
+func (f *OptionArrayDefined) ResolveRustType() string {
+	return fmt.Sprintf("Option<[%s;%d]>", f.Type, f.Length)
 }
+func (f *OptionArrayDefined) ResolveProtobufType() string {
+	return fmt.Sprintf("OptionArrayDefined%s", f.Type)
+}
+func (f *OptionArrayDefined) PrintNecessaryProtobufMessages() string {
+	innerMessageName := fmt.Sprintf("OptionArrayDefined%sInner", f.Type)
+	return fmt.Sprintf(`
+		message %s {
+			repeated %s value = 1;
+		}
+
+		message OptionArrayDefined%s {
+			optional %s inner = 1;
+		}
+	`, innerMessageName, f.Type, f.Type, innerMessageName)
+}
+
+type OptionArrayArraySimple struct {
+	ResolvedFieldTypeCommon
+	Length      int
+	OuterLength int
+}
+
+func (f *OptionArrayArraySimple) ResolveRustType() string {
+	return fmt.Sprintf("Option<[[%s;%d];%d]>", f.Type, f.Length, f.OuterLength)
+}
+func (f *OptionArrayArraySimple) ResolveProtobufType() string {
+	return fmt.Sprintf("OptionArrayArraySimple%s", f.Type)
+}
+func (f *OptionArrayArraySimple) PrintNecessaryProtobufMessages() string {
+	innerMessageName := fmt.Sprintf("OptionArrayArraySimple%sInner", f.Type)
+	innerArrayMessageName := fmt.Sprintf("OptionArrayArraySimple%sInnerArray", f.Type)
+
+	return fmt.Sprintf(`
+		message %s {
+			repeated %s inner = 1;
+		}
+
+		message %s {
+			repeated %s arrayInner = 1;
+		}
+
+		message OptionArrayArraySimple%s {
+			optional %s inner = 1;
+		}
+	`, innerArrayMessageName, f.Type, innerMessageName, innerArrayMessageName, f.Type, innerMessageName)
+}
+
 type OptionArrayArrayDefined struct {
-	ResolvedFieldType
-	LengthX int
-	LengthY int
+	ResolvedFieldTypeCommon
+	Length      int
+	OuterLength int
+}
+
+func (f *OptionArrayArrayDefined) ResolveRustType() string {
+	return fmt.Sprintf("Option<[[%s;%d];%d]>", f.Type, f.Length, f.OuterLength)
+}
+func (f *OptionArrayArrayDefined) ResolveProtobufType() string {
+	return fmt.Sprintf("OptionArrayArraySimple%s", f.Type)
+}
+func (f *OptionArrayArrayDefined) PrintNecessaryProtobufMessages() string {
+	innerMessageName := fmt.Sprintf("OptionArrayArrayDefined%sInner", f.Type)
+	innerArrayMessageName := fmt.Sprintf("OptionArrayArrayDefined%sInnerArray", f.Type)
+
+	return fmt.Sprintf(`
+		message %s {
+			repeated %s inner = 1;
+		}
+
+		message %s {
+			repeated %s arrayInner = 1;
+		}
+
+		message OptionArrayArrayDefined%s {
+			optional %s inner = 1;
+		}
+	`, innerArrayMessageName, f.Type, innerMessageName, innerArrayMessageName, f.Type, innerMessageName)
 }
 
 // array
 type ArraySimple struct {
-	ResolvedFieldType
+	ResolvedFieldTypeCommon
 	Length int
 }
+
+func (f *ArraySimple) ResolveRustType() string {
+	return fmt.Sprintf("[%s;%d]", f.Type, f.Length)
+}
+
+func (f *ArraySimple) PrintNecessaryProtobufMessages() string {
+	return ""
+}
+
 type ArrayDefined struct {
-	ResolvedFieldType
+	ResolvedFieldTypeCommon
 	Length int
 }
-type ArrayArraySimple struct {
-	ResolvedFieldType
-	LengthX int
-	LengthY int
+
+func (f *ArrayDefined) ResolveRustType() string {
+	return fmt.Sprintf("[%s;%d]", f.Type, f.Length)
 }
+
+func (f *ArrayDefined) PrintNecessaryProtobufMessages() string {
+	return ""
+}
+
+type ArrayArraySimple struct {
+	ResolvedFieldTypeCommon
+	Length      int
+	OuterLength int
+}
+
+func (f *ArrayArraySimple) ResolveRustType() string {
+	return fmt.Sprintf("[[%s;%d];%d]", f.Type, f.Length, f.OuterLength)
+}
+
+func (f *ArrayArraySimple) PrintNecessaryProtobufMessages() string {
+	return ""
+}
+
 type ArrayArrayDefined struct {
-	ResolvedFieldType
-	LengthX int
-	LengthY int
+	ResolvedFieldTypeCommon
+	Length      int
+	OuterLength int
+}
+
+func (f *ArrayArrayDefined) ResolveRustType() string {
+	return fmt.Sprintf("[[%s;%d];%d]", f.Type, f.Length, f.OuterLength)
+}
+
+func (f *ArrayArrayDefined) PrintNecessaryProtobufMessages() string {
+	return ""
 }
 
 // Add a method to the Status type
-func (s ResolvedFieldType) String() string {
+/*func (s ResolvedFieldType) String() string {
 	switch s {
 	case Simple:
 		return "Active"
@@ -149,9 +360,9 @@ func (s ResolvedFieldType) String() string {
 	default:
 		return "Unknown"
 	}
-}
+}*/
 
-/* Rust Type generation */
+/*
 func (f *FieldType) ResolveRustType() string {
 	if f.IsSimple() {
 		return f.Simple
@@ -236,4 +447,4 @@ func (f *FieldType) ResolveRustType() string {
 	}
 
 	return ""
-}
+}*/
