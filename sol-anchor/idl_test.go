@@ -86,18 +86,19 @@ func TestRaydiumAMM(t *testing.T) {
 
 	result := &IDL{}
 	err := json.Unmarshal(idl, &result)
+	output := ""
 
-	for _, i := range result.Instructions {
-		if i.Name == "simulateInfo" {
-			for _, a := range i.Args {
-				if a.Type.IsOption() && a.Type.Option.Defined != nil {
-					fmt.Println(*a.Type.Option.Defined)
-				}
-
-				fmt.Printf("%s\n", a.Name)
-			}
+	for _, inst := range result.Instructions {
+		argsString := ""
+		for _, arg := range inst.Args {
+			argsString += fmt.Sprintf("%s %s\n", arg.Type.ResolveRustType(), arg.SnakeCaseName())
 		}
+		output += fmt.Sprintf(`pub struct %s {
+			%s
+		}`, inst.PascalCaseName(), argsString)
 	}
+
+	fmt.Println(output)
 
 	assert.Nil(t, err)
 }
@@ -108,25 +109,20 @@ func TestMeteoraBondingCurve(t *testing.T) {
 	result := &IDL{}
 	err := json.Unmarshal(idl, &result)
 
-	//result.MoveEventsIfNecessary()
+	assert.Nil(t, err)
+}
 
-	/*for _, a := range result.Events {
-		fmt.Println(len(a.Fields))
-		for _, field := range a.Fields {
-			fmt.Println(field.Name)
-			field.Type.Print("event", "event", result.AccountsAndTypes())
-		}
-		fmt.Println("----------------")
-		//fmt.Printf("---- %s // %s\n", a.Type.Kind, a.Name)
-	}*/
+func TestMarginfi(t *testing.T) {
+	idl := readFromFile("marginfi")
 
-	for _, a := range result.Types {
-		if a.Type.IsStruct() {
-			fmt.Println(a.Name)
-			fmt.Println("----------------")
-			//fmt.Printf("---- %s // %s\n", a.Type.Kind, a.Name)
-		}
+	result := &IDL{}
+	err := json.Unmarshal(idl, &result)
+
+	for _, t := range result.AccountsAndTypes() {
+		fmt.Println(t.Name)
 	}
+
+	fmt.Println(result.IsTypeUsed("EmodeEntry"))
 
 	assert.Nil(t, err)
 }

@@ -32,67 +32,82 @@ func TestUnmarshalSimple(t *testing.T) {
 	assert.Equal(t, "string", result)
 }
 
-// Test unmarshalVec
-func TestUnmarshalVecSimple(t *testing.T) {
-	json := []byte(`{"vec": "string"}`)
+// ------------ OPTION
+func TestUnmarshallRecursivelyOption(t *testing.T) {
+	json := []byte(`{"option": {"vec": {"defined": "MyObject"}}}`)
 
-	kind, kindType := unmarshalVec(json)
+	optionType, err := unmarshallFieldType(json)
 
-	assert.Equal(t, "simple", kind)
-	assert.Equal(t, "string", kindType)
+	assert.Nil(t, err)
+	assert.True(t, optionType.IsOption())
+	assert.True(t, optionType.Option.Type.IsVec())
+	assert.True(t, optionType.Option.Type.Vec.Type.IsDefined())
+	assert.Equal(t, "MyObject", optionType.Option.Type.Vec.Type.Defined)
+	assert.Equal(t, "Option<Vec<MyObject>>", optionType.ResolveRustType())
 }
 
-func TestUnmarshalVecDefined(t *testing.T) {
-	json := []byte(`{"vec": {"defined": "string"}}`)
+func TestUnmarshallRecursivelyOptionWithArray(t *testing.T) {
+	json := []byte(`{"option": {"array": [{"defined": {"name": "EmodeEntry"}},10]}}`)
 
-	kind, kindType := unmarshalVec(json)
+	optionType, err := unmarshallFieldType(json)
 
-	assert.Equal(t, "defined", kind)
-	assert.Equal(t, "string", kindType)
+	assert.Nil(t, err)
+	assert.True(t, optionType.IsOption())
+	assert.True(t, optionType.Option.Type.IsArray())
+	assert.True(t, optionType.Option.Type.Array.Type.IsDefined())
+	assert.Equal(t, "EmodeEntry", optionType.Option.Type.Array.Type.Defined)
+	assert.Equal(t, "Option<[EmodeEntry;10]>", optionType.ResolveRustType())
 }
 
-// Test unmarshalOption
-func TestUnmarshalOptionSimple(t *testing.T) {
-	json := []byte(`{"option": "string"}`)
+func TestUnmarshallRecursivelyOptionWith2DArraySimple(t *testing.T) {
+	json := []byte(`{"option": {"array": [{"array": ["u64", 3]},10]}}`)
 
-	optionType, result := unmarshalOption(json)
+	optionType, err := unmarshallFieldType(json)
 
-	assert.Equal(t, "simple", optionType)
-	assert.Equal(t, "string", result)
+	assert.Nil(t, err)
+	assert.True(t, optionType.IsOption())
+	assert.True(t, optionType.Option.Type.IsArray())
+	assert.True(t, optionType.Option.Type.Array.Type.IsArray())
+	assert.Equal(t, "u64", optionType.Option.Type.Array.Type.Array.Type.Simple)
+	assert.Equal(t, "Option<[[u64;3];10]>", optionType.ResolveRustType())
 }
 
-func TestUnmarshalOptionDefined(t *testing.T) {
-	json := []byte(`{"option": {"defined": "string"}}`)
+func TestUnmarshallRecursivelyOptionWith2DArrayDefined(t *testing.T) {
+	json := []byte(`{"option": {"array": [{"array": [{"defined": "MyObject"}, 3]},10]}}`)
 
-	optionType, result := unmarshalOption(json)
+	optionType, err := unmarshallFieldType(json)
 
-	assert.Equal(t, "defined", optionType)
-	assert.Equal(t, "string", result)
+	assert.Nil(t, err)
+	assert.True(t, optionType.IsOption())
+	assert.True(t, optionType.Option.Type.IsArray())
+	assert.True(t, optionType.Option.Type.Array.Type.IsArray())
+	assert.Equal(t, "MyObject", optionType.Option.Type.Array.Type.Array.Type.Defined)
+	assert.Equal(t, "Option<[[MyObject;3];10]>", optionType.ResolveRustType())
 }
 
-func TestUnmarshalOptionDefinedWithName(t *testing.T) {
-	json := []byte(`{"option": {"defined": {"name": "string"}}}`)
+// ------------------ ARRAY
+func TestUnmarshallRecursivelyArray(t *testing.T) {
+	json := []byte(`{"array": [{"defined": {"name": "EmodeEntry"}},10]}`)
 
-	optionType, result := unmarshalOption(json)
+	array, err := unmarshallFieldType(json)
 
-	assert.Equal(t, "defined", optionType)
-	assert.Equal(t, "string", result)
+	assert.Nil(t, err)
+	assert.True(t, array.IsArray())
+	assert.Equal(t, 10, array.Array.Length)
+	assert.True(t, array.Array.Type.IsDefined())
+	assert.Equal(t, "EmodeEntry", array.Array.Type.Defined)
 }
 
-func TestUnmarshalOptionVecSimple(t *testing.T) {
-	json := []byte(`{"option": {"vec": "string"}}`)
+func TestUnmarshallRecursivelyArrayInsideArray(t *testing.T) {
+	json := []byte(`{"array": [{"array": [{"defined": "MyObject"}, 3]},10]}`)
 
-	optionType, result := unmarshalOption(json)
+	array, err := unmarshallFieldType(json)
 
-	assert.Equal(t, "vecSimple", optionType)
-	assert.Equal(t, "string", result)
-}
-
-func TestUnmarshalOptionVecDefined(t *testing.T) {
-	json := []byte(`{"option": {"vec": {"defined": "string"}}}`)
-
-	optionType, result := unmarshalOption(json)
-
-	assert.Equal(t, "vecDefined", optionType)
-	assert.Equal(t, "string", result)
+	assert.Nil(t, err)
+	assert.True(t, array.IsArray())
+	assert.Equal(t, 10, array.Array.Length)
+	assert.True(t, array.Array.Type.IsArray())
+	assert.Equal(t, "MyObject", array.Array.Type.Array.Type.Defined)
+	assert.Equal(t, "[[MyObject;3];10]", array.ResolveRustType())
+	assert.Equal(t, 3, array.Array.Type.Array.Length)
 }

@@ -17,6 +17,42 @@ func (i *IDL) AccountsAndTypes() []Type {
 	return append(i.Types, i.Accounts...)
 }
 
+func (i *IDL) GetFieldsFromInstructionsEventsTypesAndAccounts() []Field {
+	fieldList := make([]Field, 0)
+	for _, inst := range i.Instructions {
+		fieldList = append(fieldList, inst.Args...)
+	}
+
+	for _, evt := range i.Events {
+		fieldList = append(fieldList, evt.Fields...)
+	}
+
+	for _, t := range i.Types {
+		if t.Type.IsStruct() {
+			fieldList = append(fieldList, t.Type.Struct.Fields...)
+		}
+	}
+
+	return fieldList
+}
+
+func (i *IDL) PrintProtobufNestedTypes() string {
+	// Collect all the complex types
+	allFields := i.GetFieldsFromInstructionsEventsTypesAndAccounts()
+
+	// Get all types that we should generate
+	rustTypes := make([]string, 0)
+	for _, f := range allFields {
+		rustTypes = append(rustTypes, f.Type.ResolveRustType())
+	}
+	// remove duplicates
+	rustTypes = uniqueStrings(rustTypes)
+
+	output := "";
+
+	return output
+}
+
 func (i *IDL) ProgramID() string {
 	if i.Metadata.Address != "" {
 		return i.Metadata.Address
@@ -177,7 +213,7 @@ func CastInRustIfNeeded(rustType string) string {
 		return "u64"
 	}
 
-	return ""
+	return rustType
 }
 
 func toSnakeCase(str string, initialUnderscore bool) string {

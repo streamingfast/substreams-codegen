@@ -42,7 +42,6 @@ message {{$instruction.PascalCaseName}}_Instruction {
 {{- end}}
 
 {{ range $i, $type := .Idl.AccountsAndTypes }}
-{{- if $.Idl.IsTypeUsed $type.Name }}
 {{- if $type.Type.IsStruct }}
 message {{$type.Name}} {
   {{- $counter := 0 }}
@@ -57,6 +56,5 @@ enum {{$type.Name}}Enum {
     {{ $type.SnakeCaseNameUpperCase }}_{{ $variant.SnakeCaseName }} = {{ $i }};
     {{- end}}
 }
-{{- end }}
 {{- end }}
 {{- end }}

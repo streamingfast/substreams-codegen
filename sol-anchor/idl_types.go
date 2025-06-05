@@ -69,21 +69,8 @@ func (t *TypeDetails) UnmarshalJSON(data []byte) error {
 }
 
 type TypeStruct struct {
-	Kind   string            `json:"kind"`
-	Fields []TypeStructField `json:"fields"`
-}
-
-type TypeStructField struct {
-	Name string    `json:"name"`
-	Type FieldType `json:"type"`
-}
-
-func (t *TypeStructField) SnakeCaseName() string {
-	return toSnakeCase(t.Name, true)
-}
-
-func (t *TypeStructField) SnakeCaseNameWithoutInitialUnderscore() string {
-	return toSnakeCase(t.Name, false)
+	Kind   string  `json:"kind"`
+	Fields []Field `json:"fields"`
 }
 
 type TypeEnum struct {
