@@ -1,5 +1,27 @@
 pub mod idl {
-    use anchor_lang::declare_program;
+    {{- range $i, $event := .Idl.Events }}
+    pub struct {{$event.Name}}Event {
+        {{- range $i, $arg := $event.Fields }}
+            pub {{ $arg.SnakeCaseName }}: {{ $arg.Type.GetResolvedFieldType.ResolveRustType }},
+        {{- end }}
+    }
+    {{ end }}
 
-    declare_program!(program);
+    {{- range $i, $inst := .Idl.Instructions }}
+    pub struct {{$inst.PascalCaseName}}Instruction {
+        {{- range $i, $arg := $inst.Args }}
+            pub {{ $arg.SnakeCaseName }}: {{ $arg.Type.GetResolvedFieldType.ResolveRustType }},
+        {{- end }}
+    }
+    {{ end }}
+
+    {{ range $i, $type := .Idl.AccountsAndTypes }}
+    {{- if $type.Type.IsStruct }}
+    pub struct {{$type.Name}} {
+    {{- range $i, $field := $type.Type.Struct.Fields }}
+        pub {{ $field.SnakeCaseName }}: {{ $field.Type.GetResolvedFieldType.ResolveRustType }},
+    {{- end}}
+    }
+    {{- end }}
+    {{- end }}
 }

@@ -2907,9 +2907,9 @@
                 "kind": "struct",
                 "fields": [
                     {
-                        "name": "accountsType",
+                        "name": "info",
                         "type": {
-                            "defined": "AccountsType"
+                            "defined": "WhirlpoolRewardInfo"
                         }
                     },
                     {

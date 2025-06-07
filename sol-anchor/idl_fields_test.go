@@ -1,6 +1,7 @@
 package solanchor
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -22,6 +23,65 @@ func TestUnmarshalDefinedName(t *testing.T) {
 	result := unmarshalDefined(json)
 
 	assert.Equal(t, "MyType", result)
+}
+
+func TestPrintDefined(t *testing.T) {
+	// Generate types from IDL
+	idlString := readFromFile("orca")
+
+	idl := &IDL{}
+	err := json.Unmarshal(idlString, &idl)
+
+	jsonBytes := []byte(`{"defined":{"name": "OpenPositionWithMetadataBumps"}}`)
+
+	result, err := unmarshallFieldType(jsonBytes)
+	assert.Nil(t, err)
+
+	resolvedFieldType, err := result.GetResolvedFieldType()
+	assert.Nil(t, err)
+
+	mappings := resolvedFieldType.PrintRustMappings("my_type", "inst", idl.Types)
+	fmt.Println(mappings)
+}
+
+func TestPrintDefinedWithNestedDefined(t *testing.T) {
+	// Generate types from IDL
+	idlString := readFromFile("orca")
+
+	idl := &IDL{}
+	err := json.Unmarshal(idlString, &idl)
+	assert.Nil(t, err)
+
+	jsonBytes := []byte(`{"defined":{"name": "RemainingAccountsSlice"}}`)
+
+	result, err := unmarshallFieldType(jsonBytes)
+	assert.Nil(t, err)
+
+	resolvedFieldType, err := result.GetResolvedFieldType()
+	assert.Nil(t, err)
+
+	mappings := resolvedFieldType.PrintRustMappings("my_type", "inst", idl.Types)
+	fmt.Println(mappings)
+}
+
+func TestPrintVecDefined(t *testing.T) {
+	// Generate types from IDL
+	idlString := readFromFile("orca")
+
+	idl := &IDL{}
+	err := json.Unmarshal(idlString, &idl)
+	assert.Nil(t, err)
+
+	jsonBytes := []byte(`{"vec": {"defined":{"name": "RemainingAccountsSlice"}}}`)
+
+	result, err := unmarshallFieldType(jsonBytes)
+	assert.Nil(t, err)
+
+	resolvedFieldType, err := result.GetResolvedFieldType()
+	assert.Nil(t, err)
+
+	mappings := resolvedFieldType.PrintRustMappings("my_type", "inst", idl.Types)
+	fmt.Println(mappings)
 }
 
 // Test unmarshalSimple

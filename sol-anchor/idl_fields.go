@@ -78,7 +78,7 @@ func (t *FieldType) GetResolvedFieldType() (ResolvedFieldType, error) {
 	if t.IsVecDefined() {
 		return t.VecDefined, nil
 	}
-	if t.IsVecOptionSimple() {
+	/*if t.IsVecOptionSimple() {
 		return t.VecOptionSimple, nil
 	}
 	if t.IsVecOptionDefined() {
@@ -119,7 +119,7 @@ func (t *FieldType) GetResolvedFieldType() (ResolvedFieldType, error) {
 	}
 	if t.IsArrayArrayDefined() {
 		return t.ArrayArrayDefined, nil
-	}
+	}*/
 
 	return nil, fmt.Errorf("Unsupported type")
 }

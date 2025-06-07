@@ -15,13 +15,11 @@ use pb::substreams::v1::program::{{$instruction.PascalCaseName}}Instruction;
 {{- end}}
 
 {{- range $i, $type := .Idl.AccountsAndTypes }}
-{{ if $.Idl.IsTypeUsed $type.Name }}
 {{ if $type.Type.IsEnum }}
 use pb::substreams::v1::program::{{$type.Name}}Enum;
 {{ else if $type.Type.IsStruct }}
 use pb::substreams::v1::program::{{$type.Name}};
 {{ end }}
-{{- end}}
 {{- end}}
 
 use sologger_log_context::programs_selector::ProgramsSelector;
@@ -72,7 +70,6 @@ fn map_program_data(blk: Block) -> Data {
                                     {{ $event.SnakeCaseName }}_event_list.push({{ $event.Name }}Event {
                                         trx_hash: transaction.id(),
                                         {{- range $i, $arg := $event.Fields }}
-                                        {{ $arg.Type.Print $arg.Name "event" $.Idl.AccountsAndTypes }}
                                         {{- end}}
                                     });
                                 }
@@ -108,7 +105,6 @@ fn map_program_data(blk: Block) -> Data {
                         {{ $event.SnakeCaseName }}_event_list.push({{ $event.Name }}Event {
                             trx_hash: transaction.id(),
                             {{- range $i, $arg := $event.Fields }}
-                            {{ $arg.Type.Print $arg.Name "event" $.Idl.AccountsAndTypes }}
                             {{- end}}
                         });
                     }
@@ -123,15 +119,7 @@ fn map_program_data(blk: Block) -> Data {
                 {
                     let accts = inst.accounts();
                     {{ $instruction.SnakeCaseName }}_instruction_list.push({{ $instruction.PascalCaseName }}Instruction {
-                        trx_hash: transaction.id(),
-                        {{- range $i, $arg := $instruction.Args }}
-                        {{ $arg.Type.Print $arg.Name "instruction" $.Idl.AccountsAndTypes }}
-                        {{- end }}
-                        {{- range $i, $acc := $instruction.Accounts }}
-                        {{- if not $acc.Address }}
-                        acct_{{ $acc.SnakeCaseName }}: accts[{{ $i }}].to_string(),
-                        {{- end }}
-                        {{- end }}
+                        
                     });
                 }
             }
@@ -163,13 +151,11 @@ fn map_enum_{{$type.SnakeCaseName}}(value: idl::idl::program::types::{{ $type.Na
     }
 }
 {{ else if $type.Type.IsStruct }}
-{{ if $.Idl.IsTypeUsed $type.Name }}
 fn map_option_{{$type.SnakeCaseName}}(value: Option<idl::idl::program::types::{{ $type.Name }}>) -> Option<{{ $type.Name }}> {
     match value {
         Some({{$type.SnakeCaseName}}) => {
             return Some({{$type.PascalCaseName}} {
                 {{- range $i, $field := $type.Type.Struct.Fields }}
-                {{ $field.Type.Print $field.Name $type.SnakeCaseName $.Idl.AccountsAndTypes }}
                 {{- end}}
             })
         },
@@ -178,7 +164,6 @@ fn map_option_{{$type.SnakeCaseName}}(value: Option<idl::idl::program::types::{{
         }
     }
 }
-{{ end }}
 {{ end }}
 {{- end }}
 
@@ -193,13 +178,11 @@ fn map_enum_{{$type.SnakeCaseName}}(value: idl::idl::program::accounts::{{ $type
     }
 }
 {{ else }}
-{{ if $.Idl.IsTypeUsed $type.Name }}
 fn map_option_{{$type.SnakeCaseName}}(value: Option<idl::idl::program::accounts::{{ $type.Name }}>) -> Option<{{ $type.Name }}> {
     match value {
         Some({{$type.SnakeCaseName}}) => {
             return Some({{$type.PascalCaseName}} {
                 {{- range $i, $field := $type.Type.Struct.Fields }}
-                {{ $field.Type.Print $field.Name $type.SnakeCaseName $.Idl.AccountsAndTypes }}
                 {{- end}}
             })
         },
@@ -208,6 +191,5 @@ fn map_option_{{$type.SnakeCaseName}}(value: Option<idl::idl::program::accounts:
         }
     }
 }
-{{ end }}
 {{ end }}
 {{- end }}

@@ -6,55 +6,43 @@ message Data {
   {{- $counter := 0 }}
   {{- range $i, $event := .Idl.Events }}
     {{- $counter = add $counter 1 }}
-    repeated {{ $event.Name }}_Event {{ $event.SnakeCaseName }}_event_list = {{ $counter }};
+    repeated {{ $event.Name }}Event {{ $event.SnakeCaseName }}_event_list = {{ $counter }};
   {{- end}}
 
   {{- range $i, $instruction := .Idl.Instructions -}}
     {{- $counter = add $counter 1 }}
-    repeated {{ $instruction.PascalCaseName }}_Instruction {{ $instruction.SnakeCaseName }}_instruction_list = {{ $counter }};
+    repeated {{ $instruction.PascalCaseName }}Instruction {{ $instruction.SnakeCaseName }}_instruction_list = {{ $counter }};
   {{- end }}
 }
-{{ range $i, $event := .Idl.Events -}}
-message {{$event.Name}}_Event {
-  string trx_hash = 1;
-  {{- $counter := 1 }}
-  {{- range $i, $field := $event.Fields }}
-    {{- $counter = add $counter 1 }}
-    {{ if or $field.Type.IsArray $field.Type.IsVec }} repeated {{ end }} {{ if $field.Type.IsOption }} optional {{ end }} {{$field.Type.ResolveProtobufType}}{{ if $.Idl.IsTypeEnum $field.Type.ResolveProtobufType }}Enum{{end}} {{$field.SnakeCaseName}} = {{ $counter }};
-  {{- end}}
-}
-{{- end}}
-{{ range $i, $instruction := .Idl.Instructions }}
-message {{$instruction.PascalCaseName}}_Instruction {
-  string trx_hash = 1;
-  {{- $counter := 1 }}
-  {{- range $i, $arg := $instruction.Args }}
-    {{- $counter = add $counter 1 }}
-    {{ if or $arg.Type.IsArray $arg.Type.IsVec }}repeated {{ end }}{{ if $arg.Type.IsOption }}optional {{ end }}{{$arg.Type.ResolveProtobufType}}{{ if $.Idl.IsTypeEnum $arg.Type.ResolveProtobufType }}Enum{{end}} {{$arg.SnakeCaseName}} = {{ $counter }};
-  {{- end}}
-  {{- range $i, $acc := $instruction.Accounts }}
-    {{- if not $acc.Address }}
-    {{- $counter = add $counter 1 }}
-    string acct_{{$acc.SnakeCaseName}} = {{ $counter }};
+
+{{- range $i, $event := .Idl.Events }}
+{{- $counter := 1 }}
+pub struct {{$event.Name}}Event {
+    {{- range $i, $arg := $event.Fields }}
+        {{- $counter = add $counter 1 }}
+        {{ $arg.Type.GetResolvedFieldType.ResolveProtobufType }} {{ $arg.SnakeCaseName }} = {{ $counter }};
     {{- end }}
-  {{- end}}
 }
-{{- end}}
+{{ end }}
+
+{{- range $i, $inst := .Idl.Instructions }}
+{{- $counter := 1 }}
+pub struct {{$inst.PascalCaseName}}Instruction {
+    {{- range $i, $arg := $inst.Args }}
+        {{- $counter = add $counter 1 }}
+        {{ $arg.Type.GetResolvedFieldType.ResolveProtobufType }} {{ $arg.SnakeCaseName }} = {{ $counter }};
+    {{- end }}
+}
+{{ end }}
 
 {{ range $i, $type := .Idl.AccountsAndTypes }}
+{{- $counter := 1 }}
 {{- if $type.Type.IsStruct }}
-message {{$type.Name}} {
-  {{- $counter := 0 }}
-  {{- range $i, $field := $type.Type.Struct.Fields }}
+pub struct {{$type.Name}} {
+{{- range $i, $field := $type.Type.Struct.Fields }}
     {{- $counter = add $counter 1 }}
-    {{ if or $field.Type.IsArray $field.Type.IsVec }} repeated {{ end }} {{ if $field.Type.IsOption }} optional {{ end }} {{$field.Type.ResolveProtobufType}}{{ if $.Idl.IsTypeEnum $field.Type.ResolveProtobufType }}Enum{{end}} {{$field.SnakeCaseName}} = {{ $counter }};
-  {{- end}}
-}
-{{- else if $type.Type.IsEnum }}
-enum {{$type.Name}}Enum {
-    {{- range $i, $variant := $type.Type.Enum.Variants }}
-    {{ $type.SnakeCaseNameUpperCase }}_{{ $variant.SnakeCaseName }} = {{ $i }};
-    {{- end}}
+    {{ $field.Type.GetResolvedFieldType.ResolveRustType }} {{ $field.SnakeCaseName }} = {{ $counter }};
+{{- end}}
 }
 {{- end }}
 {{- end }}
