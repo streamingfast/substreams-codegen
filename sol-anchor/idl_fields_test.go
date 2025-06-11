@@ -64,6 +64,27 @@ func TestPrintDefinedWithNestedDefined(t *testing.T) {
 	fmt.Println(mappings)
 }
 
+func TestPrintDefinedRustStructures(t *testing.T) {
+	// Generate types from IDL
+	idlString := readFromFile("orca")
+
+	idl := &IDL{}
+	err := json.Unmarshal(idlString, &idl)
+	assert.Nil(t, err)
+
+	jsonBytes := []byte(`{"defined":{"name": "WhirlpoolRewardInfo"}}`)
+
+	result, err := unmarshallFieldType(jsonBytes)
+	assert.Nil(t, err)
+
+	resolvedFieldType, err := result.GetResolvedFieldType()
+	assert.Nil(t, err)
+
+	mappings := resolvedFieldType.PrintNecessaryRustStructs("my_type", idl.Types)
+	fmt.Println(mappings)
+}
+
+// vec
 func TestPrintVecDefined(t *testing.T) {
 	// Generate types from IDL
 	idlString := readFromFile("orca")
@@ -94,7 +115,56 @@ func TestUnmarshalSimple(t *testing.T) {
 }
 
 // ------------ OPTION
-func TestUnmarshallRecursivelyOption(t *testing.T) {
+// vec
+func TestPrintOptionDefined(t *testing.T) {
+	// Generate types from IDL
+	idlString := readFromFile("orca")
+
+	idl := &IDL{}
+	err := json.Unmarshal(idlString, &idl)
+	assert.Nil(t, err)
+
+	jsonBytes := []byte(`{"option": {"defined": {"name": "RemainingAccountsSlice"}}}`)
+
+	result, err := unmarshallFieldType(jsonBytes)
+	assert.Nil(t, err)
+
+	resolvedFieldType, err := result.GetResolvedFieldType()
+	assert.Nil(t, err)
+
+	mappings := resolvedFieldType.PrintRustMappings("my_type", "inst", idl.Types)
+	fmt.Println(mappings)
+	fmt.Println("-------------------------")
+	fmt.Println(resolvedFieldType.PrintNecessaryRustStructs("idl", idl.Types))
+}
+
+func TestUnmarshallRecursivelyOptionDefined(t *testing.T) {
+	json := []byte(`{"option": {"defined": "MyObject"}}`)
+
+	optionType, err := unmarshallFieldType(json)
+	resolvedType, err := optionType.GetResolvedFieldType()
+
+	assert.Nil(t, err)
+	assert.True(t, optionType.IsOptionRecursive())
+	assert.True(t, optionType.OptionRecursive.Type.IsVecRecursive())
+	assert.True(t, optionType.OptionRecursive.Type.VecRecursive.Type.IsDefined())
+	assert.Equal(t, "MyObject", optionType.OptionRecursive.Type.VecRecursive.Type.Defined.Type)
+	assert.Equal(t, "Option<Vec<MyObject>>", resolvedType.ResolveRustType())
+}
+
+func TestUnmarshallRecursivelyOptionVecSimple(t *testing.T) {
+	json := []byte(`{"option": {"vec": "u8"}}`)
+
+	optionType, err := unmarshallFieldType(json)
+	resolvedType, err := optionType.GetResolvedFieldType()
+
+	assert.Nil(t, err)
+	assert.Equal(t, "Option<Vec<u64>>", resolvedType.ResolveRustType())
+
+	fmt.Println(resolvedType.PrintNecessaryRustStructs("inst", []Type{}))
+}
+
+func TestUnmarshallRecursivelyOptionVecDefined(t *testing.T) {
 	json := []byte(`{"option": {"vec": {"defined": "MyObject"}}}`)
 
 	optionType, err := unmarshallFieldType(json)
@@ -136,6 +206,8 @@ func TestUnmarshallRecursivelyOptionWith2DArraySimple(t *testing.T) {
 	assert.Equal(t, "u64", optionType.OptionRecursive.Type.ArrayRecursive.Type.ArrayRecursive.Type.Simple.Type)
 	assert.Equal(t, 3, optionType.OptionRecursive.Type.ArrayRecursive.Type.ArrayRecursive.Length)
 	assert.Equal(t, "Option<[[u64;3];10]>", resolvedType.ResolveRustType())
+
+	fmt.Println(resolvedType.PrintNecessaryRustStructs("inst", []Type{}))
 }
 
 func TestUnmarshallRecursivelyOptionWith2DArrayDefined(t *testing.T) {

@@ -1,10 +1,11 @@
 mod idl;
 mod pb;
 
-use anchor_lang::AnchorDeserialize;
-use anchor_lang::Discriminator;
+//use anchor_lang::AnchorDeserialize;
+//use anchor_lang::Discriminator;
 use base64::prelude::*;
 use pb::substreams::v1::program::Data;
+use substreams::Hex;
 
 {{- range $i, $event := .Idl.Events }}
 use pb::substreams::v1::program::{{$event.Name}}Event;
@@ -61,15 +62,16 @@ fn map_program_data(blk: Block) -> Data {
 
                         match static_discriminator_slice {
                             {{- range $i, $event := .Idl.Events }}
-                            idl::idl::program::events::{{$event.Name}}::DISCRIMINATOR => {
+                            {{ $event.PrintDiscriminator }} => {
                                 if let Ok(event) =
-                                    idl::idl::program::events::{{$event.Name}}::deserialize(
+                                    idl::idl::{{$event.Name}}Event::deserialize(
                                         &mut &slice_u8[8..],
                                     )
                                 {
-                                    {{ $event.SnakeCaseName }}_event_list.push({{ $event.Name }}Event {
-                                        trx_hash: transaction.id(),
+                                    {{ $event.SnakeCaseName }}_event_list.push(pb::substreams::v1::program::{{ $event.Name }}Event {
                                         {{- range $i, $arg := $event.Fields }}
+                                            {{ $resolvedType := $arg.Type.GetResolvedFieldType }}
+                                            {{- $resolvedType.PrintRustMappings $arg.SnakeCaseName "event" $.Idl.AccountsAndTypes }}
                                         {{- end}}
                                     });
                                 }
@@ -96,16 +98,17 @@ fn map_program_data(blk: Block) -> Data {
             */
             if slice_u8.len() >= 16 {
                 {{- range $i, $event := .Idl.Events }}
-                if &slice_u8[8..16] == idl::idl::program::events::{{$event.Name}}::DISCRIMINATOR {
+                if &slice_u8[8..16] == {{ $event.PrintDiscriminator }} {
                     if let Ok(event) =
-                        idl::idl::program::events::{{$event.Name}}::deserialize(
+                        idl::idl::{{$event.Name}}Event::deserialize(
                             &mut &slice_u8[16..],
                         )
                     {
                         {{ $event.SnakeCaseName }}_event_list.push({{ $event.Name }}Event {
-                            trx_hash: transaction.id(),
                             {{- range $i, $arg := $event.Fields }}
-                            {{- end}}
+                                {{ $resolvedType := $arg.Type.GetResolvedFieldType }}
+                                {{- $resolvedType.PrintRustMappings $arg.SnakeCaseName "event" $.Idl.AccountsAndTypes }}
+                            {{- end }}
                         });
                     }
                 }
@@ -113,13 +116,16 @@ fn map_program_data(blk: Block) -> Data {
             }
 
             {{- range $i, $instruction := .Idl.Instructions }}
-            if &slice_u8[0..8] == idl::idl::program::client::args::{{ $instruction.PascalCaseName }}::DISCRIMINATOR {
+            if &slice_u8[0..8] == {{ $instruction.PrintDiscriminator }} {
                 if let Ok(instruction) =
-                    idl::idl::program::client::args::{{ $instruction.PascalCaseName }}::deserialize(&mut &slice_u8[8..])
+                    idl::idl::{{ $instruction.PascalCaseName }}Instruction::deserialize(&mut &slice_u8[8..])
                 {
                     let accts = inst.accounts();
                     {{ $instruction.SnakeCaseName }}_instruction_list.push({{ $instruction.PascalCaseName }}Instruction {
-                        
+                        {{- range $i, $arg := $instruction.Args }}
+                            {{ $resolvedType := $arg.Type.GetResolvedFieldType }}
+                            {{- $resolvedType.PrintRustMappings $arg.SnakeCaseName "instruction" $.Idl.AccountsAndTypes }}
+                        {{- end }}
                     });
                 }
             }
@@ -140,56 +146,4 @@ fn map_program_data(blk: Block) -> Data {
     }
 }
 
-{{ range $i, $type := .Idl.Types }}
-{{- if $type.Type.IsEnum -}}
-fn map_enum_{{$type.SnakeCaseName}}(value: idl::idl::program::types::{{ $type.Name }}) -> i32 {
-    match value {
-        {{- range $j, $variant := $type.Type.Enum.Variants }}
-        idl::idl::program::types::{{ $type.Name }}::{{ $variant.Name }} => return {{ $j }},
-        {{- end}}
-        _ => 0,
-    }
-}
-{{ else if $type.Type.IsStruct }}
-fn map_option_{{$type.SnakeCaseName}}(value: Option<idl::idl::program::types::{{ $type.Name }}>) -> Option<{{ $type.Name }}> {
-    match value {
-        Some({{$type.SnakeCaseName}}) => {
-            return Some({{$type.PascalCaseName}} {
-                {{- range $i, $field := $type.Type.Struct.Fields }}
-                {{- end}}
-            })
-        },
-        None => {
-            return None;
-        }
-    }
-}
-{{ end }}
-{{- end }}
-
-{{ range $i, $type := .Idl.Accounts }}
-{{- if $type.Type.IsEnum -}}
-fn map_enum_{{$type.SnakeCaseName}}(value: idl::idl::program::accounts::{{ $type.Name }}) -> i32 {
-    match value {
-        {{- range $j, $variant := $type.Type.Enum.Variants }}
-        idl::idl::program::types::{{ $type.Name }}::{{ $variant.Name }} => return {{ $j }},
-        {{- end}}
-        _ => 0,
-    }
-}
-{{ else }}
-fn map_option_{{$type.SnakeCaseName}}(value: Option<idl::idl::program::accounts::{{ $type.Name }}>) -> Option<{{ $type.Name }}> {
-    match value {
-        Some({{$type.SnakeCaseName}}) => {
-            return Some({{$type.PascalCaseName}} {
-                {{- range $i, $field := $type.Type.Struct.Fields }}
-                {{- end}}
-            })
-        },
-        None => {
-            return None;
-        }
-    }
-}
-{{ end }}
-{{- end }}
+{{ $.Idl.PrintNecessaryRustStructs }}

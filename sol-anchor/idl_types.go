@@ -15,6 +15,10 @@ type Type struct {
 	Type TypeDetails `json:"type"`
 }
 
+func (f *Type) PrintRustStruct(allTypes []Type) string {
+	return PrintDefinedTree(f.Name, "idlType", allTypes)
+}
+
 func (t *Type) SnakeCaseName() string {
 	return toSnakeCase(t.Name, true)
 }
@@ -73,13 +77,28 @@ type TypeStruct struct {
 	Fields []Field `json:"fields"`
 }
 
+/* ENUM */
 type TypeEnum struct {
 	Kind     string            `json:"kind"`
 	Variants []TypeEnumVariant `json:"variants"`
 }
 
+/*
+func (f *TypeEnum) PrintNecessaryProtobufMessages() string {
+	return strings.ToUpper(toSnakeCase(f.Name, true))
+}
+
+func (f *TypeEnum) PrintNecessaryRustStructs() string {
+	return strings.ToUpper(toSnakeCase(f.Name, true))
+}
+
+func (f *TypeEnum) ResolveRustType() string {
+	return f.T
+}*/
+
 type TypeEnumVariant struct {
-	Name string `json:"name"`
+	Name   string  `json:"name"`
+	Fields []Field `json:"fields"`
 }
 
 func (f *TypeEnumVariant) SnakeCaseName() string {

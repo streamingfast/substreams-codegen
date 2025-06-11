@@ -1,6 +1,8 @@
 package solanchor
 
 import (
+	"fmt"
+
 	"github.com/golang-cz/textcase"
 )
 
@@ -29,4 +31,16 @@ func (i *Instruction) PascalCaseName() string {
 
 func (i *Instruction) SnakeCaseName() string {
 	return toSnakeCase(i.Name, true)
+}
+
+func (e *Instruction) PrintDiscriminator() string {
+	numbersAsString := ""
+	for i, n := range e.Discriminator {
+		numbersAsString += fmt.Sprintf("%du8", n)
+
+		if i < len(e.Discriminator)-1 {
+			numbersAsString += ","
+		}
+	}
+	return fmt.Sprintf("&[%s]", numbersAsString)
 }

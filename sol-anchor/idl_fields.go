@@ -3,7 +3,6 @@ package solanchor
 import (
 	"encoding/json"
 	"fmt"
-	//"strings"
 )
 
 // --- FIELDS
@@ -11,7 +10,6 @@ import (
 type Field struct {
 	Name string    `json:"name"`
 	Type FieldType `json:"type"`
-	//Index bool      `json:"index"`
 }
 
 func (f *Field) SnakeCaseName() string {
@@ -78,7 +76,7 @@ func (t *FieldType) GetResolvedFieldType() (ResolvedFieldType, error) {
 	if t.IsVecDefined() {
 		return t.VecDefined, nil
 	}
-	/*if t.IsVecOptionSimple() {
+	if t.IsVecOptionSimple() {
 		return t.VecOptionSimple, nil
 	}
 	if t.IsVecOptionDefined() {
@@ -119,7 +117,7 @@ func (t *FieldType) GetResolvedFieldType() (ResolvedFieldType, error) {
 	}
 	if t.IsArrayArrayDefined() {
 		return t.ArrayArrayDefined, nil
-	}*/
+	}
 
 	return nil, fmt.Errorf("Unsupported type")
 }

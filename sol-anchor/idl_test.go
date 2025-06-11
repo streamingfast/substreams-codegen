@@ -65,6 +65,8 @@ func TestOrbitLen(t *testing.T) {
 	result := &IDL{}
 	err := json.Unmarshal(idl, &result)
 
+	fmt.Println(result.PrintNecessaryRustStructs())
+
 	assert.Nil(t, err)
 	assert.Equal(t, "QoB7dVkkZr3oLb95DMpSptvUF8mTygDHNjFQh5y5RAb", result.Address)
 

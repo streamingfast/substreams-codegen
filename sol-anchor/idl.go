@@ -1,6 +1,7 @@
 package solanchor
 
 import (
+	"fmt"
 	"unicode"
 )
 
@@ -36,24 +37,45 @@ func (i *IDL) GetFieldsFromInstructionsEventsTypesAndAccounts() []Field {
 	return fieldList
 }
 
-func (i *IDL) PrintProtobufNestedTypes() string {
+func (i *IDL) PrintNecessaryProtobufMessages() string {
 	// Collect all the complex types
 	allFields := i.GetFieldsFromInstructionsEventsTypesAndAccounts()
 
 	// Get all types that we should generate
-	rustTypes := make([]string, 0)
+	output := ""
 	for _, f := range allFields {
 		resolvedType, err := f.Type.GetResolvedFieldType()
 		if err != nil {
 			continue
 		}
 
-		rustTypes = append(rustTypes, resolvedType.ResolveRustType())
+		output += resolvedType.PrintNecessaryProtobufMessages()
 	}
 	// remove duplicates
-	rustTypes = uniqueStrings(rustTypes)
 
+	return output
+}
+
+func (i *IDL) PrintNecessaryRustStructs() string {
+	// Collect all the complex types
+	allFields := i.GetFieldsFromInstructionsEventsTypesAndAccounts()
+
+	// Get all types that we should generate
 	output := ""
+	for _, f := range allFields {
+		resolvedType, err := f.Type.GetResolvedFieldType()
+		if err != nil || f.Type.IsDefined() {
+			continue
+		}
+
+		output += resolvedType.PrintNecessaryRustStructs(f.SnakeCaseName(), i.Types)
+	}
+
+	for _, t := range i.Types {
+		fmt.Println(t.Name)
+		output += t.PrintRustStruct(i.Types)
+	}
+	// remove duplicates
 
 	return output
 }
@@ -201,10 +223,6 @@ func ToProtobufType(rustType string) string {
 	}
 
 	return rustType
-}
-
-func IsPublicKey(idlType string) bool {
-	return idlType == "publicKey" || idlType == "pubkey"
 }
 
 func CastInRustIfNeeded(rustType string) string {

@@ -17,7 +17,7 @@ message Data {
 
 {{- range $i, $event := .Idl.Events }}
 {{- $counter := 1 }}
-pub struct {{$event.Name}}Event {
+message {{$event.Name}}Event {
     {{- range $i, $arg := $event.Fields }}
         {{- $counter = add $counter 1 }}
         {{ $arg.Type.GetResolvedFieldType.ResolveProtobufType }} {{ $arg.SnakeCaseName }} = {{ $counter }};
@@ -27,7 +27,7 @@ pub struct {{$event.Name}}Event {
 
 {{- range $i, $inst := .Idl.Instructions }}
 {{- $counter := 1 }}
-pub struct {{$inst.PascalCaseName}}Instruction {
+message {{$inst.PascalCaseName}}Instruction {
     {{- range $i, $arg := $inst.Args }}
         {{- $counter = add $counter 1 }}
         {{ $arg.Type.GetResolvedFieldType.ResolveProtobufType }} {{ $arg.SnakeCaseName }} = {{ $counter }};
@@ -36,13 +36,37 @@ pub struct {{$inst.PascalCaseName}}Instruction {
 {{ end }}
 
 {{ range $i, $type := .Idl.AccountsAndTypes }}
-{{- $counter := 1 }}
+
 {{- if $type.Type.IsStruct }}
-pub struct {{$type.Name}} {
+{{- $structCounter := 1 }}
+message {{$type.Name}} {
 {{- range $i, $field := $type.Type.Struct.Fields }}
-    {{- $counter = add $counter 1 }}
-    {{ $field.Type.GetResolvedFieldType.ResolveRustType }} {{ $field.SnakeCaseName }} = {{ $counter }};
+    {{ $field.Type.GetResolvedFieldType.ResolveProtobufType }} {{ $field.SnakeCaseName }} = {{ $structCounter }};
+    {{- $structCounter = add $structCounter 1 }}
 {{- end}}
 }
+{{- else }}
+// Enum
+{{- $variantCounter := 1 }}
+message {{ $type.Name }} {
+  oneof kind {
+    {{- range $i, $variant := $type.Type.Enum.Variants }}
+      {{ $type.Name }}{{ $variant.Name }}Variant {{ $variant.SnakeCaseName }} = {{ $variantCounter }};
+      {{- $variantCounter = add $variantCounter 1 }}
+    {{- end}}
+  }
+}
+
+{{- range $i, $variant := $type.Type.Enum.Variants }}
+message {{ $type.Name }}{{ $variant.Name }}Variant {
+  {{- $fieldCounter := 1 }}
+  {{- range $i, $field := $variant.Fields }}
+    {{ $field.Type.GetResolvedFieldType.ResolveProtobufType }} {{ $field.SnakeCaseName }} = {{ $fieldCounter }};
+    {{- $fieldCounter = add $fieldCounter 1 }}
+  {{- end}}
+}
+{{- end}}
 {{- end }}
 {{- end }}
+
+{{ $.Idl.PrintNecessaryProtobufMessages }}
