@@ -40,11 +40,19 @@ func (f *Simple) PrintNecessaryRustStructs(fieldName string, types []Type) strin
 	return ""
 }
 func (f *Simple) PrintRustMappings(fieldName string, variableName string, types []Type) string {
-	if IsPublicKey(f.Type) {
-		return fmt.Sprintf("%s: Hex::encode(%s.%s),", fieldName, variableName, fieldName)
+	if variableName != "" {
+		if IsPrimitiveTypeToStringNeeded(f.Type) {
+			return PrintMapPrimitiveToString(f.Type, fieldName, fmt.Sprintf("%s.%s", variableName, fieldName))
+		}
+
+		return fmt.Sprintf("%s: %s.%s as %s,", fieldName, variableName, fieldName, IDLTypeToRustType(f.Type))
 	}
 
-	return fmt.Sprintf("%s: %s.%s as %s,", fieldName, variableName, fieldName, IDLTypeToRustType(f.Type))
+	if IsPrimitiveTypeToStringNeeded(f.Type) {
+		return PrintMapPrimitiveToString(f.Type, fieldName, variableName)
+	}
+
+	return fmt.Sprintf("%s: %s as %s,", fieldName, fieldName, IDLTypeToRustType(f.Type))
 }
 
 type Defined struct {
@@ -65,29 +73,36 @@ func (f *Defined) PrintNecessaryRustStructs(fieldName string, types []Type) stri
 }
 func (f *Defined) PrintRustMappings(fieldName string, variableName string, types []Type) string {
 	for _, t := range types {
-		if t.Name == f.Type {
+		if t.Name == f.Type || IsPublicKey(f.Type) {
 			// TODO: enums
 			//if t.Type.IsStruct() {
-				/*var fieldsInString strings.Builder
+			/*var fieldsInString strings.Builder
 
-				for _, structField := range t.Type.Struct.Fields {
-					resolvedFieldType, err := structField.Type.GetResolvedFieldType()
-					if err != nil {
-						continue
-					}
+			for _, structField := range t.Type.Struct.Fields {
+				resolvedFieldType, err := structField.Type.GetResolvedFieldType()
+				if err != nil {
+					continue
+				}
 
-					variableNameInner := variableName
-					if _, ok := resolvedFieldType.(*Defined); ok {
-						variableNameInner = fmt.Sprintf("%s.%s", variableNameInner, structField.SnakeCaseName())
-					}
+				variableNameInner := variableName
+				if _, ok := resolvedFieldType.(*Defined); ok {
+					variableNameInner = fmt.Sprintf("%s.%s", variableNameInner, structField.SnakeCaseName())
+				}
 
-					rustMappings := resolvedFieldType.PrintRustMappings(structField.SnakeCaseName(), variableNameInner, types)
-					fieldsInString.WriteString(fmt.Sprintf("            %s,\n", rustMappings))
-				}*/
+				rustMappings := resolvedFieldType.PrintRustMappings(structField.SnakeCaseName(), variableNameInner, types)
+				fieldsInString.WriteString(fmt.Sprintf("            %s,\n", rustMappings))
+			}*/
 
+			if variableName != "" {
 				return fmt.Sprintf(`
 					%s: Some(map_defined_%s(%s.%s)),
 				`, fieldName, toSnakeCase(f.Type, false), variableName, fieldName)
+			}
+
+			return fmt.Sprintf(`
+				%s: Some(map_defined_%s(%s)),
+			`, fieldName, toSnakeCase(f.Type, false), fieldName)
+
 			//}
 		}
 	}
@@ -134,34 +149,22 @@ func (f *VecDefined) PrintNecessaryRustStructs(fieldName string, types []Type) s
 func (f *VecDefined) PrintRustMappings(fieldName string, variableName string, types []Type) string {
 	for _, t := range types {
 		if t.Name == f.Type {
-			variableName = "f"
-			// TODO: enums
-			if t.Type.IsStruct() {
-				var fieldsInString strings.Builder
 
-				for _, structField := range t.Type.Struct.Fields {
-					resolvedFieldType, err := structField.Type.GetResolvedFieldType()
-					if err != nil {
-						continue
-					}
-
-					variableNameInner := variableName
-					if _, ok := resolvedFieldType.(*Defined); ok {
-						variableNameInner = fmt.Sprintf("%s.%s", variableNameInner, structField.SnakeCaseName())
-					}
-
-					rustMappings := resolvedFieldType.PrintRustMappings(structField.SnakeCaseName(), variableNameInner, types)
-					fieldsInString.WriteString(fmt.Sprintf("\t\t\t%s,\n", rustMappings))
-				}
-
-				return fmt.Sprintf("%s: %s.%s.into_iter().map(|f| {\n \t return %s {\n%s\n\t}\n}).collect(),",
+			if variableName != "" {
+				return fmt.Sprintf("%s: %s.%s.into_iter().map(|f| \t map_defined_%s(f)).collect(),",
 					fieldName,
 					variableName,
 					fieldName,
-					f.Type,
-					fieldsInString.String(),
+					toSnakeCase(f.Type, false),
 				)
 			}
+
+			return fmt.Sprintf("%s: %s.into_iter().map(|f| \t map_defined_%s(f)).collect(),",
+				fieldName,
+				fieldName,
+				toSnakeCase(f.Type, false),
+			)
+
 		}
 	}
 	return ""
@@ -252,16 +255,16 @@ func (f *OptionSimple) ResolveProtobufType() string {
 }
 func (f *OptionSimple) PrintNecessaryRustStructs(fieldName string, types []Type) string {
 	return fmt.Sprintf(`
-			fn map_option_%s(idlType: Option<%s%s>) -> Option<%s%s> {
-				if (idltype.is_none()) {
+			fn map_option_%s(idlType: Option<%s>) -> Option<%s> {
+				if (idlType.is_none()) {
 					return None
 				}
 				return Some(idlType.unwrap() as %s)
 			}
-		`, toSnakeCase(f.Type, false), IDLRustNamespace, f.Type, ProgramRustNamespace, f.Type, IDLTypeToProtobufType(f.Type))
+		`, toSnakeCase(f.Type, false), f.Type, f.Type, IDLTypeToRustType(f.Type))
 }
 func (f *OptionSimple) PrintRustMappings(fieldName string, variableName string, types []Type) string {
-	return fmt.Sprintf("%s: map_option_%s(%s.%s)", fieldName, toSnakeCase(f.Type, false), variableName, fieldName)
+	return fmt.Sprintf("%s: map_option_%s(%s.%s),", fieldName, toSnakeCase(f.Type, false), variableName, fieldName)
 }
 func (f *OptionSimple) PrintNecessaryProtobufMessages() string {
 	return ""
@@ -278,12 +281,12 @@ func (f *OptionDefined) ResolveProtobufType() string {
 	return fmt.Sprintf("optional %s", f.Type)
 }
 func (f *OptionDefined) PrintRustMappings(fieldName string, variableName string, types []Type) string {
-	return fmt.Sprintf("%s: map_option_%s(%s.%s)", fieldName, toSnakeCase(f.Type, false), variableName, fieldName)
+	return fmt.Sprintf("%s: map_option_%s(%s.%s),", fieldName, toSnakeCase(f.Type, false), variableName, fieldName)
 }
 func (f *OptionDefined) PrintNecessaryRustStructs(fieldName string, types []Type) string {
 	return fmt.Sprintf(`
 			fn map_option_%s(idlType: Option<%s%s>) -> Option<%s%s> {
-				if (idltype.is_none()) {
+				if (idlType.is_none()) {
 					return None
 				}
 				return Some(map_defined_%s(idlType.unwrap()))
@@ -305,7 +308,7 @@ func (f *OptionVecSimple) ResolveProtobufType() string {
 	return fmt.Sprintf("OptionVecSimple%s", IDLTypeToProtobufType(f.Type))
 }
 func (f *OptionVecSimple) PrintRustMappings(fieldName string, variableName string, types []Type) string {
-	return fmt.Sprintf("%s: map_option_vec_%s()", fieldName, toSnakeCase(f.Type, false))
+	return fmt.Sprintf("%s: map_option_vec_%s(),", fieldName, toSnakeCase(f.Type, false))
 }
 func (f *OptionVecSimple) PrintNecessaryRustStructs(fieldName string, types []Type) string {
 	typeName := fmt.Sprintf("OptionVecSimple%s", f.Type)
@@ -315,7 +318,7 @@ func (f *OptionVecSimple) PrintNecessaryRustStructs(fieldName string, types []Ty
 
 	return fmt.Sprintf(`
 			fn map_option_vec_%s(idlType: %s) -> %s {
-				if (idltype.is_none()) {
+				if (idlType.is_none()) {
 					return %s {
 						inner: None
 					}
@@ -327,7 +330,7 @@ func (f *OptionVecSimple) PrintNecessaryRustStructs(fieldName string, types []Ty
 					})
 				}
 			}
-		`, toSnakeCase(f.Type, false), f.ResolveRustType(), composedType, composedType, composedType, composedInnerType, IDLTypeToProtobufType(f.Type))
+		`, toSnakeCase(f.Type, false), f.ResolveRustType(), composedType, composedType, composedType, composedInnerType, IDLTypeToRustType(f.Type))
 }
 func (f *OptionVecSimple) PrintNecessaryProtobufMessages() string {
 	castType := IDLTypeToProtobufType(f.Type)
@@ -361,7 +364,7 @@ func (f *OptionVecDefined) PrintNecessaryRustStructs(fieldName string, types []T
 
 	return fmt.Sprintf(`
 			fn map_option_vec_%s(idlType: %s) -> %s {
-				if (idltype.is_none()) {
+				if (idlType.is_none()) {
 					return %s {
 						inner: None
 					}
@@ -376,7 +379,7 @@ func (f *OptionVecDefined) PrintNecessaryRustStructs(fieldName string, types []T
 		`, toSnakeCase(f.Type, false), f.ResolveRustType(), composedType, composedType, composedType, composedInnerType, f.Type)
 }
 func (f *OptionVecDefined) PrintRustMappings(fieldName string, variableName string, types []Type) string {
-	return fmt.Sprintf("%s: map_option_vec_%s(%s.%s)", fieldName, toSnakeCase(f.Type, false), variableName, fieldName)
+	return fmt.Sprintf("%s: map_option_vec_%s(%s.%s),", fieldName, toSnakeCase(f.Type, false), variableName, fieldName)
 }
 func (f *OptionVecDefined) PrintNecessaryProtobufMessages() string {
 	messageName := fmt.Sprintf("OptionVecDefined%s", f.Type)
@@ -404,17 +407,17 @@ func (f *OptionArraySimple) ResolveProtobufType() string {
 	return fmt.Sprintf("OptionArraySimple%s", IDLTypeToProtobufType(f.Type))
 }
 func (f *OptionArraySimple) PrintRustMappings(fieldName string, variableName string, types []Type) string {
-	return fmt.Sprintf("%s: map_option_array_%s(%s.%s)", fieldName, toSnakeCase(f.Type, false), variableName, fieldName)
+	return fmt.Sprintf("%s: map_option_array_%s(%s.%s),", fieldName, toSnakeCase(IDLTypeToProtobufType(f.Type), false), variableName, fieldName)
 }
 func (f *OptionArraySimple) PrintNecessaryRustStructs(fieldName string, types []Type) string {
-	typeName := fmt.Sprintf("OptionArraySimple%s", f.Type)
-	typeNameInner := fmt.Sprintf("OptionArraySimple%sInner", f.Type)
+	typeName := fmt.Sprintf("OptionArraySimple%s", IDLTypeToProtobufType(f.Type))
+	typeNameInner := fmt.Sprintf("OptionArraySimple%sInner", IDLTypeToProtobufType(f.Type))
 	composedType := ComposeProgramRustNamespaceType(typeName)
 	composedInnerType := ComposeProgramRustNamespaceType(typeNameInner)
 
 	return fmt.Sprintf(`
 			fn map_option_array_%s(idlType: %s) -> %s {
-				if (idltype.is_none()) {
+				if (idlType.is_none()) {
 					return %s {
 						inner: None
 					}
@@ -426,7 +429,7 @@ func (f *OptionArraySimple) PrintNecessaryRustStructs(fieldName string, types []
 					})
 				}
 			}
-		`, toSnakeCase(f.Type, false), f.ResolveRustType(), composedType, composedType, composedType, composedInnerType, IDLTypeToProtobufType(f.Type))
+		`, toSnakeCase(IDLTypeToProtobufType(f.Type), false), f.ResolveRustType(), composedType, composedType, composedType, composedInnerType, IDLTypeToRustType(f.Type))
 }
 func (f *OptionArraySimple) PrintNecessaryProtobufMessages() string {
 	castType := IDLTypeToProtobufType(f.Type)
@@ -454,7 +457,7 @@ func (f *OptionArrayDefined) ResolveProtobufType() string {
 	return fmt.Sprintf("OptionArrayDefined%s", f.Type)
 }
 func (f *OptionArrayDefined) PrintRustMappings(fieldName string, variableName string, types []Type) string {
-	return fmt.Sprintf("%s: map_option_array_%s(%s.%s)", fieldName, toSnakeCase(f.Type, false), variableName, fieldName)
+	return fmt.Sprintf("%s: map_option_array_%s(%s.%s),", fieldName, toSnakeCase(f.Type, false), variableName, fieldName)
 }
 func (f *OptionArrayDefined) PrintNecessaryRustStructs(fieldName string, types []Type) string {
 	typeName := fmt.Sprintf("OptionArrayDefined%s", f.Type)
@@ -464,7 +467,7 @@ func (f *OptionArrayDefined) PrintNecessaryRustStructs(fieldName string, types [
 
 	return fmt.Sprintf(`
 			fn map_option_array_%s(idlType: %s) -> %s {
-				if (idltype.is_none()) {
+				if (idlType.is_none()) {
 					return %s {
 						inner: None
 					}
@@ -505,28 +508,26 @@ func (f *OptionArrayArraySimple) ResolveProtobufType() string {
 }
 func (f *OptionArrayArraySimple) PrintRustMappings(fieldName string, variableName string, types []Type) string {
 	return fmt.Sprintf(
-		"%s: map_option_array_array_%s(%s.%s)",
+		"%s: map_option_array_array_%s(%s.%s),",
 		fieldName,
-		toSnakeCase(f.Type, false),
+		toSnakeCase(IDLTypeToProtobufType(f.Type), false),
 		variableName,
 		fieldName,
 	)
 }
 
 func (f *OptionArrayArraySimple) PrintNecessaryRustStructs(fieldName string, types []Type) string {
-	typeName := fmt.Sprintf("OptionArrayArraySimple%s", f.Type)
-	typeNameInner := fmt.Sprintf("OptionArrayArraySimple%sInner", f.Type)
-	typeNameInnerArray := fmt.Sprintf("OptionArrayArraySimple%sInnerArray", f.Type)
+	typeName := fmt.Sprintf("OptionArrayArraySimple%s", IDLTypeToProtobufType(f.Type))
+	typeNameInner := fmt.Sprintf("OptionArrayArraySimple%sInner", IDLTypeToProtobufType(f.Type))
+	typeNameInnerArray := fmt.Sprintf("OptionArrayArraySimple%sInnerArray", IDLTypeToProtobufType(f.Type))
 
 	composedType := ComposeProgramRustNamespaceType(typeName)
 	composedInnerType := ComposeProgramRustNamespaceType(typeNameInner)
 	composedInnerArrayType := ComposeProgramRustNamespaceType(typeNameInnerArray)
 
-	elementType := IDLTypeToProtobufType(f.Type)
-
 	return fmt.Sprintf(`
 fn map_option_array_array_%s(idltype: Option<[[%s; %d]; %d]>) -> %s {
-    if idltype.is_none() {
+    if idlType.is_none() {
         return %s {
             inner: None,
         };
@@ -534,7 +535,7 @@ fn map_option_array_array_%s(idltype: Option<[[%s; %d]; %d]>) -> %s {
 
     let inner = idltype.unwrap().into_iter().map(|inner_array| {
         %s {
-            array_inner: inner_array.into_iter().map(|f| f as %s).collect(),
+            array_inner: inner_array.into_iter().map(|f| *f as %s).collect(),
         }
     }).collect();
 
@@ -548,7 +549,7 @@ fn map_option_array_array_%s(idltype: Option<[[%s; %d]; %d]>) -> %s {
 		composedType,
 		composedType,
 		composedInnerArrayType,
-		elementType,
+		IDLTypeToRustType(f.Type),
 		composedType,
 		composedInnerType)
 }
@@ -586,7 +587,7 @@ func (f *OptionArrayArrayDefined) ResolveProtobufType() string {
 }
 func (f *OptionArrayArrayDefined) PrintRustMappings(fieldName string, variableName string, types []Type) string {
 	return fmt.Sprintf(
-		"%s: map_option_array_array_%s(%s.%s)",
+		"%s: map_option_array_array_%s(%s.%s),",
 		fieldName,
 		toSnakeCase(f.Type, false),
 		variableName,
@@ -604,7 +605,7 @@ func (f *OptionArrayArrayDefined) PrintNecessaryRustStructs(fieldName string, ty
 
 	return fmt.Sprintf(`
 fn map_option_array_array_%s(idltype: Option<[[%s; %d]; %d]>) -> %s {
-	if idltype.is_none() {
+	if idlType.is_none() {
 		return %s {
 			inner: None,
 		};
@@ -665,7 +666,7 @@ func (f *ArraySimple) PrintNecessaryRustStructs(fieldName string, types []Type) 
 	return ""
 }
 func (f *ArraySimple) PrintRustMappings(fieldName string, variableName string, types []Type) string {
-	return fmt.Sprintf("%s: %s.%s.to_vec()", fieldName, variableName, fieldName)
+	return fmt.Sprintf("%s: %s.%s.to_vec(),", fieldName, variableName, fieldName)
 }
 func (f *ArraySimple) PrintNecessaryProtobufMessages() string {
 	return ""
@@ -687,7 +688,7 @@ func (f *ArrayDefined) PrintNecessaryRustStructs(fieldName string, types []Type)
 }
 func (f *ArrayDefined) PrintRustMappings(fieldName string, variableName string, types []Type) string {
 	return fmt.Sprintf(
-		"%s: %s.%s.into_iter().map(|f| map_defined_%s(f)).collect()",
+		"%s: %s.%s.into_iter().map(|f| map_defined_%s(f)).collect(),",
 		fieldName,
 		variableName,
 		fieldName,
@@ -713,37 +714,31 @@ func (f *ArrayArraySimple) ResolveProtobufType() string {
 func (f *ArrayArraySimple) PrintRustMappings(fieldName string, variableName string, types []Type) string {
 	snakeType := toSnakeCase(f.Type, false)
 	mapperFunc := fmt.Sprintf("map_array_array_%s", snakeType)
-	return fmt.Sprintf("%s: %s(%s.%s)", fieldName, mapperFunc, variableName, fieldName)
+	return fmt.Sprintf("%s: Some(%s(%s.%s)),", fieldName, mapperFunc, variableName, fieldName)
 }
 func (f *ArrayArraySimple) PrintNecessaryRustStructs(fieldName string, types []Type) string {
 	snakeType := toSnakeCase(f.Type, false)
 	funcName := fmt.Sprintf("map_array_array_%s", snakeType)
-	protobufType := fmt.Sprintf("ArrayArraySimple%s", f.Type)
-	innerProtobufType := fmt.Sprintf("ArrayArraySimple%sInner", f.Type)
-
-	cast := "(*f)"
-	if IDLTypeToProtobufType(f.Type) == f.Type {
-		// Assume it's a defined type needing a mapper
-		cast = fmt.Sprintf("map_defined_%s(f)", snakeType)
-	}
+	protobufType := fmt.Sprintf("ArrayArraySimple%s", IDLTypeToProtobufType(f.Type))
+	innerProtobufType := fmt.Sprintf("ArrayArraySimple%sInner", IDLTypeToProtobufType(f.Type))
 
 	return fmt.Sprintf(`
-fn %s(input: [[%s; %d]; %d]) -> %s {
+fn %s<const M: usize, const N: usize>(input: [[%s; N]; M]) -> %s {
     %s {
         inner: input.iter()
             .map(|inner_arr| %s {
-                value: inner_arr.iter().map(|f| %s).collect()
+                value: inner_arr.iter().map(|f| *f as %s).collect()
             })
             .collect()
     }
 }
 `,
 		funcName,
-		IDLTypeToRustType(f.Type), f.Length, f.OuterLength,
-		protobufType,
-		protobufType,
-		innerProtobufType,
-		cast,
+		IDLTypeToRustType(f.Type),
+		ComposeProgramRustNamespaceType(protobufType),
+		ComposeProgramRustNamespaceType(protobufType),
+		ComposeProgramRustNamespaceType(innerProtobufType),
+		IDLTypeToRustType(f.Type),
 	)
 }
 func (f *ArrayArraySimple) PrintNecessaryProtobufMessages() string {
@@ -782,7 +777,7 @@ func (f *ArrayArrayDefined) PrintNecessaryRustStructs(fieldName string, types []
 	mapFunc := fmt.Sprintf("map_array_array_%s", toSnakeCase(f.Type, false))
 
 	return fmt.Sprintf(`
-fn %s(input: [[%s; %d]; %d]) -> %s {
+fn %s<const M: usize, const N: usize>(input: [[%s; N]; M]) -> %s {
     %s {
         inner: input.iter()
             .map(|inner_arr| %s {
@@ -793,13 +788,13 @@ fn %s(input: [[%s; %d]; %d]) -> %s {
             .collect()
     }
 }
-`, mapFunc, f.Type, f.Length, f.OuterLength, namespace,
+`, mapFunc, f.Type, namespace,
 		namespace, namespaceInner, toSnakeCase(f.Type, false))
 }
 func (f *ArrayArrayDefined) PrintRustMappings(fieldName string, variableName string, types []Type) string {
 	snakeType := toSnakeCase(f.Type, false)
 	mapperFunc := fmt.Sprintf("map_array_array_%s", snakeType)
-	return fmt.Sprintf("%s: %s(%s.%s)", fieldName, mapperFunc, variableName, fieldName)
+	return fmt.Sprintf("%s: %s(%s.%s),", fieldName, mapperFunc, variableName, fieldName)
 }
 func (f *ArrayArrayDefined) PrintNecessaryProtobufMessages() string {
 	messageName := fmt.Sprintf("ArrayArrayDefined%s", f.Type)

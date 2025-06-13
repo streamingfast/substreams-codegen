@@ -65,7 +65,7 @@ func TestOrbitLen(t *testing.T) {
 	result := &IDL{}
 	err := json.Unmarshal(idl, &result)
 
-	fmt.Println(result.PrintNecessaryRustStructs())
+	fmt.Println(result.PrintNecessaryProtobufMessages())
 
 	assert.Nil(t, err)
 	assert.Equal(t, "QoB7dVkkZr3oLb95DMpSptvUF8mTygDHNjFQh5y5RAb", result.Address)
@@ -118,9 +118,7 @@ func TestMarginfi(t *testing.T) {
 	result := &IDL{}
 	err := json.Unmarshal(idl, &result)
 
-	for _, t := range result.AccountsAndTypes() {
-		fmt.Println(t.Name)
-	}
+	fmt.Println(result.PrintNecessaryRustStructs())
 
 	assert.Nil(t, err)
 }

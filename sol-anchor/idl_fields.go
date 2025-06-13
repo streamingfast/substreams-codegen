@@ -3,6 +3,7 @@ package solanchor
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 // --- FIELDS
@@ -18,6 +19,25 @@ func (f *Field) SnakeCaseName() string {
 
 func (f *Field) SnakeCaseNameWithoutInitialUnderscore() string {
 	return toSnakeCase(f.Name, false)
+}
+
+func (f *Field) UnmarshalJSON(data []byte) error {
+	// Create a shadow struct to unmarshal into
+	type Alias Field
+	aux := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(f),
+	}
+
+	// Unmarshal into the shadow struct
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	// Apply trim logic after unmarshalling
+	f.Name = strings.TrimPrefix(f.Name, "_")
+	return nil
 }
 
 // FIELD TYPE
@@ -250,6 +270,12 @@ func unmarshallFieldType(data []byte) (*FieldType, error) {
 	fieldType := FieldType{}
 
 	if result := unmarshalSimple(data); result != "" {
+		if IsPublicKey(result) {
+			fieldType.Defined = &Defined{}
+			fieldType.Defined.Type = "PubKey"
+			return &fieldType, nil
+		}
+
 		fieldType.Simple = &Simple{}
 		fieldType.Simple.Type = result
 		return &fieldType, nil
@@ -274,6 +300,11 @@ func unmarshallFieldType(data []byte) (*FieldType, error) {
 
 		// build type
 		if fieldType.VecRecursive.Type.IsSimple() {
+			if IsPublicKey(fieldType.VecRecursive.Type.Simple.Type) {
+				fieldType.VecDefined = &VecDefined{}
+				fieldType.VecDefined.Type = "PubKey"
+				return &fieldType, nil
+			}
 			fieldType.VecSimple = &VecSimple{}
 			fieldType.VecSimple.Type = CastInRustIfNeeded(fieldType.VecRecursive.Type.Simple.Type)
 		}
@@ -283,6 +314,11 @@ func unmarshallFieldType(data []byte) (*FieldType, error) {
 		}
 		if fieldType.VecRecursive.Type.IsOptionRecursive() {
 			if fieldType.VecRecursive.Type.OptionRecursive.Type.IsSimple() {
+				if IsPublicKey(fieldType.VecRecursive.Type.OptionRecursive.Type.Simple.Type) {
+					fieldType.VecOptionDefined = &VecOptionDefined{}
+					fieldType.VecOptionDefined.Type = "PubKey"
+					return &fieldType, nil
+				}
 				fieldType.VecOptionSimple = &VecOptionSimple{}
 				fieldType.VecOptionSimple.Type = CastInRustIfNeeded(fieldType.VecRecursive.Type.OptionRecursive.Type.Simple.Type)
 			}
@@ -308,6 +344,11 @@ func unmarshallFieldType(data []byte) (*FieldType, error) {
 
 		// build type
 		if fieldType.OptionRecursive.Type.IsSimple() {
+			if IsPublicKey(fieldType.OptionRecursive.Type.Simple.Type) {
+				fieldType.OptionDefined = &OptionDefined{}
+				fieldType.OptionDefined.Type = "PubKey"
+				return &fieldType, nil
+			}
 			fieldType.OptionSimple = &OptionSimple{}
 			fieldType.OptionSimple.Type = CastInRustIfNeeded(fieldType.OptionRecursive.Type.Simple.Type)
 		}
@@ -317,6 +358,11 @@ func unmarshallFieldType(data []byte) (*FieldType, error) {
 		}
 		if fieldType.OptionRecursive.Type.IsVecRecursive() {
 			if fieldType.OptionRecursive.Type.VecRecursive.Type.IsSimple() {
+				if IsPublicKey(fieldType.OptionRecursive.Type.VecRecursive.Type.Simple.Type) {
+					fieldType.OptionVecDefined = &OptionVecDefined{}
+					fieldType.OptionVecDefined.Type = "PubKey"
+					return &fieldType, nil
+				}
 				fieldType.OptionVecSimple = &OptionVecSimple{}
 				fieldType.OptionVecSimple.Type = CastInRustIfNeeded(fieldType.OptionRecursive.Type.VecRecursive.Type.Simple.Type)
 			}
@@ -327,6 +373,12 @@ func unmarshallFieldType(data []byte) (*FieldType, error) {
 		}
 		if fieldType.OptionRecursive.Type.IsArrayRecursive() {
 			if fieldType.OptionRecursive.Type.ArrayRecursive.Type.IsSimple() {
+				if IsPublicKey(fieldType.OptionRecursive.Type.ArrayRecursive.Type.Simple.Type) {
+					fieldType.OptionArrayDefined = &OptionArrayDefined{}
+					fieldType.OptionArrayDefined.Type = "PubKey"
+					fieldType.OptionArrayDefined.Length = fieldType.OptionRecursive.Type.ArrayRecursive.Length
+					return &fieldType, nil
+				}
 				fieldType.OptionArraySimple = &OptionArraySimple{}
 				fieldType.OptionArraySimple.Type = CastInRustIfNeeded(fieldType.OptionRecursive.Type.ArrayRecursive.Type.Simple.Type)
 				fieldType.OptionArraySimple.Length = fieldType.OptionRecursive.Type.ArrayRecursive.Length
@@ -339,6 +391,13 @@ func unmarshallFieldType(data []byte) (*FieldType, error) {
 			// nested array
 			if fieldType.OptionRecursive.Type.ArrayRecursive.Type.IsArrayRecursive() {
 				if fieldType.OptionRecursive.Type.ArrayRecursive.Type.ArrayRecursive.Type.IsSimple() {
+					if IsPublicKey(fieldType.OptionRecursive.Type.ArrayRecursive.Type.ArrayRecursive.Type.Simple.Type) {
+						fieldType.OptionArrayArrayDefined = &OptionArrayArrayDefined{}
+						fieldType.OptionArrayArrayDefined.Type = "PubKey"
+						fieldType.OptionArrayArrayDefined.Length = fieldType.OptionRecursive.Type.ArrayRecursive.Type.ArrayRecursive.Length
+						fieldType.OptionArrayArrayDefined.OuterLength = fieldType.OptionRecursive.Type.ArrayRecursive.Length
+						return &fieldType, nil
+					}
 					fieldType.OptionArrayArraySimple = &OptionArrayArraySimple{}
 					fieldType.OptionArrayArraySimple.Type = CastInRustIfNeeded(fieldType.OptionRecursive.Type.ArrayRecursive.Type.ArrayRecursive.Type.Simple.Type)
 					fieldType.OptionArrayArraySimple.Length = fieldType.OptionRecursive.Type.ArrayRecursive.Type.ArrayRecursive.Length
@@ -375,6 +434,12 @@ func unmarshallFieldType(data []byte) (*FieldType, error) {
 		}
 
 		if innerFieldType.IsSimple() {
+			if IsPublicKey(innerFieldType.Simple.Type) {
+				fieldType.ArrayDefined = &ArrayDefined{}
+				fieldType.ArrayDefined.Type = "PubKey"
+				fieldType.ArrayDefined.Length = length
+				return &fieldType, nil
+			}
 			fieldType.ArraySimple = &ArraySimple{}
 			fieldType.ArraySimple.Type = CastInRustIfNeeded(innerFieldType.Simple.Type)
 			fieldType.ArraySimple.Length = length
@@ -387,6 +452,13 @@ func unmarshallFieldType(data []byte) (*FieldType, error) {
 		if innerFieldType.IsArrayRecursive() {
 			innerArray := innerFieldType.ArrayRecursive
 			if innerArray.Type.IsSimple() {
+				if IsPublicKey(innerArray.Type.Simple.Type) {
+					fieldType.ArrayArrayDefined = &ArrayArrayDefined{}
+					fieldType.ArrayArrayDefined.Type = "PubKey"
+					fieldType.ArrayArrayDefined.Length = length
+					fieldType.ArrayArrayDefined.OuterLength = length
+					return &fieldType, nil
+				}
 				fieldType.ArrayArraySimple = &ArrayArraySimple{}
 				fieldType.ArrayArraySimple.Type = CastInRustIfNeeded(innerArray.Type.Simple.Type)
 				fieldType.ArrayArraySimple.Length = innerArray.Length

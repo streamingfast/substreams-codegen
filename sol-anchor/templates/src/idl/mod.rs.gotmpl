@@ -1,6 +1,9 @@
 pub mod idl {
     use borsh::{BorshDeserialize, BorshSerialize};
 
+    #[derive(Debug, Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
+    pub struct PubKey(pub [u8; 32]);
+
     {{- range $i, $event := .Idl.Events }}
     #[derive(BorshSerialize, BorshDeserialize)]
     pub struct {{$event.Name}}Event {
@@ -20,14 +23,15 @@ pub mod idl {
     {{ end }}
 
     {{ range $i, $type := .Idl.AccountsAndTypes }}
-    #[derive(BorshSerialize, BorshDeserialize)]
     {{- if $type.Type.IsStruct }}
+    #[derive(BorshSerialize, BorshDeserialize)]
     pub struct {{$type.Name}} {
     {{- range $i, $field := $type.Type.Struct.Fields }}
         pub {{ $field.SnakeCaseName }}: {{ $field.Type.GetResolvedFieldType.ResolveRustType }},
     {{- end}}
     }
-    {{- else }}
+    {{- else if $type.Type.IsEnum }}
+    #[derive(BorshSerialize, BorshDeserialize)]
     pub enum {{$type.Name}} {
     {{- range $i, $variant := $type.Type.Enum.Variants }}
         {{ $variant.Name }} {

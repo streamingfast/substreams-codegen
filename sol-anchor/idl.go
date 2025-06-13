@@ -1,7 +1,7 @@
 package solanchor
 
 import (
-	"fmt"
+	"strings"
 	"unicode"
 )
 
@@ -38,46 +38,53 @@ func (i *IDL) GetFieldsFromInstructionsEventsTypesAndAccounts() []Field {
 }
 
 func (i *IDL) PrintNecessaryProtobufMessages() string {
-	// Collect all the complex types
 	allFields := i.GetFieldsFromInstructionsEventsTypesAndAccounts()
+	seen := make(map[string]struct{})
+	outputs := []string{}
 
-	// Get all types that we should generate
-	output := ""
 	for _, f := range allFields {
 		resolvedType, err := f.Type.GetResolvedFieldType()
 		if err != nil {
 			continue
 		}
 
-		output += resolvedType.PrintNecessaryProtobufMessages()
+		code := strings.TrimSpace(resolvedType.PrintNecessaryProtobufMessages())
+		if _, exists := seen[code]; !exists && code != "" {
+			seen[code] = struct{}{}
+			outputs = append(outputs, code)
+		}
 	}
-	// remove duplicates
 
-	return output
+	return strings.Join(outputs, "\n\n")
 }
 
 func (i *IDL) PrintNecessaryRustStructs() string {
-	// Collect all the complex types
 	allFields := i.GetFieldsFromInstructionsEventsTypesAndAccounts()
+	seen := make(map[string]struct{})
+	outputs := []string{}
 
-	// Get all types that we should generate
-	output := ""
 	for _, f := range allFields {
 		resolvedType, err := f.Type.GetResolvedFieldType()
 		if err != nil || f.Type.IsDefined() {
 			continue
 		}
 
-		output += resolvedType.PrintNecessaryRustStructs(f.SnakeCaseName(), i.Types)
+		code := strings.TrimSpace(resolvedType.PrintNecessaryRustStructs(f.SnakeCaseName(), i.Types))
+		if _, exists := seen[code]; !exists && code != "" {
+			seen[code] = struct{}{}
+			outputs = append(outputs, code)
+		}
 	}
 
 	for _, t := range i.Types {
-		fmt.Println(t.Name)
-		output += t.PrintRustStruct(i.Types)
+		code := strings.TrimSpace(t.PrintRustStruct(i.Types))
+		if _, exists := seen[code]; !exists && code != "" {
+			seen[code] = struct{}{}
+			outputs = append(outputs, code)
+		}
 	}
-	// remove duplicates
 
-	return output
+	return strings.Join(outputs, "\n\n")
 }
 
 func (i *IDL) ProgramID() string {

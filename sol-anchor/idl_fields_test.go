@@ -116,6 +116,18 @@ func TestUnmarshalSimple(t *testing.T) {
 
 // ------------ OPTION
 // vec
+func TestPrintOptionSimple(t *testing.T) {
+	// Generate types from IDL
+	jsonBytes := []byte(`{"option": "u64"}`)
+
+	result, err := unmarshallFieldType(jsonBytes)
+	assert.Nil(t, err)
+
+	resolvedFieldType, err := result.GetResolvedFieldType()
+	assert.Nil(t, err)
+
+	assert.Equal(t, "Option<u64>", resolvedFieldType.ResolveRustType())
+}
 func TestPrintOptionDefined(t *testing.T) {
 	// Generate types from IDL
 	idlString := readFromFile("orca")

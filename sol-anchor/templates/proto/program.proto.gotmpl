@@ -36,7 +36,6 @@ message {{$inst.PascalCaseName}}Instruction {
 {{ end }}
 
 {{ range $i, $type := .Idl.AccountsAndTypes }}
-
 {{- if $type.Type.IsStruct }}
 {{- $structCounter := 1 }}
 message {{$type.Name}} {
@@ -45,7 +44,7 @@ message {{$type.Name}} {
     {{- $structCounter = add $structCounter 1 }}
 {{- end}}
 }
-{{- else }}
+{{- else if $type.Type.IsEnum }}
 // Enum
 {{- $variantCounter := 1 }}
 message {{ $type.Name }} {
@@ -68,5 +67,9 @@ message {{ $type.Name }}{{ $variant.Name }}Variant {
 {{- end}}
 {{- end }}
 {{- end }}
+
+message PubKey {
+  string key = 1;
+}
 
 {{ $.Idl.PrintNecessaryProtobufMessages }}

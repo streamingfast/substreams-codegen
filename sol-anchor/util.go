@@ -3,6 +3,7 @@ package solanchor
 import (
 	"fmt"
 	"strings"
+	"unicode"
 )
 
 func uniqueStrings(input []string) []string {
@@ -38,7 +39,7 @@ func IDLTypeToRustType(idlType string) string {
 
 func IDLTypeToProtobufType(idlType string) string {
 	if IsPublicKey(idlType) {
-		return "string"
+		return "PubKey"
 	}
 
 	switch idlType {
@@ -145,8 +146,8 @@ func PrintDefinedTree(typeName string, fieldName string, types []Type) string {
 					if err != nil {
 						continue
 					}
-					mapping := resolvedFieldType.PrintRustMappings(field.SnakeCaseName(), bindingName, types)
-					mappedFields = append(mappedFields, fmt.Sprintf("%s,", mapping))
+					mapping := resolvedFieldType.PrintRustMappings(field.SnakeCaseName(), "", types)
+					mappedFields = append(mappedFields, fmt.Sprintf("%s", mapping))
 				}
 
 				matchArms.WriteString(fmt.Sprintf(`
@@ -185,4 +186,110 @@ func indentLines(lines []string, indentLevel int) string {
 		b.WriteString(fmt.Sprintf("%s%s\n", indent, line))
 	}
 	return b.String()
+}
+
+func ProtobufEnumVariantToRust(name string) string {
+	var result strings.Builder
+	runes := []rune(name)
+
+	for i := 0; i < len(runes); i++ {
+		// If we find a sequence of 2+ uppercase letters (acronym), normalize it
+		if unicode.IsUpper(runes[i]) {
+			start := i
+			for i+1 < len(runes) && unicode.IsUpper(runes[i+1]) {
+				i++
+			}
+
+			// If it was a single uppercase letter, just append as-is
+			if i == start {
+				result.WriteRune(runes[start])
+			} else {
+				// Normalize acronym (e.g. FX → Fx)
+				result.WriteRune(runes[start])
+				for j := start + 1; j <= i; j++ {
+					result.WriteRune(unicode.ToLower(runes[j]))
+				}
+			}
+		} else {
+			result.WriteRune(runes[i])
+		}
+	}
+
+	return result.String()
+}
+
+func IsPrimitiveTypeToStringNeeded(typeName string) bool {
+	if typeName == "u128" || typeName == "f128" {
+		return true
+	}
+
+	return false
+}
+
+func PrintMapPrimitiveToString(primitiveType string, fieldName string, variableName string) string {
+	return fmt.Sprintf("%s: map_primitive_to_string(%s),", fieldName, variableName)
+}
+
+func splitProtobufMessages(s string) []string {
+	var blocks []string
+	var current strings.Builder
+	openBraces := 0
+
+	for _, line := range strings.Split(s, "\n") {
+		if strings.TrimSpace(line) == "" && current.Len() == 0 {
+			continue
+		}
+		current.WriteString(line + "\n")
+		if strings.Contains(line, "{") {
+			openBraces++
+		}
+		if strings.Contains(line, "}") {
+			openBraces--
+			if openBraces == 0 && current.Len() > 0 {
+				blocks = append(blocks, current.String())
+				current.Reset()
+			}
+		}
+	}
+	// Add any remaining block
+	if current.Len() > 0 {
+		blocks = append(blocks, current.String())
+	}
+	return blocks
+}
+
+func splitRustStructs(s string) []string {
+	var blocks []string
+	var current strings.Builder
+	openBraces := 0
+	inStruct := false
+
+	for _, line := range strings.Split(s, "\n") {
+		trim := strings.TrimSpace(line)
+		if strings.HasPrefix(trim, "pub struct") {
+			inStruct = true
+		}
+
+		if inStruct {
+			current.WriteString(line + "\n")
+			if strings.Contains(line, "{") {
+				openBraces++
+			}
+			if strings.Contains(line, "}") {
+				openBraces--
+				if openBraces == 0 {
+					blocks = append(blocks, current.String())
+					current.Reset()
+					inStruct = false
+				}
+			}
+		}
+	}
+
+	// Add any remaining block (e.g. helpers or impls)
+	if current.Len() > 0 {
+		blocks = append(blocks, current.String())
+	}
+
+	return blocks
 }
