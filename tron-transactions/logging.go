@@ -1,7 +1,7 @@
-package stellartransactionsoperations
+package trontransactions
 
 import (
 	"github.com/streamingfast/logging"
 )
 
-var zlog, tracer = logging.PackageLogger("stellar-transactions-operations", "github.com/streamingfast/substreams-codegen/codegen/stellar-transactions-operations")
+var zlog, tracer = logging.PackageLogger("tron-transactions", "github.com/streamingfast/substreams-codegen/codegen/tron-transactions")

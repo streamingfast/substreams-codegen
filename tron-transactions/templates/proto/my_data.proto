@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package mydata.v1;
+
+import 'sf/tron/type/v1/type.proto';
+
+message MyData {
+  repeated .sf.tron.type.v1.Transaction transactions = 1;
+}

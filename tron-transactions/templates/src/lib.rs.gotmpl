@@ -1,7 +1,6 @@
 mod pb;
 
-{{ if eq .FilterType "transactions" }}
-use pb::sf::substreams::stellar::r#type::v1::Transactions;
+use crate::pb::sf::substreams::tron::v1::Transactions;
 
 #[substreams::handlers::map]
 fn map_my_data(transactions: Transactions) -> Result<Transactions, ::substreams::errors::Error> {
@@ -9,13 +8,3 @@ fn map_my_data(transactions: Transactions) -> Result<Transactions, ::substreams:
 
     Ok(transactions)
 }
-{{ else }}
-use pb::sf::substreams::stellar::r#type::v1::Operations;
-
-#[substreams::handlers::map]
-fn map_my_data(operations: Operations) -> Result<Operations, ::substreams::errors::Error> {
-    // Include here your custom code
-
-    Ok(operations)
-}
-{{ end }}

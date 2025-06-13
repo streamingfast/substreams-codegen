@@ -1,9 +1,6 @@
-package stellartransactionsoperations
+package trontransactions
 
 import pbconvo "github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1"
-
-type AskFilterType struct {}
-type InputFilterType struct { pbconvo.UserInput_Selection }
 
 type AskFilter struct {}
 type InvalidFilter struct { Err error }
