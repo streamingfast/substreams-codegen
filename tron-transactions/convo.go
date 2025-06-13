@@ -64,7 +64,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.NextStep()
 
 	case AskFilter:
-		message := "Input the filter that you want to apply on the transactions. You can filter on the following fields: `contract_type`, `to`, `from`, `contract_address`.\n\n The `&&` and `||` logical operators are supported.\n\nIn the following example, you filter all the transactions of type `Transfer` and received by `TTXFoqGiUrGrmYTcamNp4NSfx5zSwmHMc9`:\n\n (contract_type:Transfer && to:TTXFoqGiUrGrmYTcamNp4NSfx5zSwmHMc9)"
+		message := "Input the filter that you want to apply on the transactions. You can filter on the following fields: `contract_type`, `to`, `from`, `contract_address`.\n\n The `&&` and `||` logical operators are supported.\n\nIn the following example, you filter all the transactions of type `TransferContract` and received by `TTXFoqGiUrGrmYTcamNp4NSfx5zSwmHMc9`:\n\n (contract_type:TransferContract && to:TTXFoqGiUrGrmYTcamNp4NSfx5zSwmHMc9)"
 
 		return c.Action(InputFilter{}).
 			TextInput(message, "Submit").
