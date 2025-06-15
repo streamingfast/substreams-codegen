@@ -18,11 +18,11 @@ binaries:
 
 modules:
  - name: map_my_filtered_transactions
-   use: stellar:filtered_transactions
+   use: tron:filtered_transactions
 
  - name: map_my_data
    kind: map
-   initialBlock: 0
+   initialBlock: 71846500
    inputs:
    - map: map_my_filtered_transactions
    output:

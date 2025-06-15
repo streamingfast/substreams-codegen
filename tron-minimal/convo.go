@@ -20,7 +20,7 @@ func New() codegen.Converser {
 func init() {
 	codegen.RegisterConversation(
 		"tron-minimal",
-		"Creates a Substreams project which indexes the full Stellar Block.",
+		"Creates a Substreams project which indexes the full Tron Block.",
 		"You will get a project that indexes all the data contained in the Block.",
 		codegen.ConversationFactory(New),
 		59,
@@ -32,14 +32,6 @@ func (c *Convo) NextStep() loop.Cmd {
 	p := c.State
 	if p.Name == "" {
 		return cmd(codegen.AskProjectName{})
-	}
-
-	if p.ChainName == "" {
-		return cmd(codegen.AskChainName{})
-	}
-
-	if !p.IsValidChainName(p.ChainName) {
-		return loop.Seq(cmd(codegen.MsgInvalidChainName{}), cmd(codegen.AskChainName{}))
 	}
 
 	return cmd(codegen.RunGenerate{})
@@ -77,21 +69,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			Labels(labels...).
 			Values(values...).
 			Cmd()
-
-	case codegen.MsgInvalidChainName:
-		return c.Msg().
-			Messagef(`Hmm, %q seems like an invalid chain name. Maybe it was supported and is not anymore?`, c.State.ChainName).
-			Cmd()
-
-	case codegen.InputChainName:
-		c.State.ChainName = msg.Value
-		if c.State.IsValidChainName(msg.Value) {
-			return loop.Seq(
-				c.Msg().Messagef("Got it, will be using chain %q", c.State.ChainConfig().DisplayName).Cmd(),
-				c.NextStep(),
-			)
-		}
-		return c.NextStep()
 
 	case codegen.RunGenerate:
 		return c.CmdGenerate(c.State.Generate)
