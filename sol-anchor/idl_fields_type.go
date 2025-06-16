@@ -281,6 +281,9 @@ func (f *OptionDefined) ResolveProtobufType() string {
 	return fmt.Sprintf("optional %s", f.Type)
 }
 func (f *OptionDefined) PrintRustMappings(fieldName string, variableName string, types []Type) string {
+	if variableName == "" {
+		return fmt.Sprintf("%s: map_option_%s(%s),", fieldName, toSnakeCase(f.Type, false), fieldName)
+	}
 	return fmt.Sprintf("%s: map_option_%s(%s.%s),", fieldName, toSnakeCase(f.Type, false), variableName, fieldName)
 }
 func (f *OptionDefined) PrintNecessaryRustStructs(fieldName string, types []Type) string {
@@ -291,7 +294,7 @@ func (f *OptionDefined) PrintNecessaryRustStructs(fieldName string, types []Type
 				}
 				return Some(map_defined_%s(idlType.unwrap()))
 			}
-		`, toSnakeCase(f.Type, false), IDLRustNamespace, f.Type, ProgramRustNamespace, f.Type, toSnakeCase(f.Type, false))
+		`, toSnakeCase(f.Type, false), IDLRustNamespace, f.Type, ProgramRustNamespace, ToRustPascalCase(f.Type), toSnakeCase(f.Type, false))
 }
 func (f *OptionDefined) PrintNecessaryProtobufMessages() string {
 	return ""
@@ -357,8 +360,8 @@ func (f *OptionVecDefined) ResolveProtobufType() string {
 	return fmt.Sprintf("OptionVecDefined%s", f.Type)
 }
 func (f *OptionVecDefined) PrintNecessaryRustStructs(fieldName string, types []Type) string {
-	typeName := fmt.Sprintf("OptionVecDefined%s", f.Type)
-	typeNameInner := fmt.Sprintf("OptionVecDefined%sInner", f.Type)
+	typeName := fmt.Sprintf("OptionVecDefined%s", ToRustPascalCase(f.Type))
+	typeNameInner := fmt.Sprintf("OptionVecDefined%sInner", ToRustPascalCase(f.Type))
 	composedType := ComposeProgramRustNamespaceType(typeName)
 	composedInnerType := ComposeProgramRustNamespaceType(typeNameInner)
 
@@ -376,7 +379,7 @@ func (f *OptionVecDefined) PrintNecessaryRustStructs(fieldName string, types []T
 					})
 				}
 			}
-		`, toSnakeCase(f.Type, false), f.ResolveRustType(), composedType, composedType, composedType, composedInnerType, f.Type)
+		`, toSnakeCase(f.Type, false), f.ResolveRustType(), composedType, composedType, composedType, composedInnerType, toSnakeCase(f.Type, false))
 }
 func (f *OptionVecDefined) PrintRustMappings(fieldName string, variableName string, types []Type) string {
 	return fmt.Sprintf("%s: map_option_vec_%s(%s.%s),", fieldName, toSnakeCase(f.Type, false), variableName, fieldName)
@@ -460,8 +463,8 @@ func (f *OptionArrayDefined) PrintRustMappings(fieldName string, variableName st
 	return fmt.Sprintf("%s: map_option_array_%s(%s.%s),", fieldName, toSnakeCase(f.Type, false), variableName, fieldName)
 }
 func (f *OptionArrayDefined) PrintNecessaryRustStructs(fieldName string, types []Type) string {
-	typeName := fmt.Sprintf("OptionArrayDefined%s", f.Type)
-	typeNameInner := fmt.Sprintf("OptionArrayDefined%sInner", f.Type)
+	typeName := fmt.Sprintf("OptionArrayDefined%s", ToRustPascalCase(f.Type))
+	typeNameInner := fmt.Sprintf("OptionArrayDefined%sInner", ToRustPascalCase(f.Type))
 	composedType := ComposeProgramRustNamespaceType(typeName)
 	composedInnerType := ComposeProgramRustNamespaceType(typeNameInner)
 
@@ -595,9 +598,9 @@ func (f *OptionArrayArrayDefined) PrintRustMappings(fieldName string, variableNa
 	)
 }
 func (f *OptionArrayArrayDefined) PrintNecessaryRustStructs(fieldName string, types []Type) string {
-	typeName := fmt.Sprintf("OptionArrayArrayDefined%s", f.Type)
-	typeNameInner := fmt.Sprintf("OptionArrayArrayDefined%sInner", f.Type)
-	typeNameInnerArray := fmt.Sprintf("OptionArrayArrayDefined%sInnerArray", f.Type)
+	typeName := fmt.Sprintf("OptionArrayArrayDefined%s", ToRustPascalCase(f.Type))
+	typeNameInner := fmt.Sprintf("OptionArrayArrayDefined%sInner", ToRustPascalCase(f.Type))
+	typeNameInnerArray := fmt.Sprintf("OptionArrayArrayDefined%sInnerArray", ToRustPascalCase(f.Type))
 
 	composedType := ComposeProgramRustNamespaceType(typeName)
 	composedInnerType := ComposeProgramRustNamespaceType(typeNameInner)
@@ -770,8 +773,8 @@ func (f *ArrayArrayDefined) ResolveProtobufType() string {
 	return fmt.Sprintf("ArrayArrayDefined%s", f.Type)
 }
 func (f *ArrayArrayDefined) PrintNecessaryRustStructs(fieldName string, types []Type) string {
-	typeName := fmt.Sprintf("ArrayArrayDefined%s", f.Type)
-	innerMessage := fmt.Sprintf("ArrayArrayDefined%sInner", f.Type)
+	typeName := fmt.Sprintf("ArrayArrayDefined%s", ToRustPascalCase(f.Type))
+	innerMessage := fmt.Sprintf("ArrayArrayDefined%sInner", ToRustPascalCase(f.Type))
 	namespace := ComposeProgramRustNamespaceType(typeName)
 	namespaceInner := ComposeProgramRustNamespaceType(innerMessage)
 	mapFunc := fmt.Sprintf("map_array_array_%s", toSnakeCase(f.Type, false))

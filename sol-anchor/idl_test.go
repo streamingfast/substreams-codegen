@@ -123,6 +123,17 @@ func TestMarginfi(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func TestJupiterV6(t *testing.T) {
+	idl := readFromFile("jupiter_v6")
+
+	result := &IDL{}
+	err := json.Unmarshal(idl, &result)
+
+	fmt.Println(result.PrintNecessaryRustStructs())
+
+	assert.Nil(t, err)
+}
+
 func TestProofOfPlay(t *testing.T) {
 	idl := readFromFile("proof_of_play")
 

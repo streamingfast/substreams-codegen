@@ -6,20 +6,6 @@ import (
 	"unicode"
 )
 
-func uniqueStrings(input []string) []string {
-	seen := make(map[string]struct{})
-	var result []string
-
-	for _, val := range input {
-		if _, exists := seen[val]; !exists {
-			seen[val] = struct{}{}
-			result = append(result, val)
-		}
-	}
-
-	return result
-}
-
 func IDLTypeToRustType(idlType string) string {
 	if IsPublicKey(idlType) {
 		return "[u8;32]"
@@ -113,7 +99,7 @@ func PrintDefinedTree(typeName string, fieldName string, types []Type) string {
 %s
 				}
 			}
-		`, toSnakeCase(typeName, false), IDLRustNamespace, typeName, ProgramRustNamespace, typeName, ProgramRustNamespace, typeName, fieldsInString.String())
+		`, toSnakeCase(typeName, false), IDLRustNamespace, typeName, ProgramRustNamespace, ToRustPascalCase(typeName), ProgramRustNamespace, ToRustPascalCase(typeName), fieldsInString.String())
 	}
 
 	if t.Type.IsEnum() {
@@ -130,7 +116,7 @@ func PrintDefinedTree(typeName string, fieldName string, types []Type) string {
 				kind: Some(%s(%s {}))
 			},`,
 					typeName, variant.Name,
-					typeName,
+					ToRustPascalCase(typeName),
 					oneofWrapper,
 					ComposeProgramRustNamespaceType(protobufVariantName),
 				))
@@ -159,7 +145,7 @@ func PrintDefinedTree(typeName string, fieldName string, types []Type) string {
 					typeName,
 					variant.Name,
 					strings.Join(bindingFields, ", "),
-					typeName,
+					ToRustPascalCase(typeName),
 					oneofWrapper,
 					ComposeProgramRustNamespaceType(protobufVariantName),
 					indentLines(mappedFields, 4),
@@ -173,7 +159,7 @@ func PrintDefinedTree(typeName string, fieldName string, types []Type) string {
 %s
 				}
 			}
-		`, toSnakeCase(typeName, false), typeName, typeName, matchArms.String())
+		`, toSnakeCase(typeName, false), typeName, ToRustPascalCase(typeName), matchArms.String())
 	}
 
 	return ""
@@ -230,66 +216,37 @@ func PrintMapPrimitiveToString(primitiveType string, fieldName string, variableN
 	return fmt.Sprintf("%s: map_primitive_to_string(%s),", fieldName, variableName)
 }
 
-func splitProtobufMessages(s string) []string {
-	var blocks []string
-	var current strings.Builder
-	openBraces := 0
-
-	for _, line := range strings.Split(s, "\n") {
-		if strings.TrimSpace(line) == "" && current.Len() == 0 {
-			continue
-		}
-		current.WriteString(line + "\n")
-		if strings.Contains(line, "{") {
-			openBraces++
-		}
-		if strings.Contains(line, "}") {
-			openBraces--
-			if openBraces == 0 && current.Len() > 0 {
-				blocks = append(blocks, current.String())
-				current.Reset()
-			}
-		}
-	}
-	// Add any remaining block
-	if current.Len() > 0 {
-		blocks = append(blocks, current.String())
-	}
-	return blocks
+func ToRustPascalCase(t string) string {
+	return t
 }
 
-func splitRustStructs(s string) []string {
-	var blocks []string
-	var current strings.Builder
-	openBraces := 0
-	inStruct := false
+func toLowerCaseCapitalized(input string) string {
+	if input == "" {
+		return ""
+	}
+	lower := strings.ToLower(input)
+	runes := []rune(lower)
+	runes[0] = unicode.ToUpper(runes[0])
+	return string(runes)
 
-	for _, line := range strings.Split(s, "\n") {
-		trim := strings.TrimSpace(line)
-		if strings.HasPrefix(trim, "pub struct") {
-			inStruct = true
+}
+
+func ToRustFriendlyPascalCase(input string) string {
+	var result strings.Builder
+	runes := []rune(input)
+	capNext := true
+	for i := 0; i < len(runes); i++ {
+		ch := runes[i]
+		if !unicode.IsLetter(ch) && !unicode.IsDigit(ch) {
+			capNext = true
+			continue
 		}
-
-		if inStruct {
-			current.WriteString(line + "\n")
-			if strings.Contains(line, "{") {
-				openBraces++
-			}
-			if strings.Contains(line, "}") {
-				openBraces--
-				if openBraces == 0 {
-					blocks = append(blocks, current.String())
-					current.Reset()
-					inStruct = false
-				}
-			}
+		if capNext {
+			result.WriteRune(unicode.ToUpper(ch))
+			capNext = false
+		} else {
+			result.WriteRune(unicode.ToLower(ch))
 		}
 	}
-
-	// Add any remaining block (e.g. helpers or impls)
-	if current.Len() > 0 {
-		blocks = append(blocks, current.String())
-	}
-
-	return blocks
+	return result.String()
 }

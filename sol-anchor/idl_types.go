@@ -31,6 +31,10 @@ func (t *Type) PascalCaseName() string {
 	return textcase.PascalCase(t.Name)
 }
 
+func (t *Type) LowerCaseCapitalizedName() string {
+	return toLowerCaseCapitalized(t.Name)
+}
+
 type TypeDetails struct {
 	Kind   string
 	Struct *TypeStruct
