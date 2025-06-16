@@ -1,21 +1,13 @@
 # {{ .Name }} Substreams modules
 
-This package was initialized via `substreams init`, using the `stellar-transactions-operations` template.
+This package was initialized via `substreams init`, using the `tron-transactions` template.
 
 {{ template "readme_usage" }}
 
 ## Modules
 
-
-### `map_my_filtered_transactions`
-
-This module _uses_ the imported module, `filtered_transactions` from the Stellar Foundational Modules. In the params, you set the source accounts that want to filter on. For example:
-
-```yaml
-params:
-  map_my_filtered_transactions: source_account:GADLRTGF4GCU2CNAHYPKAEBGQSBX2M3UYIZZJODZAVC5A5QCAE7AT66C
-```
-
 ### `map_my_data`
 
-This module outputs the filtered transactions
+This module outputs filtered transactions based on the filter provided. Take a look at the input parameters in `substreams.yaml` to configure the filter.
+
+**NOTE:** We do NOT recommend outputting the full Transaction object. Instead, you should filter on the specific parts that your application needs.

@@ -13,4 +13,3 @@ type Project struct {
 func (p *Project) ModuleName() string { return strings.ReplaceAll(p.Name, "-", "_") }
 func (p *Project) KebabName() string  { return strings.ReplaceAll(p.Name, "_", "-") }
 
-func (p *Project) IsValidChainName(input string) bool { return ChainConfigByID[input] != nil }

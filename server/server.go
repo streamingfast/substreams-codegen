@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"connectrpc.com/connect"
 	dgrpcserver "github.com/streamingfast/dgrpc/server"
@@ -49,6 +50,11 @@ func New(
 
 func (s *server) Run() {
 	s.logger.Info("starting server")
+
+	// Fetch networks from the registry every 12 hours
+	go func() {
+		time.Sleep(12 * time.Hour)
+	}()
 
 	tracerProvider := otel.GetTracerProvider()
 	options := []dgrpcserver.Option{

@@ -1,7 +1,6 @@
 package trontransactions
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -15,23 +14,3 @@ type Project struct {
 
 func (p *Project) ModuleName() string { return strings.ReplaceAll(p.Name, "-", "_") }
 func (p *Project) KebabName() string  { return strings.ReplaceAll(p.Name, "_", "-") }
-
-func (p *Project) ComposeFilter() string {
-	keyword := "source_account"
-	if p.FilterType == "operations" {
-		keyword = "operation"
-	}
-
-	var stringBuilder string
-
-	splittedFilter := strings.Split(p.Filter, ",")
-	for i, filterPiece := range splittedFilter {
-		stringBuilder += fmt.Sprintf("%s:%s", keyword, filterPiece)
-
-		if i < (len(splittedFilter) - 1) {
-			stringBuilder += " || "
-		}
-	}
-
-	return stringBuilder
-}

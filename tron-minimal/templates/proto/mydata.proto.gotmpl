@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package mydata.v1;
 
+import "sf/tron/type/v1/block.proto";
+
 message MyData {
-  string hash = 1;
-  uint64 number = 2;
-  uint64 transactions_len = 4;
+  .sf.tron.type.v1.Block block = 1;
 }

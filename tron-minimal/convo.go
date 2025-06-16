@@ -59,17 +59,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		c.State.Name = msg.Value
 		return c.NextStep()
 
-	case codegen.AskChainName:
-		var labels, values []string
-		for _, conf := range ChainConfigs {
-			labels = append(labels, conf.DisplayName)
-			values = append(values, conf.ID)
-		}
-		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain").
-			Labels(labels...).
-			Values(values...).
-			Cmd()
-
 	case codegen.RunGenerate:
 		return c.CmdGenerate(c.State.Generate)
 
