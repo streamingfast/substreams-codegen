@@ -12,7 +12,7 @@ type AskChainName struct{}
 type MsgInvalidChainName struct{}
 type InputChainName struct{ pbconvo.UserInput_Selection }
 
-type InputSourceDownloaded struct{ pbconvo.UserInput_Confirmation }
+type InputSourceDownloaded struct{ pbconvo.UserInput_TextInput }
 type PackageDownloaded struct{ pbconvo.UserInput_Confirmation }
 
 type AskConfirmCompile struct{}
@@ -20,6 +20,9 @@ type InputConfirmCompile struct{ pbconvo.UserInput_Confirmation } // SQL specifi
 
 type AskInitialStartBlockType struct{}
 type InputAskInitialStartBlockType struct{ pbconvo.UserInput_TextInput }
+
+type AskSubstreamsConsumptionChoice struct{}
+type InputSubstreamsConsumptionChoice struct{ pbconvo.UserInput_Selection }
 
 func InputAskInitialStartBlockTypeTextInput() string {
 	return "At what block do you want to start indexing data?"

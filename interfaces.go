@@ -12,6 +12,7 @@ type ConversationFactory func() Converser
 type Converser interface {
 	// Functions provided by the Conversation instance
 
+	SetClientVersion(uint32)
 	NextStep() loop.Cmd
 	Update(loop.Msg) loop.Cmd
 

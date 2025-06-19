@@ -234,11 +234,12 @@ func (w *MsgWrap) Description(description string) *MsgWrap {
 	return w
 }
 
-func (w *MsgWrap) ListSelect(instructions string) *MsgWrap {
+func (w *MsgWrap) ListSelect(instructions string, ID string) *MsgWrap {
 	// TODO: to a type assertion on the `lastType`, to make sure it matches what we're asking here..
 	w.Msg.Entry = &pbconvo.SystemOutput_ListSelect_{
 		ListSelect: &pbconvo.SystemOutput_ListSelect{
 			Instructions: instructions,
+			Id:           ID,
 		},
 	}
 	return w
