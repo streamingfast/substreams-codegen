@@ -1,0 +1,34 @@
+mod pb;
+
+use crate::pb::{
+    mydata::v1::{MyData, TransferContract},
+    protocol::transaction::contract::ContractType,
+    sf::{substreams::tron::v1::Transactions},
+};
+use pb::mydata::v1 as mydata;
+
+#[substreams::handlers::map]
+fn map_my_data(transactions: Transactions) -> Result<mydata::MyData, substreams::errors::Error> {
+
+    let contracts: Vec<TransferContract> = transactions
+        .transactions
+        .into_iter()
+        .flat_map(|transaction| {
+            transaction
+                .contracts
+                .into_iter()
+                // In this case, this additional filter is NOT necessary because the transactions that you receive as input are already filtered. Take a look at the `substreams.yaml` file.
+                .filter(|contract| contract.r#type == ContractType::TransferContract as i32)
+                .map(|contract| TransferContract {
+                    contract_name: contract.contract_name,
+                    parameter: contract.parameter,
+                    provider: contract.provider,
+                    permissions_id: contract.permission_id as u32,
+                })
+        })
+        .collect();
+
+    Ok(MyData {
+        transfer_contracts: contracts
+    })
+}

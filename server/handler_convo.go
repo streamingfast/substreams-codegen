@@ -35,6 +35,7 @@ import (
 	_ "github.com/streamingfast/substreams-codegen/starknet-minimal"
 	_ "github.com/streamingfast/substreams-codegen/stellar-minimal"
 	_ "github.com/streamingfast/substreams-codegen/stellar-transactions-operations"
+	_ "github.com/streamingfast/substreams-codegen/tron-hello-world"
 	_ "github.com/streamingfast/substreams-codegen/tron-minimal"
 	_ "github.com/streamingfast/substreams-codegen/tron-transactions"
 )

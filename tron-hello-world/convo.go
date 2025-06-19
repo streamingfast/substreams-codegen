@@ -1,4 +1,4 @@
-package tronminimal
+package tronhelloworld
 
 import (
 	"encoding/json"
@@ -24,9 +24,9 @@ func New() codegen.Converser {
 }
 func init() {
 	codegen.RegisterConversation(
-		"tron-minimal",
-		"Creates a Substreams project which indexes the full Tron Block.",
-		"You will get a project that indexes all the data contained in the Block.",
+		"tron-hello-world",
+		"Creates an example Substreams project that indexes Tron contracts of type `TransferContracts`",
+		"Use this example as a starting point to create your own custom Substreams, which indexes thed data you need.",
 		codegen.ConversationFactory(New),
 		59,
 		"Tron",

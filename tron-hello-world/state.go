@@ -1,4 +1,4 @@
-package tronminimal
+package tronhelloworld
 
 import (
 	"strings"

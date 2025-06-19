@@ -1,6 +1,6 @@
 module github.com/streamingfast/substreams-codegen
 
-go 1.23.0
+go 1.24.2
 
 require (
 	connectrpc.com/connect v1.16.2
@@ -26,20 +26,23 @@ require (
 	github.com/streamingfast/dmetrics v0.0.0-20240214191810-524a5c58fbaa
 	github.com/streamingfast/dstore v0.1.1-0.20240419152712-b7df14cba7b5
 	github.com/streamingfast/eth-go v0.0.0-20230410173454-433bd8803da1
+	github.com/streamingfast/firehose-networks v0.1.0
 	github.com/streamingfast/logging v0.0.0-20230608130331-f22c91403091
 	github.com/streamingfast/shutter v1.5.0
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/tidwall/gjson v1.14.1
 	github.com/tidwall/sjson v1.0.4
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.47.0
 	go.opentelemetry.io/otel v1.23.1
-	go.uber.org/zap v1.26.0
+	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20240613232115-7f521ea00fb8
 	golang.org/x/net v0.26.0
 	golang.org/x/sync v0.7.0
 	google.golang.org/grpc v1.62.0
 	google.golang.org/protobuf v1.33.0
 )
+
+require github.com/cenkalti/backoff/v5 v5.0.2 // indirect
 
 require (
 	cloud.google.com/go v0.112.0 // indirect
