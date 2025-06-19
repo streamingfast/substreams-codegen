@@ -21,18 +21,12 @@ binaries:
     file: ./target/wasm32-unknown-unknown/release/substreams.wasm
 
 modules:
- - name: map_my_filtered_transactions
-   use: tron:filtered_transactions # Use the filtered_transactions module from the foundational module. Take a look at the "params" section of this file
-
  - name: map_my_data
    kind: map
    initialBlock: 71846500
    inputs:
-   - map: map_my_filtered_transactions # Use the filtered transactions as input to the module
+   - source: sf.tron.type.v1.Block # In production, use the "filtered_transaction" as input to the module (https://substreams.dev/packages/tron-foundational/v0.1.2#filtered_transactions)
    output:
     type: proto:mydata.v1.MyData
 
-network: tron
-
-params:
-  map_my_filtered_transactions: contract_type:TransferContract # Filter applied on the Tron transactions. In this case, only get `TransferContract` contracts
+network: {{ .Chain.ID }}

@@ -2,33 +2,46 @@ mod pb;
 
 use crate::pb::{
     mydata::v1::{MyData, TransferContract},
-    protocol::transaction::contract::ContractType,
-    sf::{substreams::tron::v1::Transactions},
+    protocol::{transaction::contract::ContractType, TransferContract as TransferContractProto},
+    sf::{tron::r#type::v1::Block},
 };
 use pb::mydata::v1 as mydata;
+use prost::Message;
 
 #[substreams::handlers::map]
-fn map_my_data(transactions: Transactions) -> Result<mydata::MyData, substreams::errors::Error> {
-
-    let contracts: Vec<TransferContract> = transactions
+fn map_my_data(block: Block) -> Result<mydata::MyData, substreams::errors::Error> {
+    let contracts: Vec<TransferContract> = block
         .transactions
         .into_iter()
         .flat_map(|transaction| {
             transaction
                 .contracts
                 .into_iter()
-                // In this case, this additional filter is NOT necessary because the transactions that you receive as input are already filtered. Take a look at the `substreams.yaml` file.
+                // This 'type' filter is actually redundant because the transactions in input
+                // are already filtered by the Tron Foundational module. See details in `substreams.yaml`
                 .filter(|contract| contract.r#type == ContractType::TransferContract as i32)
-                .map(|contract| TransferContract {
-                    contract_name: contract.contract_name,
-                    parameter: contract.parameter,
-                    provider: contract.provider,
-                    permissions_id: contract.permission_id as u32,
+                .filter(|contract| {
+                    if let Some(parameter) = contract.parameter.as_ref() {
+                        if let Ok(decoded) =
+                            TransferContractProto::decode(parameter.value.as_slice())
+                        {
+                            return decoded.amount > 100_000_000;
+                        }
+                    }
+                    return false;
+                })
+                .map(|contract| {
+                    return TransferContract {
+                        contract_name: contract.contract_name,
+                        parameter: contract.parameter,
+                        provider: contract.provider,
+                        permissions_id: contract.permission_id as u32,
+                    };
                 })
         })
         .collect();
 
     Ok(MyData {
-        transfer_contracts: contracts
+        transfer_contracts: contracts,
     })
 }
