@@ -3,8 +3,8 @@ syntax = "proto3";
 package mydata.v1;
 
 import "google/protobuf/any.proto";
-import "sf/tron/type/v1/block.proto";
 import "google/protobuf/timestamp.proto";
+import "sf/tron/type/v1/block.proto";
 
 message MyData {
   uint64 block_number = 1;
@@ -13,8 +13,8 @@ message MyData {
 }
 
 message TransferContract {
-  bytes owner = 1;
-  bytes to = 2;
+  string owner = 1;
+  string to = 2;
   int64 amount = 3;
   uint32 permissions_id = 4;
 }

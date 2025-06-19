@@ -8,6 +8,7 @@ use crate::pb::{
 use pb::mydata::v1 as mydata;
 use prost::Message;
 use prost_types::Timestamp;
+use sha2::{Digest, Sha256};
 
 #[substreams::handlers::map]
 fn map_my_data(block: Block) -> Result<mydata::MyData, substreams::errors::Error> {
@@ -40,8 +41,8 @@ fn map_my_data(block: Block) -> Result<mydata::MyData, substreams::errors::Error
                     )
                     .unwrap();
                     return TransferContract {
-                        owner: decoded.owner_address,
-                        to: decoded.to_address,
+                        owner: tron_address_to_base58(&decoded.owner_address),
+                        to: tron_address_to_base58(&decoded.to_address),
                         amount: decoded.amount,
                         permissions_id: contract.permission_id as u32,
                     };
@@ -60,4 +61,15 @@ fn map_my_data(block: Block) -> Result<mydata::MyData, substreams::errors::Error
         }),
         transfer_contracts: contracts,
     })
+}
+
+/// Converts Tron address bytes to a Base58Check-encoded string (with checksum).
+/// The address bytes must already include the Tron prefix (0x41).
+pub fn tron_address_to_base58(address: &[u8]) -> String {
+    let hash1 = Sha256::digest(address);
+    let hash2 = Sha256::digest(&hash1);
+    let checksum = &hash2[0..4];
+    let mut payload = address.to_vec();
+    payload.extend_from_slice(checksum);
+    bs58::encode(payload).into_string()
 }
