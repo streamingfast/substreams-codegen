@@ -25,7 +25,7 @@ func New() codegen.Converser {
 func init() {
 	codegen.RegisterConversation(
 		"tron-hello-world",
-		"Creates an example Substreams project that indexes Tron contracts of type `TransferContracts`",
+		"Example Substreams that reads TRON blocks and extract data from `TransferContracts`",
 		"Use this example as a starting point to create your own custom Substreams, which indexes thed data you need.",
 		codegen.ConversationFactory(New),
 		59,

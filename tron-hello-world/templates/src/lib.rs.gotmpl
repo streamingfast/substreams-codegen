@@ -3,10 +3,11 @@ mod pb;
 use crate::pb::{
     mydata::v1::{MyData, TransferContract},
     protocol::{transaction::contract::ContractType, TransferContract as TransferContractProto},
-    sf::{tron::r#type::v1::Block},
+    sf::tron::r#type::v1::Block,
 };
 use pb::mydata::v1 as mydata;
 use prost::Message;
+use prost_types::Timestamp;
 
 #[substreams::handlers::map]
 fn map_my_data(block: Block) -> Result<mydata::MyData, substreams::errors::Error> {
@@ -17,12 +18,15 @@ fn map_my_data(block: Block) -> Result<mydata::MyData, substreams::errors::Error
             transaction
                 .contracts
                 .into_iter()
-                // This 'type' filter is actually redundant because the transactions in input
-                // are already filtered by the Tron Foundational module. See details in `substreams.yaml`
+                // If you only want the Transactions, you should use the foundational module
+                // as your input instead of the full block. This allows the use of an index
+                // to go through the chain faster and only send you the data you need.
+                // Run `substreams init` again and choose the `tron-transactions` codegen to get a working example.
                 .filter(|contract| contract.r#type == ContractType::TransferContract as i32)
                 .filter(|contract| {
                     if let Some(parameter) = contract.parameter.as_ref() {
                         if let Ok(decoded) =
+                            // Decode the `parameter` field, which is a protobuf.Any object
                             TransferContractProto::decode(parameter.value.as_slice())
                         {
                             return decoded.amount > 100_000_000;
@@ -31,17 +35,29 @@ fn map_my_data(block: Block) -> Result<mydata::MyData, substreams::errors::Error
                     return false;
                 })
                 .map(|contract| {
+                    let decoded = TransferContractProto::decode(
+                        contract.parameter.as_ref().unwrap().value.as_slice(),
+                    )
+                    .unwrap();
                     return TransferContract {
-                        contract_name: contract.contract_name,
-                        parameter: contract.parameter,
-                        provider: contract.provider,
+                        owner: decoded.owner_address,
+                        to: decoded.to_address,
+                        amount: decoded.amount,
                         permissions_id: contract.permission_id as u32,
                     };
                 })
         })
         .collect();
 
+    let header = block.header.as_ref().unwrap();
+    let timestamp_millis = header.timestamp;
+
     Ok(MyData {
+        block_number: header.number as u64,
+        timestamp: Some(Timestamp {
+            seconds: timestamp_millis / 1000,
+            nanos: ((timestamp_millis % 1000) * 1_000_000) as i32,
+        }),
         transfer_contracts: contracts,
     })
 }

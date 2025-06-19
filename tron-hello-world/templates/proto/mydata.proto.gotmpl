@@ -2,16 +2,19 @@ syntax = "proto3";
 
 package mydata.v1;
 
-import "sf/tron/type/v1/block.proto";
 import "google/protobuf/any.proto";
+import "sf/tron/type/v1/block.proto";
+import "google/protobuf/timestamp.proto";
 
 message MyData {
-  repeated TransferContract transfer_contracts = 1;
+  uint64 block_number = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  repeated TransferContract transfer_contracts = 3;
 }
 
 message TransferContract {
-  bytes contract_name = 1;
-  google.protobuf.Any parameter = 2;
-  bytes provider = 3;
+  bytes owner = 1;
+  bytes to = 2;
+  int64 amount = 3;
   uint32 permissions_id = 4;
 }

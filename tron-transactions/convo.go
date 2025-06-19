@@ -20,8 +20,8 @@ func New() codegen.Converser {
 func init() {
 	codegen.RegisterConversation(
 		"tron-transactions",
-		"Creates a Substreams project which filters transactions.",
-		"You will get a project that indexes transactions by providing a filter.",
+		"Creates a Substreams that outputs a transactions based on your provided parameters.",
+		"Given a few parameters, you will get a project that indexes transactions.",
 		codegen.ConversationFactory(New),
 		59,
 		"Tron",
@@ -71,7 +71,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.NextStep()
 
 	case AskFilter:
-		message := "Input the filter that you want to apply on the transactions. You can filter on the following fields: `contract_type`, `to`, `from`, `contract_address`.\n\n The `&&` and `||` logical operators are supported.\n\nIn the following example, you filter all the transactions of type `TransferContract` and received by `TTXFoqGiUrGrmYTcamNp4NSfx5zSwmHMc9`:\n\n (contract_type:TransferContract && to:TTXFoqGiUrGrmYTcamNp4NSfx5zSwmHMc9)"
+		message := "Input the filter that you want to apply on the transactions. You can filter on the following fields: `contract_type`, `to`, `from`, `contract_address`.\n\n The `&&` and `||` logical operators are supported.\n\nIn the following example, you filter all the transactions of type `TransferContract` and received by `TPFduiaYgyYKPfrtGh3gN8rgbYU5XgfPP2`:\n\n (contract_type:TransferContract && to:TPFduiaYgyYKPfrtGh3gN8rgbYU5XgfPP2)"
 
 		return c.Action(InputFilter{}).
 			TextInput(message, "Submit").
