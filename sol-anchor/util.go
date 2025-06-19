@@ -216,8 +216,54 @@ func PrintMapPrimitiveToString(primitiveType string, fieldName string, variableN
 	return fmt.Sprintf("%s: map_primitive_to_string(%s),", fieldName, variableName)
 }
 
-func ToRustPascalCase(t string) string {
-	return t
+func ToRustPascalCase(input string) string {
+	var words []string
+	var current []rune
+
+	// Helper: flush current word
+	flush := func() {
+		if len(current) > 0 {
+			words = append(words, string(current))
+			current = []rune{}
+		}
+	}
+
+	runes := []rune(input)
+	for i := 0; i < len(runes); i++ {
+		r := runes[i]
+
+		if i > 0 && unicode.IsUpper(r) && (i+1 < len(runes) && !unicode.IsUpper(runes[i+1])) {
+			flush()
+		}
+
+		current = append(current, r)
+	}
+	flush()
+
+	// Convert words with logic
+	for i := 0; i < len(words); i++ {
+		word := words[i]
+		if isAllUpper(word) {
+			if i == len(words)-1 {
+				// Acronym at the end: keep as-is
+				continue
+			}
+			// Acronym in the middle: capitalize only first letter
+			words[i] = strings.ToUpper(string(word[0])) + strings.ToLower(word[1:])
+		}
+		// otherwise, leave it as-is (already PascalCase)
+	}
+
+	return strings.Join(words, "")
+}
+
+func isAllUpper(s string) bool {
+	for _, r := range s {
+		if !unicode.IsUpper(r) {
+			return false
+		}
+	}
+	return true
 }
 
 func toLowerCaseCapitalized(input string) string {

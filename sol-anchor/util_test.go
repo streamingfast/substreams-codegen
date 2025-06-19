@@ -2,26 +2,27 @@ package solanchor
 
 import "testing"
 
-func TestToRustFriendlyPascalCase(t *testing.T) {
+func TestProtobufToRustName(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected string
 	}{
+		{"SwapRaydiumCPVariant", "SwapRaydiumCpVariant"},
+		{"RaydiumCP", "RaydiumCP"},
 		{"WrappedI80F48", "WrappedI80f48"},
-		{"MyXMLParser", "Myxmlparser"},
-		{"ETHPriceFeed", "EthPriceFeed"},
-		{"I80F48Wrapper", "I80f48Wrapper"},
-		{"SimpleName", "SimpleName"},
-		{"bigUIDHandler", "BigUidHandler"},
-		{"multiPARTnameTEST", "Multipartnametest"},
-		{"", ""},
-		{"some_number_123", "SomeNumber123"},
+		{"MyHTTPResponse", "MyHttpResponse"},
+		{"URLParser", "UrlParser"},
+		{"ABCTestXYZ", "AbcTestXYZ"},
+		{"CPUUsageData", "CpuUsageData"},
+		{"IOConfig", "IoConfig"},
+		{"HTTP2Connection", "Http2Connection"},
+		{"DNSInfoPacket", "DnsInfoPacket"},
 	}
 
 	for _, tt := range tests {
-		result := ToRustFriendlyPascalCase(tt.input)
+		result := ToRustPascalCase(tt.input)
 		if result != tt.expected {
-			t.Errorf("ToRustFriendlyPascalCase(%q) = %q, want %q", tt.input, result, tt.expected)
+			t.Errorf("ProtobufToRustName(%q) = %q, want %q", tt.input, result, tt.expected)
 		}
 	}
 }
