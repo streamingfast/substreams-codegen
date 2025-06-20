@@ -21,8 +21,7 @@ fn map_my_data(block: Block) -> Result<mydata::MyData, substreams::errors::Error
                 .into_iter()
                 // If you only want the Transactions, you should use the foundational module
                 // as your input instead of the full block. This allows the use of an index
-                // to go through the chain faster and only send you the data you need.
-                // Run `substreams init` again and choose the `tron-transactions` codegen to get a working example.
+                // to go through the chain faster, try it using the tron-transactions codegen.
                 .filter(|contract| contract.r#type == ContractType::TransferContract as i32)
                 .filter(|contract| {
                     if let Some(parameter) = contract.parameter.as_ref() {
