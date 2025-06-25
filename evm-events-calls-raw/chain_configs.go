@@ -151,7 +151,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		SupportsCalls:        true,
 		APIKeyEnvVar:         "CODEGEN_BASE_API_KEY",
 	},
-	"tron-mainnet-evm": {
+	"tron-evm-mainnet": {
 		DisplayName:          "Tron EVM mainnet",
 		FirstStreamableBlock: 0,
 		Network:              "tron-evm-mainnet",

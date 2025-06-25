@@ -106,7 +106,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
 	},
-	"tron-mainnet-evm": {
+	"tron-evm-mainnet": {
 		DisplayName:          "Tron EVM mainnet",
 		FirstStreamableBlock: 0,
 		Network:              "tron-evm-mainnet",
