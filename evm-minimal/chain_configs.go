@@ -106,6 +106,13 @@ var ChainConfigByID = map[string]*ChainConfig{
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
 	},
+	"tron-mainnet-evm": {
+		DisplayName:          "Tron EVM mainnet",
+		FirstStreamableBlock: 0,
+		Network:              "tron-evm-mainnet",
+		initialBlockCache:    make(map[string]uint64),
+		SupportsCalls:        false,
+	},
 	"unichain": {
 		DisplayName:          "Unichain Mainnet",
 		FirstStreamableBlock: 0,
