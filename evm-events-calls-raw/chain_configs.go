@@ -165,6 +165,13 @@ var ChainConfigByID = map[string]*ChainConfig{
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
 	},
+	"injective-evm-testnet": {
+		DisplayName:          "Injective EVM testnet",
+		FirstStreamableBlock: 0,
+		Network:              "injective-evm-testnet",
+		initialBlockCache:    make(map[string]uint64),
+		SupportsCalls:        true,
+	},
 }
 
 func init() {
