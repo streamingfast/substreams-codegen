@@ -1,0 +1,42 @@
+mod pb;
+use pb::mydata::v1 as mydata;
+
+use substreams::Hex;
+use substreams_ethereum::pb::eth::v2::Block;
+
+#[allow(unused_imports)]
+use num_traits::cast::ToPrimitive;
+
+use crate::pb::mydata::v1::Log;
+
+substreams_ethereum::init!();
+
+#[substreams::handlers::map]
+fn map_my_data(blk: Block) -> Result<mydata::MyData, substreams::errors::Error> {
+    let mut my_data = mydata::MyData::default();
+
+    // Get bytes from the string USDC address
+    let usdc_address = match Hex::decode("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48") {
+        Ok(address) => address,
+        Err(_) => panic!("Could not decode address"),
+    };
+
+    // Retrieve all the logs from the blocks
+    let logs: Vec<Log> = blk
+        .transaction_traces
+        .into_iter() // Iterate over the transactions of the block
+        .filter(|transaction| transaction.to == usdc_address) // Filter only USDC transactions
+        .filter_map(|transaction| transaction.receipt)
+        .flat_map(|receipt| { // Map the log data
+            receipt.logs.into_iter().map(|log| Log {
+                address: log.address,
+                topics: log.topics,
+                data: log.data,
+            })
+        })
+        .collect();
+
+    my_data.logs = logs;
+
+    Ok(my_data)
+}

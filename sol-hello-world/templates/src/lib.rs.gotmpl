@@ -1,0 +1,23 @@
+mod pb;
+use pb::mydata::v1 as mydata;
+
+use substreams_solana::pb::sf::solana::r#type::v1::Block;
+
+#[substreams::handlers::map]
+fn map_my_data(blk: Block) -> mydata::MyData {
+    let mut account_vec: Vec<Vec<u8>> = Vec::new();
+
+    blk.walk_instructions()
+        .filter(|instruction| {
+            instruction.program_id() == "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"
+        })
+        .for_each(|instruction| {
+            instruction.accounts().into_iter().for_each(|account| {
+                account_vec.push(account.0.clone());
+            });
+        });
+
+    let mut my_data = mydata::MyData::default();
+    my_data.accounts = account_vec;
+    my_data
+}

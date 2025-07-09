@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package mydata.v1;
+
+message Event {
+  repeated bytes keys = 1;
+  repeated bytes data = 2;
+}
+
+message MyData {
+  repeated Event events = 1;
+}
