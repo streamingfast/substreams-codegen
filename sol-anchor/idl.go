@@ -14,6 +14,22 @@ type IDL struct {
 	Types        []Type        `json:"types"`
 }
 
+/*
+	Old IDLs do not contain the discriminator in the JSON, so the only way is to generate them through the Anchor library.
+	We must support both.
+*/
+func (i *IDL) IsOldIDLFormat() bool {
+	if len(i.Instructions) > 0 {
+		return len(i.Instructions[0].Discriminator) == 0
+	}
+
+	if len(i.Events) > 0 {
+		return len(i.Events[0].Discriminator) == 0
+	}
+
+	return false
+}
+
 func (i *IDL) AccountsAndTypes() []Type {
 	return append(i.Types, i.Accounts...)
 }

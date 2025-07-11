@@ -105,6 +105,26 @@ func TestPrintVecDefined(t *testing.T) {
 	fmt.Println(mappings)
 }
 
+func TestPrintVecArraySimple(t *testing.T) {
+	// Generate types from IDL
+	idlString := readFromFile("jupiter_locks")
+
+	idl := &IDL{}
+	err := json.Unmarshal(idlString, &idl)
+	assert.Nil(t, err)
+
+	jsonBytes := []byte(`{"vec": {"array": ["u8",32]}}`)
+
+	result, err := unmarshallFieldType(jsonBytes)
+	assert.Nil(t, err)
+
+	resolvedFieldType, err := result.GetResolvedFieldType()
+	assert.Nil(t, err)
+
+	mappings := resolvedFieldType.PrintRustMappings("my_type", "inst", idl.Types)
+	fmt.Println(mappings)
+}
+
 // Test unmarshalSimple
 func TestUnmarshalSimple(t *testing.T) {
 	json := []byte(`"string"`)

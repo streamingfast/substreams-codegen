@@ -1,4 +1,10 @@
 pub mod idl {
+
+    {{ if .IsOldIDLFormat }}
+    use anchor_lang::declare_program;
+
+    declare_program!(program);
+    {{ else }}
     use borsh::{BorshDeserialize, BorshSerialize};
 
     #[derive(Debug, Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
@@ -43,4 +49,6 @@ pub mod idl {
     }
     {{ end }}
     {{- end }}
+
+    {{ end }}
 }

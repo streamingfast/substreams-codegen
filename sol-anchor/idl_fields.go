@@ -67,6 +67,7 @@ type FieldType struct {
 	VecDefined       *VecDefined
 	VecOptionSimple  *VecOptionSimple
 	VecOptionDefined *VecOptionDefined
+	VecArraySimple   *VecArraySimple
 
 	OptionSimple            *OptionSimple
 	OptionDefined           *OptionDefined
@@ -101,6 +102,9 @@ func (t *FieldType) GetResolvedFieldType() (ResolvedFieldType, error) {
 	}
 	if t.IsVecOptionDefined() {
 		return t.VecOptionDefined, nil
+	}
+	if t.IsVecArraySimple() {
+		return t.VecArraySimple, nil
 	}
 	if t.IsOptionSimple() {
 		return t.OptionSimple, nil
@@ -176,6 +180,10 @@ func (t *FieldType) IsVecOptionSimple() bool {
 
 func (t *FieldType) IsVecOptionDefined() bool {
 	return t.VecOptionDefined != nil
+}
+
+func (t *FieldType) IsVecArraySimple() bool {
+	return t.VecArraySimple != nil
 }
 
 func (t *FieldType) IsOptionSimple() bool {
@@ -326,6 +334,15 @@ func unmarshallFieldType(data []byte) (*FieldType, error) {
 				fieldType.VecOptionDefined = &VecOptionDefined{}
 				fieldType.VecOptionDefined.Type = fieldType.VecRecursive.Type.OptionRecursive.Type.Defined.Type
 			}
+		}
+
+		if fieldType.VecRecursive.Type.IsArrayRecursive() {
+			if IsPublicKey(fieldType.VecRecursive.Type.ArrayRecursive.Type.Simple.Type) {
+
+			}
+			fieldType.VecArraySimple = &VecArraySimple{}
+			fieldType.VecArraySimple.Type = fieldType.VecRecursive.Type.ArrayRecursive.Type.Simple.Type
+			fieldType.VecArraySimple.Length = fieldType.VecRecursive.Type.ArrayRecursive.Length
 		}
 
 		return &fieldType, nil
