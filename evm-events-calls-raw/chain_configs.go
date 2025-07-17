@@ -13,6 +13,9 @@ type ChainConfig struct {
 	DisplayName          string // Public
 	ExplorerLink         string
 	ApiEndpoint          string
+	ApiBaseURL           string // Base URL without query parameters
+	ApiQueryParams       string // Query parameters to append (e.g. "?chainid=747474")
+	ApiPathPattern       string // Path pattern for direct API calls (e.g. "/api", "/{address}")
 	ApiEndpointDirect    bool
 	FirstStreamableBlock uint64
 	Network              string
@@ -132,9 +135,9 @@ var ChainConfigByID = map[string]*ChainConfig{
 	},
 	"sei-mainnet": {
 		DisplayName:          "SEI Mainnet (EVM)",
-		ExplorerLink:         "0xb75d0b03c06a926e488e2659df1a861f860bd3d1",
 		ApiEndpoint:          "https://seitrace.com/pacific-1/api/v2/smart-contracts",
 		ApiEndpointDirect:    true,
+		ExampleContract:      "0xb75d0b03c06a926e488e2659df1a861f860bd3d1",
 		FirstStreamableBlock: 79123881,
 		Network:              "sei-mainnet",
 		initialBlockCache:    make(map[string]uint64),
@@ -160,6 +163,9 @@ var ChainConfigByID = map[string]*ChainConfig{
 	},
 	"unichain": {
 		DisplayName:          "Unichain Mainnet",
+		ExplorerLink:         "https://unichain-sepolia.blockscout.com",
+		ApiEndpoint:          "https://unichain-sepolia.blockscout.com/api",
+		ExampleContract:      "0x1f98400000000000000000000000000000000003",
 		FirstStreamableBlock: 0,
 		Network:              "unichain",
 		initialBlockCache:    make(map[string]uint64),
@@ -171,6 +177,20 @@ var ChainConfigByID = map[string]*ChainConfig{
 		Network:              "injective-evm-testnet",
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
+	},
+	"katana-mainnet": {
+		DisplayName:          "Katana Mainnet",
+		ExplorerLink:         "https://katanascan.com",
+		ApiEndpoint:          "https://api.etherscan.io/v2/api",
+		ApiBaseURL:           "https://api.etherscan.io/v2/api",
+		ApiQueryParams:       "?chainid=747474",
+		ApiPathPattern:       "",
+		ExampleContract:      "0x203A662b0BD271A6ed5a60EdFbd04bFce608FD36",
+		FirstStreamableBlock: 0,
+		Network:              "katana-mainnet",
+		initialBlockCache:    make(map[string]uint64),
+		SupportsCalls:        true,
+		APIKeyEnvVar:         "CODEGEN_KATANA_API_KEY",
 	},
 }
 

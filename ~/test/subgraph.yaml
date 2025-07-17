@@ -1,0 +1,32 @@
+specVersion: 1.3.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: BMIBridge
+    network: mainnet
+    source:
+      address: "0xdd86c052fc6f1e68b62595940ed4e3b8813eec0f"
+      abi: BMIBridge
+      startBlock: 14520426
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - BMIWithdrawn
+        - OwnershipTransferred
+        - StakedBMI
+      abis:
+        - name: BMIBridge
+          file: ./abis/BMIBridge.json
+      eventHandlers:
+        - event: BMIWithdrawn(uint256,indexed address)
+          handler: handleBMIWithdrawn
+        - event: OwnershipTransferred(indexed address,indexed address)
+          handler: handleOwnershipTransferred
+        - event: StakedBMI(uint256,indexed address)
+          handler: handleStakedBMI
+      file: ./src/bmi-bridge.ts

@@ -22,6 +22,39 @@ var httpClient = http.Client{
 	Timeout:   30 * time.Second,
 }
 
+// buildAPIURL constructs the API URL based on the chain configuration
+func buildAPIURL(chain *ChainConfig, endpoint string) string {
+	if chain.ApiBaseURL != "" {
+		// Use new flexible URL structure
+		url := chain.ApiBaseURL
+		if chain.ApiQueryParams != "" {
+			url += chain.ApiQueryParams
+		}
+		return url
+	}
+	// Fall back to legacy ApiEndpoint
+	return endpoint
+}
+
+// buildDirectAPIURL constructs the direct API URL for contract ABI fetching
+func buildDirectAPIURL(chain *ChainConfig, address string) string {
+	if chain.ApiBaseURL != "" && chain.ApiPathPattern != "" {
+		// Use new flexible URL structure
+		url := chain.ApiBaseURL
+		if chain.ApiPathPattern == "/{address}" {
+			url += "/" + address
+		} else {
+			url += chain.ApiPathPattern
+		}
+		if chain.ApiQueryParams != "" {
+			url += chain.ApiQueryParams
+		}
+		return url
+	}
+	// Fall back to legacy format
+	return fmt.Sprintf("%s/%s", chain.ApiEndpoint, address)
+}
+
 func getContractABIFollowingProxy(ctx context.Context, contractAddress string, chain *ChainConfig) (*ABI, error) {
 	if cachedABI := chain.abiCache[contractAddress]; cachedABI != nil {
 		// For testing purposes, when populating on-disk ABIs with setTestABI()
@@ -29,26 +62,26 @@ func getContractABIFollowingProxy(ctx context.Context, contractAddress string, c
 	}
 
 	if chain.ApiEndpointDirect {
-		abi, abiContent, err := getContractABIDirect(ctx, contractAddress, chain.ApiEndpoint)
+		abi, abiContent, err := getContractABIDirect(ctx, contractAddress, chain)
 		if err != nil {
 			return nil, err
 		}
 		return &ABI{abi, abiContent}, nil
 	}
-	abi, abiContent, wait, err := getContractABI(ctx, contractAddress, chain.ApiEndpoint, os.Getenv(chain.APIKeyEnvVar))
+	abi, abiContent, wait, err := getContractABI(ctx, contractAddress, chain, os.Getenv(chain.APIKeyEnvVar))
 	if err != nil {
 		return nil, err
 	}
 
 	<-wait.C
-	implementationAddress, wait, err := getProxyContractImplementation(ctx, contractAddress, chain.ApiEndpoint, os.Getenv(chain.APIKeyEnvVar))
+	implementationAddress, wait, err := getProxyContractImplementation(ctx, contractAddress, chain, os.Getenv(chain.APIKeyEnvVar))
 	if err != nil {
 		return nil, err
 	}
 	<-wait.C
 
 	if implementationAddress != "" {
-		implementationABI, implementationABIContent, wait, err := getContractABI(ctx, implementationAddress, chain.ApiEndpoint, os.Getenv(chain.APIKeyEnvVar))
+		implementationABI, implementationABIContent, wait, err := getContractABI(ctx, implementationAddress, chain, os.Getenv(chain.APIKeyEnvVar))
 		if err != nil {
 			return nil, err
 		}
@@ -86,8 +119,8 @@ func getContractABIFollowingProxy(ctx context.Context, contractAddress string, c
 	return &ABI{abi, abiContent}, nil
 }
 
-func getContractABIDirect(ctx context.Context, address string, endpoint string) (*eth.ABI, string, error) {
-	url := fmt.Sprintf("%s/%s", endpoint, address)
+func getContractABIDirect(ctx context.Context, address string, chain *ChainConfig) (*eth.ABI, string, error) {
+	url := buildDirectAPIURL(chain, address)
 	fmt.Println("getting from url", url)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
@@ -119,10 +152,11 @@ func getContractABIDirect(ctx context.Context, address string, endpoint string) 
 
 }
 
-func getContractABI(ctx context.Context, address string, endpoint string, apiKey string) (*eth.ABI, string, *time.Timer, error) {
+func getContractABI(ctx context.Context, address string, chain *ChainConfig, apiKey string) (*eth.ABI, string, *time.Timer, error) {
 	if apiKey != "" {
 		apiKey = fmt.Sprintf("&apiKey=%s", apiKey)
 	}
+	endpoint := buildAPIURL(chain, chain.ApiEndpoint)
 	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/api?module=contract&action=getabi&address=%s%s", endpoint, address, apiKey), nil)
 	if err != nil {
 		return nil, "", nil, fmt.Errorf("new request: %w", err)
@@ -159,10 +193,11 @@ func getContractABI(ctx context.Context, address string, endpoint string, apiKey
 }
 
 // getProxyContractImplementation returns the implementation address and a timer to wait before next call
-func getProxyContractImplementation(ctx context.Context, address string, endpoint string, apiKey string) (string, *time.Timer, error) {
+func getProxyContractImplementation(ctx context.Context, address string, chain *ChainConfig, apiKey string) (string, *time.Timer, error) {
 	if apiKey != "" {
 		apiKey = fmt.Sprintf("&apiKey=%s", apiKey)
 	}
+	endpoint := buildAPIURL(chain, chain.ApiEndpoint)
 	// check for proxy contract's implementation
 	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/api?module=contract&action=getsourcecode&address=%s%s", endpoint, address, apiKey), nil)
 
@@ -244,7 +279,8 @@ func getContractInitialBlock(ctx context.Context, chain *ChainConfig, contractAd
 	if key := os.Getenv(chain.APIKeyEnvVar); key != "" {
 		apiKey = fmt.Sprintf("&apiKey=%s", key)
 	}
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/api?module=account&action=txlist&address=%s&page=1&offset=1&sort=asc%s", chain.ApiEndpoint, contractAddress, apiKey), nil)
+	endpoint := buildAPIURL(chain, chain.ApiEndpoint)
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/api?module=account&action=txlist&address=%s&page=1&offset=1&sort=asc%s", endpoint, contractAddress, apiKey), nil)
 	if err != nil {
 		return chain.FirstStreamableBlock, fmt.Errorf("new request: %w", err)
 	}
