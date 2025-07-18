@@ -11,7 +11,7 @@ import (
 func init() {
 	codegen.RegisterConversation(
 		"sol-hello-world",
-		"Creates a Substreams project that indexes accounts from the Pump.Fun program.",
+		"Creates a Substreams project that extracts accounts from the Pump.Fun program.",
 		"You will get a very simple project to get started with Substreams.",
 		codegen.ConversationFactory(New),
 		2002,

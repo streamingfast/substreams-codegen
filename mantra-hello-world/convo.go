@@ -18,7 +18,7 @@ type Convo struct {
 func init() {
 	codegen.RegisterConversation(
 		"mantra-hello-world",
-		"Creates a Substreams that indexes 'transfer' Mantra events.",
+		"Creates a Substreams that extracts 'transfer' Mantra events from blocks",
 		"You will get a very simple project to get started with Substreams.",
 		codegen.ConversationFactory(New),
 		72,

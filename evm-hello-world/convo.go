@@ -16,7 +16,7 @@ func init() {
 	}
 	codegen.RegisterConversation(
 		"evm-hello-world",
-		"Creates a Substreams that indexes USDC log data",
+		"Creates a Substreams that extracts USDC log data from blocks",
 		`Supported networks: `+strings.Join(supportedChains, ", "),
 		codegen.ConversationFactory(New),
 		83,
