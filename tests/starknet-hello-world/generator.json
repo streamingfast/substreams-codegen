@@ -1,5 +1,5 @@
 {
-  "generator": "starknet-minimal",
+  "generator": "starknet-hello-world",
   "state": {
     "name": "my_project",
     "chainName": "starknet-mainnet",

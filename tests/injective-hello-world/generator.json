@@ -1,5 +1,5 @@
 {
-  "generator": "injective-minimal",
+  "generator": "injective-hello-world",
   "state": {
     "name": "my_project",
     "chainName": "injective-mainnet",

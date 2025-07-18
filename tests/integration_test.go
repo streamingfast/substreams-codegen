@@ -42,20 +42,20 @@ func TestIntegration(t *testing.T) {
 			apiKeyNeeded:          true,
 		},
 		{
-			name:      "evm-minimal",
-			stateFile: "./evm-minimal/generator.json",
+			name:      "evm-hello-world",
+			stateFile: "./evm-hello-world/generator.json",
 		},
 		{
-			name:      "injective-minimal",
-			stateFile: "./injective-minimal/generator.json",
+			name:      "injective-hello-world",
+			stateFile: "./injective-hello-world/generator.json",
 		},
 		{
-			name:      "sol-minimal",
-			stateFile: "./sol-minimal/generator.json",
+			name:      "sol-hello-world",
+			stateFile: "./sol-hello-world/generator.json",
 		},
 		{
-			name:      "starknet-minimal",
-			stateFile: "./starknet-minimal/generator.json",
+			name:      "starknet-hello-world",
+			stateFile: "./starknet-hello-world/generator.json",
 		},
 		{
 			name:      "injective-events",
@@ -114,6 +114,7 @@ func TestIntegration(t *testing.T) {
 	var zlog, _ = logging.RootLogger("test", "test")
 	endpoint := "https://codegen-staging.substreams.dev"
 	if integrationTestsAgainstLocal {
+		fmt.Println("Starting local server... :51012")
 		launchLocalServer(t, ":51012", zlog)
 
 		switch {
@@ -233,10 +234,11 @@ func runTestsInDocker(t *testing.T, cases []struct {
 func runTestLocally(t *testing.T, generatorPath string) {
 	tempDir, err := os.MkdirTemp("", "temp")
 	require.NoError(t, err)
+	fmt.Println("tempdir:", tempDir)
 	//defer os.RemoveAll(tempDir)
 
 	runCommand(t, "", "cp", generatorPath, fmt.Sprintf("%s/state.json", tempDir))
-	runCommand(t, tempDir, "substreams", "init", "--state-file", "state.json")
+	runCommand(t, tempDir, "substreams", "init", "--state-file", "state.json", "--force-download-cwd")
 	runCommand(t, tempDir, "substreams", "build")
 }
 

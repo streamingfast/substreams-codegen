@@ -1,5 +1,5 @@
 {
-  "generator": "evm-minimal",
+  "generator": "evm-hello-world",
   "state": {
     "name": "my_project",
     "chainName": "mainnet"
