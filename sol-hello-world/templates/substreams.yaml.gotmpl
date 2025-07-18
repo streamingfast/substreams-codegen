@@ -29,17 +29,17 @@ binaries:
 modules:
  - name: map_my_data
    kind: map
+   initialBlock: 280000000 # arbitrary block with some pumpfun data
    inputs:
    - map: solana:blocks_without_votes
    output:
     type: proto:mydata.v1.MyData
-  # For performance, you should use a blockFilter whenever possible, like this:
+  # For performance, you should use a blockFilter whenever possible
+  # see https://substreams.dev/streamingfast/solana-common/latest for details
   #
   # blockFilter:
-  #  module: solana:program_ids_without_votes
-  #  query:
-  #      string: program:4vMsoUT2BWatFweudnQM1xedRLfJgJ7hswhcpz4xgBTy
-  #
-  # see https://substreams.dev/streamingfast/solana-common/latest for details
+  #   module: solana:program_ids_without_votes
+  #   query:
+  #     string: program:6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P
 
 network: solana-mainnet-beta
