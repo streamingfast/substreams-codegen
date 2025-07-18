@@ -1,0 +1,8 @@
+{
+  "generator": "sol-hello-world",
+  "state": {
+    "name": "my_project",
+    "chainName": "",
+    "initialBlockSet": true
+  }
+}
