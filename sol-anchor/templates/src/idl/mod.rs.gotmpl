@@ -1,54 +1,62 @@
 pub mod idl {
 
-    {{ if .IsOldIDLFormat }}
+    {{ if .Idl.IsOldIDLFormat }}
     use anchor_lang::declare_program;
 
     declare_program!(program);
     {{ else }}
-    use borsh::{BorshDeserialize, BorshSerialize};
+    pub mod program {
+        use borsh::{BorshDeserialize, BorshSerialize};
+        use types::*;
 
-    #[derive(Debug, Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
-    pub struct PubKey(pub [u8; 32]);
+        #[derive(Debug, Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
+        pub struct PubKey(pub [u8; 32]);
 
-    {{- range $i, $event := .Idl.Events }}
-    #[derive(BorshSerialize, BorshDeserialize)]
-    pub struct {{$event.Name}}Event {
-        {{- range $i, $arg := $event.Fields }}
-            pub {{ $arg.SnakeCaseName }}: {{ $arg.Type.GetResolvedFieldType.ResolveRustType }},
-        {{- end }}
-    }
-    {{ end }}
+        {{- range $i, $event := .Idl.Events }}
+        #[derive(BorshSerialize, BorshDeserialize)]
+        pub struct {{$event.Name}} {
+            {{- range $i, $arg := $event.Fields }}
+                pub {{ $arg.SnakeCaseName }}: {{ $arg.Type.GetResolvedFieldType.ResolveRustType }},
+            {{- end }}
+        }
+        {{ end }}
 
-    {{- range $i, $inst := .Idl.Instructions }}
-    #[derive(BorshSerialize, BorshDeserialize)]
-    pub struct {{$inst.PascalCaseName}}Instruction {
-        {{- range $i, $arg := $inst.Args }}
-            pub {{ $arg.SnakeCaseName }}: {{ $arg.Type.GetResolvedFieldType.ResolveRustType }},
-        {{- end }}
-    }
-    {{ end }}
+        {{- range $i, $inst := .Idl.Instructions }}
+        #[derive(BorshSerialize, BorshDeserialize)]
+        pub struct {{$inst.PascalCaseName}} {
+            {{- range $i, $arg := $inst.Args }}
+                pub {{ $arg.SnakeCaseName }}: {{ $arg.Type.GetResolvedFieldType.ResolveRustType }},
+            {{- end }}
+        }
+        {{ end }}
 
-    {{ range $i, $type := .Idl.AccountsAndTypes }}
-    {{- if $type.Type.IsStruct }}
-    #[derive(BorshSerialize, BorshDeserialize)]
-    pub struct {{$type.Name}} {
-    {{- range $i, $field := $type.Type.Struct.Fields }}
-        pub {{ $field.SnakeCaseName }}: {{ $field.Type.GetResolvedFieldType.ResolveRustType }},
-    {{- end}}
-    }
-    {{- else if $type.Type.IsEnum }}
-    #[derive(BorshSerialize, BorshDeserialize)]
-    pub enum {{$type.Name}} {
-    {{- range $i, $variant := $type.Type.Enum.Variants }}
-        {{ $variant.Name }} {
-            {{- range $i, $field := $variant.Fields }}
-                {{ $field.SnakeCaseName }}: {{ $field.Type.GetResolvedFieldType.ResolveRustType }},
+        pub mod types {
+            use borsh::{BorshDeserialize, BorshSerialize};
+            use crate::idl::idl::program::PubKey;
+
+            {{ range $i, $type := .Idl.AccountsAndTypes }}
+            {{- if $type.Type.IsStruct }}
+            #[derive(BorshSerialize, BorshDeserialize)]
+            pub struct {{$type.Name}} {
+            {{- range $i, $field := $type.Type.Struct.Fields }}
+                pub {{ $field.SnakeCaseName }}: {{ $field.Type.GetResolvedFieldType.ResolveRustType }},
             {{- end}}
-        },
-    {{- end}}
+            }
+            {{- else if $type.Type.IsEnum }}
+            #[derive(BorshSerialize, BorshDeserialize)]
+            pub enum {{$type.Name}} {
+            {{- range $i, $variant := $type.Type.Enum.Variants }}
+                {{ $variant.Name }} {
+                    {{- range $i, $field := $variant.Fields }}
+                        {{ $field.SnakeCaseName }}: {{ $field.Type.GetResolvedFieldType.ResolveRustType }},
+                    {{- end}}
+                },
+            {{- end}}
+            }
+            {{ end }}
+            {{- end }}
+        }
     }
-    {{ end }}
-    {{- end }}
 
     {{ end }}
 }

@@ -2,6 +2,7 @@ package solanchor
 
 import (
 	"fmt"
+	//"regexp"
 	"strings"
 	"unicode"
 )
@@ -112,13 +113,13 @@ func PrintDefinedTree(typeName string, fieldName string, types []Type) string {
 			if len(variant.Fields) == 0 {
 				// Unit variant
 				matchArms.WriteString(fmt.Sprintf(`
-			idl::idl::%s::%s {} => pb::substreams::v1::program::%s {
+			idl::idl::program::types::%s::%s {} => pb::substreams::v1::program::%s {
 				kind: Some(%s(%s {}))
 			},`,
 					typeName, variant.Name,
 					ToRustPascalCase(typeName),
 					oneofWrapper,
-					ComposeProgramRustNamespaceType(protobufVariantName),
+					ComposeProgramRustNamespaceType(ToRustPascalCase(protobufVariantName)),
 				))
 			} else {
 				var bindingFields []string
@@ -137,7 +138,7 @@ func PrintDefinedTree(typeName string, fieldName string, types []Type) string {
 				}
 
 				matchArms.WriteString(fmt.Sprintf(`
-			idl::idl::%s::%s { %s } => pb::substreams::v1::program::%s {
+			idl::idl::program::types::%s::%s { %s } => pb::substreams::v1::program::%s {
 				kind: Some(%s(%s {
 %s
 				}))
@@ -154,7 +155,7 @@ func PrintDefinedTree(typeName string, fieldName string, types []Type) string {
 		}
 
 		return fmt.Sprintf(`
-			fn map_defined_%s(idlType: idl::idl::%s) -> pb::substreams::v1::program::%s {
+			fn map_defined_%s(idlType: idl::idl::program::types::%s) -> pb::substreams::v1::program::%s {
 				match idlType {
 %s
 				}
@@ -216,56 +217,6 @@ func PrintMapPrimitiveToString(primitiveType string, fieldName string, variableN
 	return fmt.Sprintf("%s: map_primitive_to_string(%s),", fieldName, variableName)
 }
 
-func ToRustPascalCase(input string) string {
-	var words []string
-	var current []rune
-
-	// Helper: flush current word
-	flush := func() {
-		if len(current) > 0 {
-			words = append(words, string(current))
-			current = []rune{}
-		}
-	}
-
-	runes := []rune(input)
-	for i := 0; i < len(runes); i++ {
-		r := runes[i]
-
-		if i > 0 && unicode.IsUpper(r) && (i+1 < len(runes) && !unicode.IsUpper(runes[i+1])) {
-			flush()
-		}
-
-		current = append(current, r)
-	}
-	flush()
-
-	// Convert words with logic
-	for i := 0; i < len(words); i++ {
-		word := words[i]
-		if isAllUpper(word) {
-			if i == len(words)-1 {
-				// Acronym at the end: keep as-is
-				continue
-			}
-			// Acronym in the middle: capitalize only first letter
-			words[i] = strings.ToUpper(string(word[0])) + strings.ToLower(word[1:])
-		}
-		// otherwise, leave it as-is (already PascalCase)
-	}
-
-	return strings.Join(words, "")
-}
-
-func isAllUpper(s string) bool {
-	for _, r := range s {
-		if !unicode.IsUpper(r) {
-			return false
-		}
-	}
-	return true
-}
-
 func toLowerCaseCapitalized(input string) string {
 	if input == "" {
 		return ""
@@ -277,22 +228,96 @@ func toLowerCaseCapitalized(input string) string {
 
 }
 
-func ToRustFriendlyPascalCase(input string) string {
-	var result strings.Builder
-	runes := []rune(input)
-	capNext := true
-	for i := 0; i < len(runes); i++ {
-		ch := runes[i]
-		if !unicode.IsLetter(ch) && !unicode.IsDigit(ch) {
-			capNext = true
-			continue
-		}
-		if capNext {
-			result.WriteRune(unicode.ToUpper(ch))
-			capNext = false
-		} else {
-			result.WriteRune(unicode.ToLower(ch))
+var knownTrailingAcronyms = map[string]struct{}{
+	"FX":   {},
+	"V2":   {},
+	"FXV2": {},
+	"XYZ":  {}, // if you want to preserve XYZ too
+}
+
+// NormalizePascalCase converts Protobuf-style PascalCase to Rust-style PascalCase,
+// preserving trailing acronyms like FXV2.
+func ToRustPascalCase(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+
+	// Step 1: Split into segments
+	segments := splitPascal(s)
+
+	// Step 2: Check trailing suffix against known acronyms
+	for i := range segments {
+		tail := strings.Join(segments[i:], "")
+		if _, ok := knownTrailingAcronyms[tail]; ok {
+			// Preserve tail as-is, normalize head
+			head := segments[:i]
+			for j, seg := range head {
+				head[j] = normalizeSegment(seg)
+			}
+			return strings.Join(append(head, tail), "")
 		}
 	}
-	return result.String()
+
+	// No match — normalize all parts
+	for i, seg := range segments {
+		segments[i] = normalizeSegment(seg)
+	}
+	return strings.Join(segments, "")
+}
+
+// splitPascal splits PascalCase string into segments using character rules
+func splitPascal(s string) []string {
+	var segments []string
+	var current strings.Builder
+	runes := []rune(s)
+
+	for i := 0; i < len(runes); i++ {
+		current.WriteRune(runes[i])
+		if i+1 < len(runes) && isBoundary(runes, i) {
+			segments = append(segments, current.String())
+			current.Reset()
+		}
+	}
+	if current.Len() > 0 {
+		segments = append(segments, current.String())
+	}
+	return segments
+}
+
+// normalizeSegment capitalizes first letter, lowercases others (for letters)
+func normalizeSegment(part string) string {
+	if len(part) == 0 {
+		return part
+	}
+
+	var sb strings.Builder
+	runes := []rune(part)
+	sb.WriteRune(unicode.ToUpper(runes[0]))
+	for _, r := range runes[1:] {
+		if unicode.IsLetter(r) {
+			sb.WriteRune(unicode.ToLower(r))
+		} else {
+			sb.WriteRune(r)
+		}
+	}
+	return sb.String()
+}
+
+// isBoundary determines if there's a word boundary between runes[i] and runes[i+1]
+func isBoundary(runes []rune, i int) bool {
+	curr := runes[i]
+	next := runes[i+1]
+
+	if unicode.IsLower(curr) && unicode.IsUpper(next) {
+		return true
+	}
+	if (unicode.IsLetter(curr) && unicode.IsDigit(next)) || (unicode.IsDigit(curr) && unicode.IsLetter(next)) {
+		return true
+	}
+	if unicode.IsUpper(curr) && unicode.IsUpper(next) {
+		if i+2 < len(runes) && unicode.IsLower(runes[i+2]) {
+			return true
+		}
+	}
+	return false
 }

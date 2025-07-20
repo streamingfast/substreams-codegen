@@ -15,7 +15,12 @@ substreams-solana = "0.14"
 substreams-solana-program-instructions = "0.2"
 sologger_log_context = "0.1.2"
 base64 = "0.22.1"
+{{ if .Idl.IsOldIDLFormat }}
+anchor-lang = ">=0.31.1"
+solana-program = "2.3.0"
+{{ else }}
 borsh = { version = "1.5.7", features = ["derive"] }
+{{ end }}
 
 # Required so that ethabi > ethereum-types build correctly under wasm32-unknown-unknown
 [target.wasm32-unknown-unknown.dependencies]

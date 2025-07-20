@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	IDLRustNamespace     = "idl::idl::"
+	IDLRustNamespace     = "idl::idl::program::types::"
 	ProgramRustNamespace = "pb::substreams::v1::program::"
 )
 
@@ -74,25 +74,6 @@ func (f *Defined) PrintNecessaryRustStructs(fieldName string, types []Type) stri
 func (f *Defined) PrintRustMappings(fieldName string, variableName string, types []Type) string {
 	for _, t := range types {
 		if t.Name == f.Type || IsPublicKey(f.Type) {
-			// TODO: enums
-			//if t.Type.IsStruct() {
-			/*var fieldsInString strings.Builder
-
-			for _, structField := range t.Type.Struct.Fields {
-				resolvedFieldType, err := structField.Type.GetResolvedFieldType()
-				if err != nil {
-					continue
-				}
-
-				variableNameInner := variableName
-				if _, ok := resolvedFieldType.(*Defined); ok {
-					variableNameInner = fmt.Sprintf("%s.%s", variableNameInner, structField.SnakeCaseName())
-				}
-
-				rustMappings := resolvedFieldType.PrintRustMappings(structField.SnakeCaseName(), variableNameInner, types)
-				fieldsInString.WriteString(fmt.Sprintf("            %s,\n", rustMappings))
-			}*/
-
 			if variableName != "" {
 				return fmt.Sprintf(`
 					%s: Some(map_defined_%s(%s.%s)),
@@ -102,8 +83,6 @@ func (f *Defined) PrintRustMappings(fieldName string, variableName string, types
 			return fmt.Sprintf(`
 				%s: Some(map_defined_%s(%s)),
 			`, fieldName, toSnakeCase(f.Type, false), fieldName)
-
-			//}
 		}
 	}
 	return ""
@@ -728,7 +707,7 @@ func (f *ArraySimple) PrintNecessaryRustStructs(fieldName string, types []Type) 
 	return ""
 }
 func (f *ArraySimple) PrintRustMappings(fieldName string, variableName string, types []Type) string {
-	return fmt.Sprintf("%s: %s.%s.to_vec(),", fieldName, variableName, fieldName)
+	return fmt.Sprintf("%s: %s.%s.into_iter().map(|f| f as %s).collect(),", fieldName, variableName, fieldName, IDLTypeToRustType(f.Type))
 }
 func (f *ArraySimple) PrintNecessaryProtobufMessages() string {
 	return ""

@@ -15,7 +15,7 @@ type IDL struct {
 }
 
 /*
-	Old IDLs do not contain the discriminator in the JSON, so the only way is to generate them through the Anchor library.
+	Old IDLs do not contain the "discriminator" in the JSON, so the only way is to generate them through the Anchor library.
 	We must support both.
 */
 func (i *IDL) IsOldIDLFormat() bool {
@@ -47,12 +47,19 @@ func (i *IDL) GetFieldsFromInstructionsEventsTypesAndAccounts() []Field {
 	for _, t := range i.Types {
 		if t.Type.IsStruct() {
 			fieldList = append(fieldList, t.Type.Struct.Fields...)
+		} else {
+			for _, variant := range t.Type.Enum.Variants {
+				fieldList = append(fieldList, variant.Fields...)
+			}
 		}
 	}
 
 	return fieldList
 }
 
+/*
+	Generate all the necessary Protobuf message (from instructions, events, types and accounts)
+*/
 func (i *IDL) PrintNecessaryProtobufMessages() string {
 	allFields := i.GetFieldsFromInstructionsEventsTypesAndAccounts()
 	seen := make(map[string]struct{})
@@ -74,6 +81,9 @@ func (i *IDL) PrintNecessaryProtobufMessages() string {
 	return strings.Join(outputs, "\n\n")
 }
 
+/*
+	Generate all the necessary Rust structs (from instructions, events, types and accounts)
+*/
 func (i *IDL) PrintNecessaryRustStructs() string {
 	allFields := i.GetFieldsFromInstructionsEventsTypesAndAccounts()
 	seen := make(map[string]struct{})
@@ -110,64 +120,10 @@ func (i *IDL) ProgramID() string {
 	return i.Address
 }
 
-/*func (i *IDL) IsTypeUsed(typeName string) bool {
-	for _, instruction := range i.Instructions {
-		for _, arg := range instruction.Args {
-			if arg.Type.IsTypeUsed(typeName) {
-				return true
-			}
-		}
-	}
-
-	for _, tp := range i.Types {
-		if tp.Type.IsStruct() {
-			for _, arg := range tp.Type.Struct.Fields {
-				if arg.Type.IsTypeUsed(typeName) && i.IsTypeUsed(tp.Name) {
-					return true
-				}
-			}
-		} else if tp.Type.IsEnum() {
-			for _, arg := range tp.Type.Enum.Variants {
-				if arg.Name == typeName && i.IsTypeUsed(tp.Name) {
-					return true
-				}
-			}
-		}
-	}
-
-	for _, tp := range i.Accounts {
-		if tp.Type.IsStruct() {
-			for _, arg := range tp.Type.Struct.Fields {
-				if arg.Type.IsTypeUsed(typeName) && i.IsTypeUsed(tp.Name) {
-					return true
-				}
-			}
-		} else if tp.Type.IsEnum() {
-			for _, arg := range tp.Type.Enum.Variants {
-				if arg.Name == typeName && i.IsTypeUsed(tp.Name) {
-					return true
-				}
-			}
-		}
-	}
-
-	for _, event := range i.Events {
-		for _, field := range event.Fields {
-			if field.Type.IsTypeUsed(typeName) {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-*/
-
 /*
 	Some IDLs have the event fields defined in the `types` section of the JSON.
 	In this function we check wether we should looks in "events" or "types" to find out the events.
 */
-
 func (i *IDL) MoveEventsIfNecessary() {
 	for idx := range i.Events {
 		event := &i.Events[idx]

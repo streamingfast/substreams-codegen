@@ -2,27 +2,30 @@ package solanchor
 
 import "testing"
 
-func TestProtobufToRustName(t *testing.T) {
+func TestNormalizePascalCase(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected string
 	}{
 		{"SwapRaydiumCPVariant", "SwapRaydiumCpVariant"},
-		{"RaydiumCP", "RaydiumCP"},
-		{"WrappedI80F48", "WrappedI80f48"},
-		{"MyHTTPResponse", "MyHttpResponse"},
-		{"URLParser", "UrlParser"},
-		{"ABCTestXYZ", "AbcTestXYZ"},
-		{"CPUUsageData", "CpuUsageData"},
-		{"IOConfig", "IoConfig"},
-		{"HTTP2Connection", "Http2Connection"},
-		{"DNSInfoPacket", "DnsInfoPacket"},
+		{"SwapGooseFXV2Variant", "SwapGooseFxv2Variant"},
+		{"SwapGooseFXVariant", "SwapGooseFxVariant"},
+		{"XMLHttpRequest", "XmlHttpRequest"},
+		{"HTTPRequestV2", "HttpRequestV2"},
+		{"Test", "Test"},
+		{"A", "A"},
+		{"CPU", "Cpu"},
+		{"SwapEvent", "SwapEvent"},
+		{"GooseFX", "GooseFX"},
+		{"GooseFXV2", "GooseFXV2"},
+		{"GooseFXV2", "GooseFxv2"},
+
 	}
 
 	for _, tt := range tests {
-		result := ToRustPascalCase(tt.input)
-		if result != tt.expected {
-			t.Errorf("ProtobufToRustName(%q) = %q, want %q", tt.input, result, tt.expected)
+		got := ToRustPascalCase(tt.input)
+		if got != tt.expected {
+			t.Errorf("NormalizePascalCase(%q) = %q; want %q", tt.input, got, tt.expected)
 		}
 	}
 }

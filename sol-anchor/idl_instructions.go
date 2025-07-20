@@ -26,7 +26,7 @@ type Instruction struct {
 }
 
 func (i *Instruction) PascalCaseName() string {
-	return textcase.PascalCase(i.Name)
+	return ToRustPascalCase(textcase.PascalCase(i.Name))
 }
 
 func (i *Instruction) SnakeCaseName() string {

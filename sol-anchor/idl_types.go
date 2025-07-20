@@ -28,7 +28,7 @@ func (t *Type) SnakeCaseNameUpperCase() string {
 }
 
 func (t *Type) PascalCaseName() string {
-	return textcase.PascalCase(t.Name)
+	return ToRustPascalCase(textcase.PascalCase(t.Name))
 }
 
 func (t *Type) LowerCaseCapitalizedName() string {
