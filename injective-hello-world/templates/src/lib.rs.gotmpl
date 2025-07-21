@@ -1,0 +1,34 @@
+mod pb;
+use pb::mydata::v1 as mydata;
+
+use crate::pb::{
+    mydata::v1::{Attribute, Event},
+    sf::cosmos::r#type::v2::Block,
+};
+
+#[substreams::handlers::map]
+fn map_my_data(blk: Block) -> mydata::MyData {
+    let mut my_data = mydata::MyData::default();
+
+    let events: Vec<Event> = blk
+        .events
+        .into_iter()
+        .filter(|event| event.r#type == "transfer")
+        .map(|event| {
+            let attributes = event
+                .attributes
+                .into_iter()
+                .map(|attr| Attribute {
+                    key: attr.key,
+                    value: attr.value,
+                })
+                .collect();
+
+            Event { attributes }
+        })
+        .collect();
+
+    my_data.events = events;
+
+    my_data
+}

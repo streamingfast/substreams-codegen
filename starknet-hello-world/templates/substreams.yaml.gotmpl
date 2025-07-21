@@ -1,0 +1,45 @@
+specVersion: v0.1.0
+package:
+  name: {{ .ModuleName }}
+  version: v0.1.0
+
+imports:
+  starknet: https://spkg.io/streamingfast/starknet-foundational-v0.1.4.spkg
+
+protobuf:
+  files:
+    - mydata.proto
+  importPaths:
+    - ./proto
+  excludePaths:
+    - sf/substreams
+    - google
+
+binaries:
+  default:
+    type: wasm/rust-v1
+    file: ./target/wasm32-unknown-unknown/release/substreams.wasm
+
+modules:
+ - name: map_my_data
+   kind: map
+   initialBlock: 1000000 # arbitrary block with some data
+   inputs:
+   - source: sf.starknet.type.v1.Block
+   output:
+    type: proto:mydata.v1.MyData
+
+# For performance, you should use a blockFilter whenever possible, like this:
+# imports:
+#   starknet: https://spkg.io/streamingfast/starknet-foundational-v0.1.4.spkg
+#
+# modules:
+#   - name: (...)
+#     blockFilter:
+#      module: starknet:index_transactions
+#      query:
+#          string: (tx:class_hash:0x0000000 && rc:type:0)
+#
+# see https://substreams.dev/streamingfast/starknet-foundational for details
+
+network: {{ .ChainNetwork }}

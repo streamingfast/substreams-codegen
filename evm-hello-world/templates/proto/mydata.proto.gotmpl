@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package mydata.v1;
+
+message Log {
+  bytes address = 1;
+  repeated bytes topics = 2;
+  bytes data = 3;
+}
+
+message MyData {
+  repeated Log logs = 1;
+}

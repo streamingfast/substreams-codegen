@@ -1,0 +1,42 @@
+mod pb;
+
+use crate::pb::{mydata::v1::Event, sf::starknet::r#type::v1::Block};
+use pb::mydata::v1 as mydata;
+
+#[allow(unused_imports)]
+use num_traits::cast::ToPrimitive;
+use substreams::Hex;
+
+#[substreams::handlers::map]
+fn map_my_data(blk: Block) -> mydata::MyData {
+    let starknet_token_address =
+
+        // Get the hash for the STRK Token byte array
+        // If you change this for another contract, be sure to check substreams.yaml and:
+        // * If you are using block filters, update the filter accordingly
+        // * Align the module's initialBlock with the creation of your contract
+        match Hex::decode("0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d") {
+            Ok(address) => address,
+            Err(_) => panic!("Could not decode address"),
+        };
+
+    let events = blk
+        .transactions
+        .into_iter()
+        .filter_map(|transaction| transaction.receipt)
+        .flat_map(|receipt| {
+            receipt
+                .events
+                .into_iter()
+                .filter(|event| event.from_address == starknet_token_address)
+                .map(|event| Event {
+                    keys: event.keys,
+                    data: event.data,
+                })
+        })
+        .collect();
+
+    let mut my_data = mydata::MyData::default();
+    my_data.events = events;
+    my_data
+}

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package mydata.v1;
+
+message Attribute {
+  string key = 1;
+  string value = 2;
+}
+
+message Event {
+  repeated Attribute attributes = 1;
+}
+
+message MyData {
+  repeated Event events = 1;
+}
