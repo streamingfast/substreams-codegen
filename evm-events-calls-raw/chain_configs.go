@@ -15,7 +15,6 @@ type ChainConfig struct {
 	ApiEndpoint          string
 	ApiBaseURL           string // Base URL without query parameters
 	ApiQueryParams       string // Query parameters to append (e.g. "?chainid=747474")
-	ApiPathPattern       string // Path pattern for direct API calls (e.g. "/api", "/{address}")
 	ApiEndpointDirect    bool
 	FirstStreamableBlock uint64
 	Network              string
@@ -184,7 +183,6 @@ var ChainConfigByID = map[string]*ChainConfig{
 		ApiEndpoint:          "https://api.etherscan.io/v2/api",
 		ApiBaseURL:           "https://api.etherscan.io/v2/api",
 		ApiQueryParams:       "?chainid=747474",
-		ApiPathPattern:       "",
 		ExampleContract:      "0x203A662b0BD271A6ed5a60EdFbd04bFce608FD36",
 		FirstStreamableBlock: 0,
 		Network:              "katana-mainnet",

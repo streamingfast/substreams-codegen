@@ -11,7 +11,6 @@ type ChainConfig struct {
 	ApiEndpoint          string
 	ApiBaseURL           string // Base URL without query parameters
 	ApiQueryParams       string // Query parameters to append (e.g. "?chainid=747474")
-	ApiPathPattern       string // Path pattern for direct API calls (e.g. "/api", "/{address}")
 	ApiEndpointDirect    bool
 	FirstStreamableBlock uint64
 	Network              string
