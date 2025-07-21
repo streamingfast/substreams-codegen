@@ -2,6 +2,7 @@ package evm_events_calls_raw
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"sort"
 
@@ -14,7 +15,7 @@ type ChainConfig struct {
 	ExplorerLink         string
 	ApiEndpoint          string
 	ApiBaseURL           string // Base URL without query parameters
-	ApiQueryParams       string // Query parameters to append (e.g. "?chainid=747474")
+	ApiQueryParams       url.Values // Query parameters to append (e.g. chainid=747474)
 	ApiEndpointDirect    bool
 	FirstStreamableBlock uint64
 	Network              string
@@ -182,7 +183,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		ExplorerLink:         "https://katanascan.com",
 		ApiEndpoint:          "https://api.etherscan.io/v2/api",
 		ApiBaseURL:           "https://api.etherscan.io/v2/api",
-		ApiQueryParams:       "?chainid=747474",
+		ApiQueryParams:       url.Values{"chainid": {"747474"}},
 		ExampleContract:      "0x203A662b0BD271A6ed5a60EdFbd04bFce608FD36",
 		FirstStreamableBlock: 0,
 		Network:              "katana-mainnet",

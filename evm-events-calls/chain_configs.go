@@ -2,6 +2,7 @@ package evm_events_calls
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"sort"
 
@@ -14,7 +15,7 @@ type ChainConfig struct {
 	ExplorerLink         string
 	ApiEndpoint          string
 	ApiBaseURL           string // Base URL without query parameters to support EtherscanV2
-	ApiQueryParams       string // Query parameters to append (e.g. "?chainid=747474")
+	ApiQueryParams       url.Values // Query parameters to append (e.g. chainid=747474)
 	ApiEndpointDirect    bool
 	FirstStreamableBlock uint64
 	Network              string
@@ -33,7 +34,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		DisplayName:          "Ethereum Mainnet",
 		ExplorerLink:         "https://etherscan.io",
 		ApiBaseURL:           "https://api.etherscan.io/v2/api",
-		ApiQueryParams:       "?chainid=1",
+		ApiQueryParams:       url.Values{"chainid": {"1"}},
 		ExampleContract:      "0x1f98431c8ad98523631ae4a59f267346ea31f984",
 		FirstStreamableBlock: 0,
 		Network:              "mainnet",
@@ -47,7 +48,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		ExplorerLink:         "https://bscscan.com",
 		ApiEndpoint:          "https://api.bscscan.com",
 		ApiBaseURL:           "https://api.etherscan.io/v2/api",
-		ApiQueryParams:       "?chainid=56",
+		ApiQueryParams:       url.Values{"chainid": {"56"}},
 		ExampleContract:      "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
 		FirstStreamableBlock: 0,
 		Network:              "bsc",
@@ -61,7 +62,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		ExplorerLink:         "https://polygonscan.com",
 		ApiEndpoint:          "https://api.polygonscan.com",
 		ApiBaseURL:           "https://api.etherscan.io/v2/api",
-		ApiQueryParams:       "?chainid=137",
+		ApiQueryParams:       url.Values{"chainid": {"137"}},
 		ExampleContract:      "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
 		FirstStreamableBlock: 0,
 		Network:              "polygon",
@@ -74,7 +75,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		DisplayName:          "Polygon Amoy Testnet",
 		ExplorerLink:         "https://www.okx.com/web3/explorer/amoy",
 		ApiBaseURL:           "https://api.etherscan.io/v2/api",
-		ApiQueryParams:       "?chainid=80002",
+		ApiQueryParams:       url.Values{"chainid": {"80002"}},
 		ApiEndpoint:          "",
 		ExampleContract:      "0x0000000071727de22e5e9d8baf0edac6f37da032",
 		FirstStreamableBlock: 0,
@@ -88,7 +89,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		ExplorerLink:         "https://arbiscan.io",
 		ApiEndpoint:          "https://api.arbiscan.io",
 		ApiBaseURL:           "https://api.etherscan.io/v2/api",
-		ApiQueryParams:       "?chainid=42161",
+		ApiQueryParams:       url.Values{"chainid": {"42161"}},
 		Network:              "arbitrum",
 		ExampleContract:      "0x58318bceaa0d249b62fad57d134da7475e551b47",
 		FirstStreamableBlock: 0,
@@ -101,7 +102,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		ExplorerLink:         "https://holesky.etherscan.io/",
 		ApiEndpoint:          "https://api-holesky.etherscan.io",
 		ApiBaseURL:           "https://api.etherscan.io/v2/api",
-		ApiQueryParams:       "?chainid=17000",
+		ApiQueryParams:       url.Values{"chainid": {"17000"}},
 		ExampleContract:      "0xade8b182898240910fe9f3513db35a1c101b4748",
 		FirstStreamableBlock: 0,
 		Network:              "holesky",
@@ -114,7 +115,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		ExplorerLink:         "https://sepolia.etherscan.io",
 		ApiEndpoint:          "https://api-sepolia.etherscan.io",
 		ApiBaseURL:           "https://api.etherscan.io/v2/api",
-		ApiQueryParams:       "?chainid=11155111",
+		ApiQueryParams:       url.Values{"chainid": {"11155111"}},
 		ExampleContract:      "0x800ec0d65adb70f0b69b7db052c6bd89c2406ac4",
 		FirstStreamableBlock: 0,
 		Network:              "sepolia",
@@ -127,7 +128,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		ExplorerLink:         "https://optimistic.etherscan.io",
 		ApiEndpoint:          "https://api-optimistic.etherscan.io",
 		ApiBaseURL:           "https://api.etherscan.io/v2/api",
-		ApiQueryParams:       "?chainid=10",
+		ApiQueryParams:       url.Values{"chainid": {"10"}},
 		ExampleContract:      "0x94b008aa00579c1307b0ef2c499ad98a8ce58e58",
 		FirstStreamableBlock: 0,
 		Network:              "optimism",
@@ -141,7 +142,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		ExplorerLink:         "https://subnets.avax.network/c-chain",
 		ApiEndpoint:          "",
 		ApiBaseURL:           "https://api.etherscan.io/v2/api",
-		ApiQueryParams:       "?chainid=43114",
+		ApiQueryParams:       url.Values{"chainid": {"43114"}},
 		ExampleContract:      "0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7",
 		FirstStreamableBlock: 0,
 		Network:              "avalanche-mainnet",
@@ -154,7 +155,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		ExplorerLink:         "https://testnet.bscscan.com/",
 		ApiEndpoint:          "https://api-testnet.bscscan.com",
 		ApiBaseURL:           "https://api.etherscan.io/v2/api",
-		ApiQueryParams:       "?chainid=97",
+		ApiQueryParams:       url.Values{"chainid": {"97"}},
 		ExampleContract:      "0x37ffab7530fbb7e8b4bfec152132929bdcdae3f3",
 		FirstStreamableBlock: 0,
 		Network:              "chapel",
@@ -178,7 +179,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		ExplorerLink:         "https://basescan.org",
 		ApiEndpoint:          "https://api.basescan.org",
 		ApiBaseURL:           "https://api.etherscan.io/v2/api",
-		ApiQueryParams:       "?chainid=8453",
+		ApiQueryParams:       url.Values{"chainid": {"8453"}},
 		ExampleContract:      "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
 		FirstStreamableBlock: 0,
 		Network:              "base",
@@ -199,7 +200,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		ExplorerLink:         "https://unichain.blockscout.com/",
 		ApiEndpoint:          "https://unichain.blockscout.com/api",
 		ApiBaseURL:           "https://api.etherscan.io/v2/api",
-		ApiQueryParams:       "?chainid=130",
+		ApiQueryParams:       url.Values{"chainid": {"130"}},
 		ExampleContract:      "0x1f98400000000000000000000000000000000003",
 		FirstStreamableBlock: 0,
 		Network:              "unichain",
@@ -220,7 +221,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		ExplorerLink:         "https://katanascan.com",
 		ApiEndpoint:          "https://explorer-katana.t.conduit.xyz",
 		ApiBaseURL:           "https://api.etherscan.io/v2/api",
-		ApiQueryParams:       "?chainid=747474",
+		ApiQueryParams:       url.Values{"chainid": {"747474"}},
 		ExampleContract:      "0x203A662b0BD271A6ed5a60EdFbd04bFce608FD36",
 		FirstStreamableBlock: 0,
 		Network:              "katana-mainnet",
