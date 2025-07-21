@@ -1,6 +1,7 @@
 package ethhelloworld
 
 import (
+	"net/url"
 	"sort"
 )
 
@@ -10,7 +11,7 @@ type ChainConfig struct {
 	ExplorerLink         string
 	ApiEndpoint          string
 	ApiBaseURL           string // Base URL without query parameters
-	ApiQueryParams       string // Query parameters to append (e.g. "?chainid=747474")
+	ApiQueryParams       url.Values // Query parameters to append (e.g. chainid=747474)
 	ApiEndpointDirect    bool
 	FirstStreamableBlock uint64
 	Network              string

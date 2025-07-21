@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -27,8 +28,8 @@ func buildAPIURL(chain *ChainConfig) string {
 	if chain.ApiBaseURL != "" {
 		// Use Etherscan V2 structure - ApiBaseURL already includes /api path
 		url := chain.ApiBaseURL
-		if chain.ApiQueryParams != "" {
-			url += chain.ApiQueryParams
+		if len(chain.ApiQueryParams) > 0 {
+			url += "?" + chain.ApiQueryParams.Encode()
 		}
 		return url
 	}
@@ -37,25 +38,33 @@ func buildAPIURL(chain *ChainConfig) string {
 }
 
 // buildFullAPIURL constructs the complete API URL with module, action, and parameters
-func buildFullAPIURL(chain *ChainConfig, params string, apiKey string) string {
+func buildFullAPIURL(chain *ChainConfig, params url.Values, apiKey string) string {
 	baseURL := buildAPIURL(chain)
 	
-	if chain.ApiBaseURL != "" {
-		// Etherscan V2: baseURL already includes /api and chainid, just append additional params
-		if chain.ApiQueryParams != "" {
-			// Already has query params, append with &
-			baseURL += "&" + params
-		} else {
-			// No existing query params, start with ?
-			baseURL += "?" + params
-		}
-	} else {
-		// Etherscan V1: need to add /api path and start query params
-		baseURL += "/api?" + params
+	// Combine all query parameters
+	allParams := url.Values{}
+	
+	// Add chain-specific query params first
+	for key, values := range chain.ApiQueryParams {
+		allParams[key] = values
 	}
 	
+	// Add additional params
+	for key, values := range params {
+		allParams[key] = values
+	}
+	
+	// Add API key if provided
 	if apiKey != "" {
-		baseURL += "&apiKey=" + apiKey
+		allParams.Set("apiKey", apiKey)
+	}
+	
+	if chain.ApiBaseURL != "" {
+		// Etherscan V2: baseURL already includes /api path
+		baseURL += "?" + allParams.Encode()
+	} else {
+		// Etherscan V1: need to add /api path
+		baseURL += "/api?" + allParams.Encode()
 	}
 	
 	return baseURL
@@ -66,8 +75,8 @@ func buildDirectAPIURL(chain *ChainConfig, address string) string {
 	if chain.ApiBaseURL != "" {
 		// Use Etherscan V2 structure with address path
 		url := chain.ApiBaseURL + "/" + address
-		if chain.ApiQueryParams != "" {
-			url += chain.ApiQueryParams
+		if len(chain.ApiQueryParams) > 0 {
+			url += "?" + chain.ApiQueryParams.Encode()
 		}
 		return url
 	}
@@ -173,7 +182,11 @@ func getContractABIDirect(ctx context.Context, address string, chain *ChainConfi
 }
 
 func getContractABI(ctx context.Context, address string, chain *ChainConfig, apiKey string) (*eth.ABI, string, *time.Timer, error) {
-	params := fmt.Sprintf("module=contract&action=getabi&address=%s", address)
+	params := url.Values{
+		"module":  {"contract"},
+		"action":  {"getabi"},
+		"address": {address},
+	}
 	url := buildFullAPIURL(chain, params, apiKey)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
@@ -212,7 +225,11 @@ func getContractABI(ctx context.Context, address string, chain *ChainConfig, api
 
 // getProxyContractImplementation returns the implementation address and a timer to wait before next call
 func getProxyContractImplementation(ctx context.Context, address string, chain *ChainConfig, apiKey string) (string, *time.Timer, error) {
-	params := fmt.Sprintf("module=contract&action=getsourcecode&address=%s", address)
+	params := url.Values{
+		"module":  {"contract"},
+		"action":  {"getsourcecode"},
+		"address": {address},
+	}
 	url := buildFullAPIURL(chain, params, apiKey)
 	// check for proxy contract's implementation
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
@@ -292,7 +309,14 @@ func getContractInitialBlock(ctx context.Context, chain *ChainConfig, contractAd
 	}
 
 	apiKey := os.Getenv(chain.APIKeyEnvVar)
-	params := fmt.Sprintf("module=account&action=txlist&address=%s&page=1&offset=1&sort=asc", contractAddress)
+	params := url.Values{
+		"module":  {"account"},
+		"action":  {"txlist"},
+		"address": {contractAddress},
+		"page":    {"1"},
+		"offset":  {"1"},
+		"sort":    {"asc"},
+	}
 	url := buildFullAPIURL(chain, params, apiKey)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
