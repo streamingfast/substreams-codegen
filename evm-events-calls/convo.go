@@ -142,7 +142,8 @@ func (c *Convo) NextStep() (out loop.Cmd) {
 				}
 				if dynContract.RawABI == nil {
 					if dynContract.ReferenceContractAddress == "" {
-						if p.ChainConfig().ApiEndpoint == "" {
+						config := p.ChainConfig()
+						if config.ApiEndpoint == "" && config.ApiBaseURL == "" {
 							return notifyContext(cmd(AskDynamicContractABI{}))
 						}
 						return notifyContext(cmd(AskDynamicContractAddress{}))
@@ -431,7 +432,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 
 		config := c.State.ChainConfig()
-		if config.ApiEndpoint == "" {
+		if config.ApiEndpoint == "" && config.ApiBaseURL == "" {
 			/*if contract.AbiType == "string" {
 				return cmd(AskContractABIString{})
 			} else if contract.AbiType == "file" {
@@ -468,7 +469,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 		contract := c.State.dynamicContractOf(factory.Name)
 		config := c.State.ChainConfig()
-		if config.ApiEndpoint == "" {
+		if config.ApiEndpoint == "" && config.ApiBaseURL == "" {
 			return cmd(AskDynamicContractABI{})
 		}
 		return func() loop.Msg {
@@ -615,7 +616,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 			return QuitInvalidContext
 		}
 		config := c.State.ChainConfig()
-		if config.ApiEndpoint == "" {
+		if config.ApiEndpoint == "" && config.ApiBaseURL == "" {
 			return cmd(AskContractInitialBlock{})
 		}
 		return func() loop.Msg {
