@@ -16,7 +16,7 @@ fn map_my_data(blk: Block) -> Result<mydata::MyData, substreams::errors::Error> 
     let mut my_data = mydata::MyData::default();
 
     // Get bytes from the string contract address
-    let contract_address = match Hex::decode("{{ .ChainConfig.ContractAddress }}") {
+    let contract_address = match Hex::decode("{{ .ChainConfig.ExampleContract }}") {
         Ok(address) => address,
         Err(_) => panic!("Could not decode address"),
     };

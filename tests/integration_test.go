@@ -208,6 +208,7 @@ func runTestsInDocker(t *testing.T, cases []struct {
 			runArgs := []string{
 				"run",
 				"--rm",
+				"-t",
 				"--name",
 				c.name,
 				"--platform",
