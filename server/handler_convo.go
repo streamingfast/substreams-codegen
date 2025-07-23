@@ -71,6 +71,10 @@ func (e *eventLogger) logEvent(event string) {
 }
 
 func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconvo.UserInput, pbconvo.SystemOutput]) (err error) {
+	// Add a 5-minute timeout for the conversation to prevent hanging indefinitely
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
+	
 	defer func() {
 		if r := recover(); r != nil {
 			s.logger.Error("internal error first defer", zap.Any("panic", r))
@@ -90,6 +94,17 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 		}
 		stream.Send(msg)
 	}
+
+	// Monitor context cancellation and close connection if needed
+	go func() {
+		<-ctx.Done()
+		closeOnce.Do(func() {
+			s.logger.Info("conversation context cancelled, closing connection", zap.Error(ctx.Err()))
+			if closer, ok := stream.Conn().(interface{ Close(error) error }); ok {
+				closer.Close(ctx.Err())
+			}
+		})
+	}()
 
 	req, err := stream.Receive()
 	if err != nil {

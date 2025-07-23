@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -22,33 +23,88 @@ var httpClient = http.Client{
 	Timeout:   30 * time.Second,
 }
 
+// buildAPIURL constructs the API URL based on the chain configuration
+func buildAPIURL(chain *ChainConfig) string {
+	if chain.ApiBaseURL != "" {
+		// Use Etherscan V2 structure - ApiBaseURL already includes /api path
+		url := chain.ApiBaseURL
+		if len(chain.ApiQueryParams) > 0 {
+			url += "?" + chain.ApiQueryParams.Encode()
+		}
+		return url
+	}
+	// Fall back to Etherscan V1 ApiEndpoint
+	return chain.ApiEndpoint
+}
+
+// buildFullAPIURL constructs the complete API URL with module, action, and parameters
+func buildFullAPIURL(chain *ChainConfig, params url.Values, apiKey string) string {
+	baseURL := buildAPIURL(chain)
+
+	allParams := url.Values{}
+
+	for key, values := range chain.ApiQueryParams {
+		allParams[key] = values
+	}
+
+	for key, values := range params {
+		allParams[key] = values
+	}
+
+	if apiKey != "" {
+		allParams.Set("apiKey", apiKey)
+	}
+
+	if chain.ApiBaseURL != "" {
+		// Etherscan V2: baseURL already includes /api path
+		baseURL += "?" + allParams.Encode()
+	} else {
+		// Etherscan V1: need to add /api path
+		baseURL += "/api?" + allParams.Encode()
+	}
+
+	return baseURL
+}
+
+// buildDirectAPIURL constructs the direct API URL for contract ABI fetching
+func buildDirectAPIURL(chain *ChainConfig, address string) string {
+	if chain.ApiBaseURL != "" {
+		url := chain.ApiBaseURL + "/" + address
+		if len(chain.ApiQueryParams) > 0 {
+			url += "?" + chain.ApiQueryParams.Encode()
+		}
+		return url
+	}
+	return fmt.Sprintf("%s/%s", chain.ApiEndpoint, address)
+}
+
 func getContractABIFollowingProxy(ctx context.Context, contractAddress string, chain *ChainConfig) (*ABI, error) {
+
 	if cachedABI := chain.abiCache[contractAddress]; cachedABI != nil {
-		// For testing purposes, when populating on-disk ABIs with setTestABI()
 		return cachedABI, nil
 	}
 
 	if chain.ApiEndpointDirect {
-		abi, abiContent, err := getContractABIDirect(ctx, contractAddress, chain.ApiEndpoint)
+		abi, abiContent, err := getContractABIDirect(ctx, contractAddress, chain)
 		if err != nil {
 			return nil, err
 		}
 		return &ABI{abi, abiContent}, nil
 	}
-	abi, abiContent, wait, err := getContractABI(ctx, contractAddress, chain.ApiEndpoint, os.Getenv(chain.APIKeyEnvVar))
+	abi, abiContent, wait, err := getContractABI(ctx, contractAddress, chain, os.Getenv(chain.APIKeyEnvVar))
 	if err != nil {
 		return nil, err
 	}
 
 	<-wait.C
-	implementationAddress, wait, err := getProxyContractImplementation(ctx, contractAddress, chain.ApiEndpoint, os.Getenv(chain.APIKeyEnvVar))
+	implementationAddress, wait, err := getProxyContractImplementation(ctx, contractAddress, chain, os.Getenv(chain.APIKeyEnvVar))
 	if err != nil {
 		return nil, err
 	}
 	<-wait.C
 
 	if implementationAddress != "" {
-		implementationABI, implementationABIContent, wait, err := getContractABI(ctx, implementationAddress, chain.ApiEndpoint, os.Getenv(chain.APIKeyEnvVar))
+		implementationABI, implementationABIContent, wait, err := getContractABI(ctx, implementationAddress, chain, os.Getenv(chain.APIKeyEnvVar))
 		if err != nil {
 			return nil, err
 		}
@@ -86,8 +142,8 @@ func getContractABIFollowingProxy(ctx context.Context, contractAddress string, c
 	return &ABI{abi, abiContent}, nil
 }
 
-func getContractABIDirect(ctx context.Context, address string, endpoint string) (*eth.ABI, string, error) {
-	url := fmt.Sprintf("%s/%s", endpoint, address)
+func getContractABIDirect(ctx context.Context, address string, chain *ChainConfig) (*eth.ABI, string, error) {
+	url := buildDirectAPIURL(chain, address)
 	fmt.Println("getting from url", url)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
@@ -119,11 +175,14 @@ func getContractABIDirect(ctx context.Context, address string, endpoint string) 
 
 }
 
-func getContractABI(ctx context.Context, address string, endpoint string, apiKey string) (*eth.ABI, string, *time.Timer, error) {
-	if apiKey != "" {
-		apiKey = fmt.Sprintf("&apiKey=%s", apiKey)
+func getContractABI(ctx context.Context, address string, chain *ChainConfig, apiKey string) (*eth.ABI, string, *time.Timer, error) {
+	params := url.Values{
+		"module":  {"contract"},
+		"action":  {"getabi"},
+		"address": {address},
 	}
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/api?module=contract&action=getabi&address=%s%s", endpoint, address, apiKey), nil)
+	url := buildFullAPIURL(chain, params, apiKey)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, "", nil, fmt.Errorf("new request: %w", err)
 	}
@@ -159,12 +218,15 @@ func getContractABI(ctx context.Context, address string, endpoint string, apiKey
 }
 
 // getProxyContractImplementation returns the implementation address and a timer to wait before next call
-func getProxyContractImplementation(ctx context.Context, address string, endpoint string, apiKey string) (string, *time.Timer, error) {
-	if apiKey != "" {
-		apiKey = fmt.Sprintf("&apiKey=%s", apiKey)
+func getProxyContractImplementation(ctx context.Context, address string, chain *ChainConfig, apiKey string) (string, *time.Timer, error) {
+	params := url.Values{
+		"module":  {"contract"},
+		"action":  {"getsourcecode"},
+		"address": {address},
 	}
+	url := buildFullAPIURL(chain, params, apiKey)
 	// check for proxy contract's implementation
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/api?module=contract&action=getsourcecode&address=%s%s", endpoint, address, apiKey), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 
 	if err != nil {
 		return "", nil, fmt.Errorf("new request: %w", err)
@@ -240,11 +302,17 @@ func getContractInitialBlock(ctx context.Context, chain *ChainConfig, contractAd
 		return initBlock, nil
 	}
 
-	apiKey := ""
-	if key := os.Getenv(chain.APIKeyEnvVar); key != "" {
-		apiKey = fmt.Sprintf("&apiKey=%s", key)
+	apiKey := os.Getenv(chain.APIKeyEnvVar)
+	params := url.Values{
+		"module":  {"account"},
+		"action":  {"txlist"},
+		"address": {contractAddress},
+		"page":    {"1"},
+		"offset":  {"1"},
+		"sort":    {"asc"},
 	}
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/api?module=account&action=txlist&address=%s&page=1&offset=1&sort=asc%s", chain.ApiEndpoint, contractAddress, apiKey), nil)
+	url := buildFullAPIURL(chain, params, apiKey)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return chain.FirstStreamableBlock, fmt.Errorf("new request: %w", err)
 	}
