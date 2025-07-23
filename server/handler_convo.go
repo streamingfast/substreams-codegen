@@ -71,6 +71,10 @@ func (e *eventLogger) logEvent(event string) {
 }
 
 func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconvo.UserInput, pbconvo.SystemOutput]) (err error) {
+	// Add a 5-minute timeout for the conversation to prevent hanging indefinitely
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
+	
 	defer func() {
 		if r := recover(); r != nil {
 			s.logger.Error("internal error first defer", zap.Any("panic", r))
@@ -91,28 +95,20 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 		stream.Send(msg)
 	}
 
-	// Create a channel to receive the initial result
-	type receiveResult struct {
-		req *pbconvo.UserInput
-		err error
-	}
-	resultChan := make(chan receiveResult, 1)
-
+	// Monitor context cancellation and close connection if needed
 	go func() {
-		req, err := stream.Receive()
-		resultChan <- receiveResult{req: req, err: err}
+		<-ctx.Done()
+		closeOnce.Do(func() {
+			s.logger.Info("conversation context cancelled, closing connection", zap.Error(ctx.Err()))
+			if closer, ok := stream.Conn().(interface{ Close(error) error }); ok {
+				closer.Close(ctx.Err())
+			}
+		})
 	}()
 
-	// Use select to handle both the receive result and context cancellation
-	var req *pbconvo.UserInput
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case result := <-resultChan:
-		if result.err != nil {
-			return result.err
-		}
-		req = result.req
+	req, err := stream.Receive()
+	if err != nil {
+		return err
 	}
 
 	start, ok := req.Entry.(*pbconvo.UserInput_Start_)
@@ -145,98 +141,80 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 		default:
 		}
 
-		// Create a channel to receive the result of stream.Receive()
-		type receiveResult struct {
-			req *pbconvo.UserInput
-			err error
+		req, err := stream.Receive()
+		if err != nil {
+			return loop.NewQuitMsg(err)
 		}
-		resultChan := make(chan receiveResult, 1)
 
-		go func() {
-			req, err := stream.Receive()
-			resultChan <- receiveResult{req: req, err: err}
-		}()
+		reflectType := msgWrapFactory.LastInput()
+		if reflectType == nil {
+			// TODO: make this a "BadRequest" or InvalidRequest error, shown to the user
+			return loop.NewQuitMsg(fmt.Errorf("message type %q was not registered or does not exist", req.FromActionId))
+		}
+		newMsg := reflect.New(reflectType)
+		newProtoMsg := newMsg.Interface().(protoreflect.ProtoMessage)
 
-		// Use select to handle both the receive result and context cancellation
-		select {
-		case <-ctx.Done():
-			return loop.NewQuitMsg(ctx.Err())
-		case result := <-resultChan:
-			if result.err != nil {
-				return loop.NewQuitMsg(result.err)
+		switch entry := req.Entry.(type) {
+		case *pbconvo.UserInput_Confirmation_:
+			cnt, err := proto.Marshal(entry.Confirmation)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("marshal type %T: %w", entry.Confirmation, err))
 			}
-			req := result.req
-
-			reflectType := msgWrapFactory.LastInput()
-			if reflectType == nil {
-				// TODO: make this a "BadRequest" or InvalidRequest error, shown to the user
-				return loop.NewQuitMsg(fmt.Errorf("message type %q was not registered or does not exist", req.FromActionId))
+			err = proto.Unmarshal(cnt, newProtoMsg)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("unmarshal into type %T from %T: %w", newProtoMsg, entry.Confirmation, err))
 			}
-			newMsg := reflect.New(reflectType)
-			newProtoMsg := newMsg.Interface().(protoreflect.ProtoMessage)
+			return codegen.IncomingMessage{Msg: newMsg.Elem().Interface()}
 
-			switch entry := req.Entry.(type) {
-			case *pbconvo.UserInput_Confirmation_:
-				cnt, err := proto.Marshal(entry.Confirmation)
-				if err != nil {
-					return loop.NewQuitMsg(fmt.Errorf("marshal type %T: %w", entry.Confirmation, err))
-				}
-				err = proto.Unmarshal(cnt, newProtoMsg)
-				if err != nil {
-					return loop.NewQuitMsg(fmt.Errorf("unmarshal into type %T from %T: %w", newProtoMsg, entry.Confirmation, err))
-				}
-				return codegen.IncomingMessage{Msg: newMsg.Elem().Interface()}
-
-			case *pbconvo.UserInput_Selection_:
-				cnt, err := proto.Marshal(entry.Selection)
-				if err != nil {
-					return loop.NewQuitMsg(fmt.Errorf("marshal type %T: %w", entry.Selection, err))
-				}
-				err = proto.Unmarshal(cnt, newProtoMsg)
-				if err != nil {
-					return loop.NewQuitMsg(fmt.Errorf("unmarshal into type %T from %T: %w", newProtoMsg, entry.Selection, err))
-				}
-				return codegen.IncomingMessage{Msg: newMsg.Elem().Interface()}
-
-			case *pbconvo.UserInput_TextInput_:
-				cnt, err := proto.Marshal(entry.TextInput)
-				if err != nil {
-					return loop.NewQuitMsg(fmt.Errorf("marshal type %T: %w", entry.TextInput, err))
-				}
-				err = proto.Unmarshal(cnt, newProtoMsg)
-				if err != nil {
-					return loop.NewQuitMsg(fmt.Errorf("unmarshal into type %T from %T: %w", newProtoMsg, entry.TextInput, err))
-				}
-				return codegen.IncomingMessage{Msg: newMsg.Elem().Interface()}
-
-			case *pbconvo.UserInput_LocalFile_:
-				cnt, err := proto.Marshal(entry.LocalFile)
-				if err != nil {
-					return loop.NewQuitMsg(fmt.Errorf("marshal type %T: %w", entry.LocalFile, err))
-				}
-				err = proto.Unmarshal(cnt, newProtoMsg)
-				if err != nil {
-					return loop.NewQuitMsg(fmt.Errorf("unmarshal into type %T from %T: %w", newProtoMsg, entry.LocalFile, err))
-				}
-				return codegen.IncomingMessage{Msg: newMsg.Elem().Interface()}
-
-			case *pbconvo.UserInput_DownloadedFiles_:
-				cnt, err := proto.Marshal(entry.DownloadedFiles)
-				if err != nil {
-					return loop.NewQuitMsg(fmt.Errorf("marshal type %T: %w", entry.DownloadedFiles, err))
-				}
-				err = proto.Unmarshal(cnt, newProtoMsg)
-				if err != nil {
-					return loop.NewQuitMsg(fmt.Errorf("unmarshal into type %T from %T: %w", newProtoMsg, entry.DownloadedFiles, err))
-				}
-				return codegen.IncomingMessage{Msg: newMsg.Elem().Interface()}
-
-			case *pbconvo.UserInput_File:
-				return loop.NewQuitMsg(fmt.Errorf("file upload not supported here"))
-
-			default:
-				return loop.NewQuitMsg(fmt.Errorf("unknown entry type %T", entry))
+		case *pbconvo.UserInput_Selection_:
+			cnt, err := proto.Marshal(entry.Selection)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("marshal type %T: %w", entry.Selection, err))
 			}
+			err = proto.Unmarshal(cnt, newProtoMsg)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("unmarshal into type %T from %T: %w", newProtoMsg, entry.Selection, err))
+			}
+			return codegen.IncomingMessage{Msg: newMsg.Elem().Interface()}
+
+		case *pbconvo.UserInput_TextInput_:
+			cnt, err := proto.Marshal(entry.TextInput)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("marshal type %T: %w", entry.TextInput, err))
+			}
+			err = proto.Unmarshal(cnt, newProtoMsg)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("unmarshal into type %T from %T: %w", newProtoMsg, entry.TextInput, err))
+			}
+			return codegen.IncomingMessage{Msg: newMsg.Elem().Interface()}
+
+		case *pbconvo.UserInput_LocalFile_:
+			cnt, err := proto.Marshal(entry.LocalFile)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("marshal type %T: %w", entry.LocalFile, err))
+			}
+			err = proto.Unmarshal(cnt, newProtoMsg)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("unmarshal into type %T from %T: %w", newProtoMsg, entry.LocalFile, err))
+			}
+			return codegen.IncomingMessage{Msg: newMsg.Elem().Interface()}
+
+		case *pbconvo.UserInput_DownloadedFiles_:
+			cnt, err := proto.Marshal(entry.DownloadedFiles)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("marshal type %T: %w", entry.DownloadedFiles, err))
+			}
+			err = proto.Unmarshal(cnt, newProtoMsg)
+			if err != nil {
+				return loop.NewQuitMsg(fmt.Errorf("unmarshal into type %T from %T: %w", newProtoMsg, entry.DownloadedFiles, err))
+			}
+			return codegen.IncomingMessage{Msg: newMsg.Elem().Interface()}
+
+		case *pbconvo.UserInput_File:
+			return loop.NewQuitMsg(fmt.Errorf("file upload not supported here"))
+
+		default:
+			return loop.NewQuitMsg(fmt.Errorf("unknown entry type %T", entry))
 		}
 	}
 

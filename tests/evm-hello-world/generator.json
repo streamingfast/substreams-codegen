@@ -2,6 +2,8 @@
   "generator": "evm-hello-world",
   "state": {
     "name": "my_project",
-    "chainName": "mainnet"
+    "chainName": "mainnet",
+    "initialBlock": 0,
+    "initialBlockSet": true
   }
 }
