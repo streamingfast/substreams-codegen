@@ -40,25 +40,21 @@ func buildAPIURL(chain *ChainConfig) string {
 // buildFullAPIURL constructs the complete API URL with module, action, and parameters
 func buildFullAPIURL(chain *ChainConfig, params url.Values, apiKey string) string {
 	baseURL := buildAPIURL(chain)
-	
-	// Combine all query parameters
+
 	allParams := url.Values{}
-	
-	// Add chain-specific query params first
+
 	for key, values := range chain.ApiQueryParams {
 		allParams[key] = values
 	}
-	
-	// Add additional params
+
 	for key, values := range params {
 		allParams[key] = values
 	}
-	
-	// Add API key if provided
+
 	if apiKey != "" {
 		allParams.Set("apiKey", apiKey)
 	}
-	
+
 	if chain.ApiBaseURL != "" {
 		// Etherscan V2: baseURL already includes /api path
 		baseURL += "?" + allParams.Encode()
@@ -66,27 +62,25 @@ func buildFullAPIURL(chain *ChainConfig, params url.Values, apiKey string) strin
 		// Etherscan V1: need to add /api path
 		baseURL += "/api?" + allParams.Encode()
 	}
-	
+
 	return baseURL
 }
 
 // buildDirectAPIURL constructs the direct API URL for contract ABI fetching
 func buildDirectAPIURL(chain *ChainConfig, address string) string {
 	if chain.ApiBaseURL != "" {
-		// Use Etherscan V2 structure with address path
 		url := chain.ApiBaseURL + "/" + address
 		if len(chain.ApiQueryParams) > 0 {
 			url += "?" + chain.ApiQueryParams.Encode()
 		}
 		return url
 	}
-	// Fall back to legacy format
 	return fmt.Sprintf("%s/%s", chain.ApiEndpoint, address)
 }
 
 func getContractABIFollowingProxy(ctx context.Context, contractAddress string, chain *ChainConfig) (*ABI, error) {
+
 	if cachedABI := chain.abiCache[contractAddress]; cachedABI != nil {
-		// For testing purposes, when populating on-disk ABIs with setTestABI()
 		return cachedABI, nil
 	}
 
