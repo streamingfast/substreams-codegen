@@ -26,6 +26,42 @@ func (c *Conversation[X]) GetState() any {
 	return c.State
 }
 
+// GetNetworkAndModule attempts to extract network and output module information from the conversation state
+func (c *Conversation[X]) GetNetworkAndModule() (network string, outputModule string, hasInfo bool) {
+	state := c.GetState()
+	
+	// Try to extract information using reflection/type assertion
+	// This handles the common case where state has ChainName and Name fields
+	if stateMap, ok := state.(interface {
+		GetChainName() string
+		ModuleName() string
+		TrackAnyEvents() bool
+		TrackAnyCalls() bool
+	}); ok {
+		network = stateMap.GetChainName()
+		
+		// Determine output module based on what's being tracked
+		if stateMap.TrackAnyEvents() && stateMap.TrackAnyCalls() {
+			outputModule = "map_events_calls"
+		} else if stateMap.TrackAnyEvents() {
+			outputModule = "map_events"
+		} else if stateMap.TrackAnyCalls() {
+			outputModule = "map_calls"
+		} else {
+			// Default to events if we can't determine
+			outputModule = "map_events"
+		}
+		
+		return network, outputModule, true
+	}
+	
+	// Fallback: try to access fields by name using reflection
+	// This is a more generic approach for states that might have these fields
+	// but don't implement the interface above
+	
+	return "", "", false
+}
+
 func (c *Conversation[X]) Msg() *MsgWrap { return c.factory.NewMsg(c.State) }
 
 func (c *Conversation[X]) Action(element any) *MsgWrap {
@@ -51,18 +87,32 @@ func (c *Conversation[X]) CmdAskProjectName() loop.Cmd {
 }
 
 func (c *Conversation[X]) HandleSubstreamsConsumptionChoice(value string) loop.Cmd {
+	// Try to get actual network and module information
+	network, outputModule, hasInfo := c.GetNetworkAndModule()
+	
+	// Prepare the values to use in commands
+	var endpoint, module string
+	if hasInfo {
+		endpoint = NetworkToEndpoint(network)
+		module = outputModule
+	} else {
+		// Fallback to placeholders if we can't determine the values
+		endpoint = "{endpoint}"
+		module = "{output_module}"
+	}
+	
 	var sinkMessage *MsgWrap
 	switch value {
 	case "sql":
 		sinkMessage = c.Msg().Message(`Sink to SQL:
 		1. Get the binary from https://github.com/streamingfast/substreams-sink-sql/ (version 4.6.1 or above)
-		2. Run ` + "`substreams-sink-sql from-proto psql://db_user:db_password@db_host:5432/db_name ./substreams.yaml {output_module}`" +
+		2. Run ` + "`substreams-sink-sql from-proto psql://db_user:db_password@db_host:5432/db_name ./substreams.yaml " + module + "`" +
 			` See https://docs.substreams.dev/how-to-guides/sinks/sql-sink"`)
 	case "parquet":
 		sinkMessage = c.Msg().Message(`Sink to Parquet file:
 			1. Get the binary from https://github.com/streamingfast/substreams-sink-files/ (version 2.1.0 or above)
-			2. Run ` + "`substreams-sink-files run {endpoint} substreams.yaml {output_module} ./output`" +
-			` See https://docs.substreams.dev/how-to-guides/sinks/sql-sink"`)
+			2. Run ` + "`substreams-sink-files run " + endpoint + " substreams.yaml " + module + " ./output`" +
+			` See https://github.com/streamingfast/substreams-sink-files?tab=readme-ov-file#parquet"`)
 	case "golang":
 		sinkMessage = c.Msg().Message(`Sink using Golang
 

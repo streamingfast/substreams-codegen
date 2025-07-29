@@ -43,8 +43,9 @@ func contractNames(contracts []*Contract) (out []string) {
 
 func (p *Project) ChainConfig() *ChainConfig { return ChainConfigByID[p.ChainName] }
 
-func (p *Project) ModuleName() string { return strings.ReplaceAll(p.Name, "-", "_") }
-func (p *Project) KebabName() string  { return strings.ReplaceAll(p.Name, "_", "-") }
+func (p *Project) GetChainName() string { return p.ChainName }
+func (p *Project) ModuleName() string   { return strings.ReplaceAll(p.Name, "-", "_") }
+func (p *Project) KebabName() string    { return strings.ReplaceAll(p.Name, "_", "-") }
 
 func (p *Project) GetContractByName(contractName string) *Contract {
 	for _, contract := range p.Contracts {
