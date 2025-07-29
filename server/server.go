@@ -2,6 +2,7 @@ package server
 
 import (
 	_ "embed"
+	"context"
 	"net/http"
 	"regexp"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	dgrpcserver "github.com/streamingfast/dgrpc/server"
 	connectweb "github.com/streamingfast/dgrpc/server/connectrpc"
 	"github.com/streamingfast/dstore"
+	"github.com/streamingfast/firehose-networks"
 	"github.com/streamingfast/shutter"
 	"github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1/pbconvoconnect"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -51,9 +53,13 @@ func New(
 func (s *server) Run() {
 	s.logger.Info("starting server")
 
-	// Fetch networks from the registry every 12 hours
+	// Schedule registry updates every 12 hours to keep network endpoints up to date
 	go func() {
-		time.Sleep(12 * time.Hour)
+		ctx := context.Background()
+		interval := 12 * time.Hour
+		s.logger.Info("scheduling firehose-networks registry updates", zap.Duration("interval", interval))
+		
+		networks.ScheduleUpdateLatestRegistry(ctx, interval, s.logger)
 	}()
 
 	tracerProvider := otel.GetTracerProvider()

@@ -97,8 +97,8 @@ func (c *Conversation[X]) HandleSubstreamsConsumptionChoice(value string) loop.C
 		module = outputModule
 	} else {
 		// Fallback to placeholders if we can't determine the values
-		endpoint = "{endpoint}"
-		module = "{output_module}"
+		endpoint = "<endpoint>"
+		module = "<output_module>"
 	}
 	
 	var sinkMessage *MsgWrap

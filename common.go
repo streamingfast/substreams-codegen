@@ -6,6 +6,7 @@ import (
 	"text/template"
 
 	"github.com/bmatcuk/doublestar/v4"
+	"github.com/streamingfast/firehose-networks"
 )
 
 //go:embed common-templates/*
@@ -26,28 +27,14 @@ func MarkdownEscape(s string) string {
 }
 
 // NetworkToEndpoint maps network names to their corresponding StreamingFast endpoints
+// using the firehose-networks library
 func NetworkToEndpoint(network string) string {
-	endpoints := map[string]string{
-		"mainnet":   "mainnet.eth.streamingfast.io:443",
-		"bnb":       "bnb.streamingfast.io:443",
-		"bsc":       "bnb.streamingfast.io:443",
-		"polygon":   "polygon.streamingfast.io:443",
-		"arbitrum":  "arbitrum.streamingfast.io:443",
-		"optimism":  "optimism.streamingfast.io:443",
-		"base":      "base.streamingfast.io:443",
-		"avalanche": "avalanche.streamingfast.io:443",
-		"fantom":    "fantom.streamingfast.io:443",
-		"amoy":      "polygon.streamingfast.io:443", // Polygon testnet uses same endpoint
-		"holesky":   "holesky.eth.streamingfast.io:443",
-		"sepolia":   "sepolia.eth.streamingfast.io:443",
+	endpoint, err := networks.GetSubstreamsEndpoint(network)
+	if err != nil {
+		// Fallback to a generic pattern if not found in registry
+		return network + ".streamingfast.io:443"
 	}
-	
-	if endpoint, exists := endpoints[network]; exists {
-		return endpoint
-	}
-	
-	// Fallback to a generic pattern if not found
-	return network + ".streamingfast.io:443"
+	return endpoint
 }
 
 func parseCommonTemplates() (*template.Template, error) {
