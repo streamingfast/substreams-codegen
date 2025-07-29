@@ -29,8 +29,8 @@ func MarkdownEscape(s string) string {
 // NetworkToEndpoint maps network names to their corresponding StreamingFast endpoints
 // using the firehose-networks library
 func NetworkToEndpoint(network string) string {
-	endpoint, err := networks.GetSubstreamsEndpoint(network)
-	if err != nil {
+	endpoint := networks.GetSubstreamsEndpoint(network)
+	if endpoint == "" {
 		// Fallback to a generic pattern if not found in registry
 		return network + ".streamingfast.io:443"
 	}
