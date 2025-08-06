@@ -1,197 +1,14 @@
 package evm_events_calls_raw
 
 import (
-	"fmt"
-	"net/url"
-	"os"
 	"sort"
 
-	"github.com/streamingfast/eth-go"
+	evm_events_calls "github.com/streamingfast/substreams-codegen/evm-events-calls"
 )
 
-type ChainConfig struct {
-	ID                   string // Public
-	DisplayName          string // Public
-	ExplorerLink         string
-	ApiEndpoint          string
-	ApiBaseURL           string // Base URL without query parameters
-	ApiQueryParams       url.Values // Query parameters to append (e.g. chainid=747474)
-	ApiEndpointDirect    bool
-	FirstStreamableBlock uint64
-	Network              string
-	SupportsCalls        bool
-	APIKeyEnvVar         string
-	ExampleContract      string
+var ChainConfigs []*evm_events_calls.ChainConfig
 
-	initialBlockCache map[string]uint64
-}
-
-var ChainConfigs []*ChainConfig
-
-var ChainConfigByID = map[string]*ChainConfig{
-	"mainnet": {
-		DisplayName:          "Ethereum Mainnet",
-		ExplorerLink:         "https://etherscan.io",
-		ApiEndpoint:          "https://api.etherscan.io",
-		ExampleContract:      "0x1f98431c8ad98523631ae4a59f267346ea31f984",
-		FirstStreamableBlock: 0,
-		Network:              "mainnet",
-		initialBlockCache:    make(map[string]uint64),
-		SupportsCalls:        true,
-		APIKeyEnvVar:         "CODEGEN_MAINNET_API_KEY",
-	},
-	"bnb": {
-		DisplayName:          "BNB",
-		ExplorerLink:         "https://bscscan.com",
-		ApiEndpoint:          "https://api.bscscan.com",
-		ExampleContract:      "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
-		FirstStreamableBlock: 0,
-		Network:              "bsc",
-		initialBlockCache:    make(map[string]uint64),
-		SupportsCalls:        true,
-		APIKeyEnvVar:         "CODEGEN_BNB_API_KEY",
-	},
-	"polygon": {
-		DisplayName:          "Polygon",
-		ExplorerLink:         "https://polygonscan.com",
-		ApiEndpoint:          "https://api.polygonscan.com",
-		ExampleContract:      "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
-		FirstStreamableBlock: 0,
-		Network:              "polygon",
-		initialBlockCache:    make(map[string]uint64),
-		SupportsCalls:        true,
-		APIKeyEnvVar:         "CODEGEN_POLYGON_API_KEY",
-	},
-	"amoy": {
-		DisplayName:          "Polygon Amoy Testnet",
-		ExplorerLink:         "https://www.okx.com/web3/explorer/amoy",
-		ExampleContract:      "0x0000000071727de22e5e9d8baf0edac6f37da032",
-		ApiEndpoint:          "",
-		FirstStreamableBlock: 0,
-		Network:              "amoy",
-		initialBlockCache:    make(map[string]uint64),
-		SupportsCalls:        true,
-	},
-	"arbitrum": {
-		DisplayName:          "Arbitrum",
-		ExplorerLink:         "https://arbiscan.io",
-		ExampleContract:      "0x58318bceaa0d249b62fad57d134da7475e551b47",
-		ApiEndpoint:          "https://api.arbiscan.io",
-		Network:              "arbitrum",
-		FirstStreamableBlock: 0,
-		initialBlockCache:    make(map[string]uint64),
-		SupportsCalls:        true,
-	},
-	"holesky": {
-		DisplayName:          "Holesky",
-		ExplorerLink:         "https://holesky.etherscan.io/",
-		ExampleContract:      "0xade8b182898240910fe9f3513db35a1c101b4748",
-		ApiEndpoint:          "https://api-holesky.etherscan.io",
-		FirstStreamableBlock: 0,
-		Network:              "holesky",
-		initialBlockCache:    make(map[string]uint64),
-		SupportsCalls:        true,
-	},
-	"sepolia": {
-		DisplayName:          "Sepolia Testnet",
-		ExplorerLink:         "https://sepolia.etherscan.io",
-		ApiEndpoint:          "https://api-sepolia.etherscan.io",
-		ExampleContract:      "0x800ec0d65adb70f0b69b7db052c6bd89c2406ac4",
-		FirstStreamableBlock: 0,
-		Network:              "sepolia",
-		initialBlockCache:    make(map[string]uint64),
-		SupportsCalls:        true,
-	},
-	"optimism": {
-		DisplayName:          "Optimism Mainnet",
-		ExplorerLink:         "https://optimistic.etherscan.io",
-		ApiEndpoint:          "https://api-optimistic.etherscan.io",
-		ExampleContract:      "0x94b008aa00579c1307b0ef2c499ad98a8ce58e58",
-		FirstStreamableBlock: 0,
-		Network:              "optimism",
-		initialBlockCache:    make(map[string]uint64),
-		SupportsCalls:        false,
-		APIKeyEnvVar:         "CODEGEN_OPTIMISM_API_KEY",
-	},
-	"avalanche-mainnet": {
-		DisplayName:          "Avalanche C-chain",
-		ExplorerLink:         "https://subnets.avax.network/c-chain",
-		ApiEndpoint:          "",
-		ExampleContract:      "0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7",
-		FirstStreamableBlock: 0,
-		Network:              "avalanche-mainnet",
-		initialBlockCache:    make(map[string]uint64),
-		SupportsCalls:        false,
-	},
-	"chapel": {
-		DisplayName:          "BNB Chapel Testnet",
-		ExplorerLink:         "https://testnet.bscscan.com/",
-		ApiEndpoint:          "https://api-testnet.bscscan.com",
-		ExampleContract:      "0x37ffab7530fbb7e8b4bfec152132929bdcdae3f3",
-		FirstStreamableBlock: 0,
-		Network:              "chapel",
-		initialBlockCache:    make(map[string]uint64),
-		SupportsCalls:        true,
-	},
-	"sei-mainnet": {
-		DisplayName:          "SEI Mainnet (EVM)",
-		ApiEndpoint:          "https://seitrace.com/pacific-1/api/v2/smart-contracts",
-		ApiEndpointDirect:    true,
-		ExampleContract:      "0xb75d0b03c06a926e488e2659df1a861f860bd3d1",
-		FirstStreamableBlock: 79123881,
-		Network:              "sei-mainnet",
-		initialBlockCache:    make(map[string]uint64),
-		SupportsCalls:        true,
-	},
-	"base": {
-		DisplayName:          "Base Mainnet",
-		ExplorerLink:         "https://basescan.org",
-		ApiEndpoint:          "https://api.basescan.org",
-		ExampleContract:      "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
-		FirstStreamableBlock: 0,
-		Network:              "base",
-		initialBlockCache:    make(map[string]uint64),
-		SupportsCalls:        true,
-		APIKeyEnvVar:         "CODEGEN_BASE_API_KEY",
-	},
-	"tron-evm-mainnet": {
-		DisplayName:          "Tron EVM mainnet",
-		FirstStreamableBlock: 0,
-		Network:              "tron-evm-mainnet",
-		initialBlockCache:    make(map[string]uint64),
-		SupportsCalls:        false,
-	},
-	"unichain": {
-		DisplayName:          "Unichain Mainnet",
-		ExplorerLink:         "https://unichain-sepolia.blockscout.com",
-		ApiEndpoint:          "https://unichain-sepolia.blockscout.com/api",
-		ExampleContract:      "0x1f98400000000000000000000000000000000003",
-		FirstStreamableBlock: 0,
-		Network:              "unichain",
-		initialBlockCache:    make(map[string]uint64),
-		SupportsCalls:        true,
-	},
-	"injective-evm-testnet": {
-		DisplayName:          "Injective EVM testnet",
-		FirstStreamableBlock: 0,
-		Network:              "injective-evm-testnet",
-		initialBlockCache:    make(map[string]uint64),
-		SupportsCalls:        true,
-	},
-	"katana-mainnet": {
-		DisplayName:          "Katana Mainnet",
-		ExplorerLink:         "https://katanascan.com",
-		ApiEndpoint:          "https://api.etherscan.io/v2/api",
-		ApiBaseURL:           "https://api.etherscan.io/v2/api",
-		ApiQueryParams:       url.Values{"chainid": {"747474"}},
-		ExampleContract:      "0x203A662b0BD271A6ed5a60EdFbd04bFce608FD36",
-		FirstStreamableBlock: 0,
-		Network:              "katana-mainnet",
-		initialBlockCache:    make(map[string]uint64),
-		SupportsCalls:        true,
-		APIKeyEnvVar:         "CODEGEN_KATANA_API_KEY",
-	},
-}
+var ChainConfigByID = evm_events_calls.ChainConfigByID
 
 func init() {
 	for k, v := range ChainConfigByID {
@@ -203,19 +20,20 @@ func init() {
 	})
 }
 
-// TODO: move to a `_test.go` file
-func (c *ChainConfig) setTestABI(address string, abiFile string) {
-	raw, err := os.ReadFile(abiFile)
-	if err != nil {
-		panic(fmt.Errorf("reading Abi %q: %w", abiFile, err))
-	}
-	abi, err := eth.ParseABIFromBytes(raw)
-	if err != nil {
-		panic(fmt.Errorf("parsing Abi %q: %w", abi, err))
-	}
-}
-
-// TODO: move to a `_test.go` file
-func (c *ChainConfig) setTestInitialBlock(address string, initialBlock uint64) {
-	c.initialBlockCache[address] = initialBlock
-}
+//// TODO: move to a `_test.go` file
+//func (c *ChainConfig) setTestABI(address string, abiFile string) {
+//	raw, err := os.ReadFile(abiFile)
+//	if err != nil {
+//		panic(fmt.Errorf("reading Abi %q: %w", abiFile, err))
+//	}
+//	abi, err := eth.ParseABIFromBytes(raw)
+//	if err != nil {
+//		panic(fmt.Errorf("parsing Abi %q: %w", abi, err))
+//	}
+//}
+//
+//// TODO: move to a `_test.go` file
+//func (c *ChainConfig) setTestInitialBlock(address string, initialBlock uint64) {
+//	c.initialBlockCache[address] = initialBlock
+//}
+//

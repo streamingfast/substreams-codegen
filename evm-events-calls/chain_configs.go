@@ -14,7 +14,7 @@ type ChainConfig struct {
 	DisplayName          string // Public
 	ExplorerLink         string
 	ApiEndpoint          string
-	ApiBaseURL           string // Base URL without query parameters to support EtherscanV2
+	ApiBaseURL           string     // Base URL without query parameters to support EtherscanV2
 	ApiQueryParams       url.Values // Query parameters to append (e.g. chainid=747474)
 	ApiEndpointDirect    bool
 	FirstStreamableBlock uint64
@@ -41,7 +41,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		abiCache:             make(map[string]*ABI),
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
-		APIKeyEnvVar:         "CODEGEN_MAINNET_API_KEY",
+		APIKeyEnvVar:         "ETHERSCAN_API_KEY",
 	},
 	"bnb": {
 		DisplayName:          "BNB",
@@ -55,7 +55,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		abiCache:             make(map[string]*ABI),
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
-		APIKeyEnvVar:         "CODEGEN_BNB_API_KEY",
+		APIKeyEnvVar:         "ETHERSCAN_API_KEY",
 	},
 	"polygon": {
 		DisplayName:          "Polygon",
@@ -63,13 +63,13 @@ var ChainConfigByID = map[string]*ChainConfig{
 		ApiEndpoint:          "https://api.polygonscan.com",
 		ApiBaseURL:           "https://api.etherscan.io/v2/api",
 		ApiQueryParams:       url.Values{"chainid": {"137"}},
-		ExampleContract:      "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
+		ExampleContract:      "ETHERSCAN",
 		FirstStreamableBlock: 0,
 		Network:              "polygon",
 		abiCache:             make(map[string]*ABI),
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
-		APIKeyEnvVar:         "CODEGEN_POLYGON_API_KEY",
+		APIKeyEnvVar:         "ETHERSCAN_API_KEY",
 	},
 	"amoy": {
 		DisplayName:          "Polygon Amoy Testnet",
@@ -83,6 +83,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		abiCache:             make(map[string]*ABI),
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
+		APIKeyEnvVar:         "ETHERSCAN_API_KEY",
 	},
 	"arbitrum": {
 		DisplayName:          "Arbitrum",
@@ -96,6 +97,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		abiCache:             make(map[string]*ABI),
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
+		APIKeyEnvVar:         "ETHERSCAN_API_KEY",
 	},
 	"holesky": {
 		DisplayName:          "Holesky",
@@ -109,6 +111,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		abiCache:             make(map[string]*ABI),
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
+		APIKeyEnvVar:         "ETHERSCAN_API_KEY",
 	},
 	"sepolia": {
 		DisplayName:          "Sepolia Testnet",
@@ -122,6 +125,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		abiCache:             make(map[string]*ABI),
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
+		APIKeyEnvVar:         "ETHERSCAN_API_KEY",
 	},
 	"optimism": {
 		DisplayName:          "Optimism Mainnet",
@@ -135,7 +139,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		abiCache:             make(map[string]*ABI),
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        false,
-		APIKeyEnvVar:         "CODEGEN_OPTIMISM_API_KEY",
+		APIKeyEnvVar:         "ETHERSCAN_API_KEY",
 	},
 	"avalanche-mainnet": {
 		DisplayName:          "Avalanche C-chain",
@@ -149,6 +153,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		abiCache:             make(map[string]*ABI),
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        false,
+		APIKeyEnvVar:         "ETHERSCAN_API_KEY",
 	},
 	"chapel": {
 		DisplayName:          "BNB Chapel Testnet",
@@ -162,6 +167,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		abiCache:             make(map[string]*ABI),
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
+		APIKeyEnvVar:         "ETHERSCAN_API_KEY",
 	},
 	"sei-mainnet": {
 		DisplayName:          "SEI Mainnet (EVM)",
@@ -186,7 +192,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		abiCache:             make(map[string]*ABI),
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
-		APIKeyEnvVar:         "CODEGEN_BASE_API_KEY",
+		APIKeyEnvVar:         "ETHERSCAN_API_KEY",
 	},
 	"tron-evm-mainnet": {
 		DisplayName:          "Tron EVM mainnet",
@@ -206,6 +212,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		Network:              "unichain",
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
+		APIKeyEnvVar:         "ETHERSCAN_API_KEY",
 	},
 	"injective-evm-testnet": {
 		DisplayName:          "Injective EVM testnet",
@@ -228,7 +235,7 @@ var ChainConfigByID = map[string]*ChainConfig{
 		abiCache:             make(map[string]*ABI),
 		initialBlockCache:    make(map[string]uint64),
 		SupportsCalls:        true,
-		APIKeyEnvVar:         "CODEGEN_KATANA_API_KEY",
+		APIKeyEnvVar:         "ETHERSCAN_API_KEY",
 	},
 }
 

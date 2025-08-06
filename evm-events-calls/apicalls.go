@@ -27,11 +27,7 @@ var httpClient = http.Client{
 func buildAPIURL(chain *ChainConfig) string {
 	if chain.ApiBaseURL != "" {
 		// Use Etherscan V2 structure - ApiBaseURL already includes /api path
-		url := chain.ApiBaseURL
-		if len(chain.ApiQueryParams) > 0 {
-			url += "?" + chain.ApiQueryParams.Encode()
-		}
-		return url
+		return chain.ApiBaseURL
 	}
 	// Fall back to Etherscan V1 ApiEndpoint
 	return chain.ApiEndpoint
@@ -150,15 +146,13 @@ func getContractABIDirect(ctx context.Context, address string, chain *ChainConfi
 		return nil, "", fmt.Errorf("new request: %w", err)
 	}
 
+	req.Header.Add("user-agent", "substreams-codegen/1.0.0")
+
 	res, err := httpClient.Do(req)
 	if err != nil {
 		return nil, "", fmt.Errorf("getting contract Abi: %w", err)
 	}
 	defer res.Body.Close()
-
-	type Response struct {
-		Abi []byte `json:"Abi"`
-	}
 
 	data, err := io.ReadAll(res.Body)
 	if err != nil {
@@ -166,6 +160,12 @@ func getContractABIDirect(ctx context.Context, address string, chain *ChainConfi
 	}
 
 	abiContent := gjson.GetBytes(data, "Abi").String()
+	if abiContent == "" {
+		abiContent = gjson.GetBytes(data, "abi").String()
+	}
+	if abiContent == "" {
+		abiContent = string(data)
+	}
 
 	ethABI, err := eth.ParseABIFromBytes([]byte(abiContent))
 	if err != nil {

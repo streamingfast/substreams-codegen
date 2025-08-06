@@ -42,13 +42,13 @@ func TestConvoUpdate(t *testing.T) {
 	conv.SetFactory(&codegen.MsgWrapFactory{})
 	p := conv.(*Convo).State
 
-	next := conv.Update(codegen.InputProjectName{pbconvo.UserInput_TextInput{
+	next := conv.Update(codegen.InputProjectName{UserInput_TextInput: pbconvo.UserInput_TextInput{
 		Value: "my-proj",
 	}})
 	assert.Equal(t, "my-proj", p.Name)
 
 	assert.Equal(t, codegen.AskChainName{}, next())
-	next = conv.Update(codegen.InputChainName{pbconvo.UserInput_Selection{
+	next = conv.Update(codegen.InputChainName{UserInput_Selection: pbconvo.UserInput_Selection{
 		Value: "mainnet",
 	}})
 	assert.Equal(t, "mainnet", p.ChainName)
@@ -147,15 +147,15 @@ func TestConvoUpdate(t *testing.T) {
 	assert.NotNil(t, downloadMsg.GetDownloadFiles())
 
 	// Second part should trigger InputSourceDownloaded which leads to the project ready message
-	next = conv.Update(codegen.InputSourceDownloaded{pbconvo.UserInput_TextInput{Value: "{project folder}"}})
+	next = conv.Update(codegen.InputSourceDownloaded{UserInput_TextInput: pbconvo.UserInput_TextInput{Value: "{project folder}"}})
 	seq = next().(loop.SeqMsg)
-	
+
 	// Now the project ready message should be in the first part of this new sequence
 	msg1 := seq[0]().(*pbconvo.SystemOutput)
 	assert.Contains(t, msg1.GetMessage().Markdown, "substreams build\nsubstreams auth\nsubstreams gui")
 	assert.Contains(t, msg1.GetMessage().Markdown, "substreams registry login")
 	assert.Contains(t, msg1.GetMessage().Markdown, "substreams registry publish")
-	
+
 	// Second part should be the consumption choice selection
 	consumptionMsg := seq[1]().(*pbconvo.SystemOutput)
 	assert.NotNil(t, consumptionMsg.GetListSelect())

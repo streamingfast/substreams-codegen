@@ -9,6 +9,7 @@ import (
 	"github.com/codemodus/kace"
 	"github.com/golang-cz/textcase"
 	"github.com/huandu/xstrings"
+	evm_events_calls "github.com/streamingfast/substreams-codegen/evm-events-calls"
 )
 
 type Project struct {
@@ -37,7 +38,7 @@ func contractNames(contracts []*Contract) (out []string) {
 	return
 }
 
-func (p *Project) ChainConfig() *ChainConfig { return ChainConfigByID[p.ChainName] }
+func (p *Project) ChainConfig() *evm_events_calls.ChainConfig { return ChainConfigByID[p.ChainName] }
 
 func (p *Project) ModuleName() string { return strings.ReplaceAll(p.Name, "-", "_") }
 func (p *Project) KebabName() string  { return strings.ReplaceAll(p.Name, "_", "-") }
@@ -236,9 +237,9 @@ func (p *Project) AllContracts() []*BaseContract {
 }
 
 type BaseContract struct {
-	Name        string          `json:"name,omitempty"`
-	TrackEvents bool            `json:"trackEvents"`
-	TrackCalls  bool            `json:"trackCalls"`
+	Name        string `json:"name,omitempty"`
+	TrackEvents bool   `json:"trackEvents"`
+	TrackCalls  bool   `json:"trackCalls"`
 }
 
 func (c *BaseContract) Identifier() string { return c.Name }
