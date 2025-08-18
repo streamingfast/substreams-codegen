@@ -57,11 +57,39 @@ func (a *ABI) EventIDsToSig() (out map[string]string) {
 	return
 }
 
+func namesThatNeedDoublePluralization(
+	names []string,
+) map[string]bool {
+	namesThatChange := make(map[string]bool)
+	for _, name := range names {
+		sanitized := sanitizeABIStructName(name)
+		singular := xstrings.ToSnakeCase(sanitized)
+		plural := xstrings.ToSnakeCase(pluralizerSingleton.Plural(sanitized))
+		if plural != singular {
+			namesThatChange[plural] = true
+		}
+	}
+
+	out := make(map[string]bool)
+	for _, name := range names {
+		sanitized := sanitizeABIStructName(name)
+		singular := xstrings.ToSnakeCase(sanitized)
+		plural := xstrings.ToSnakeCase(pluralizerSingleton.Plural(sanitized))
+		if singular == plural && namesThatChange[plural] {
+			out[name] = true
+		}
+	}
+
+	return out
+}
+
 func (a *ABI) BuildEventModels() (out []codegenEvent, err error) {
 	abi := a.abi
 
 	names := maps.Keys(abi.LogEventsByNameMap)
 	sort.StringSlice(names).Sort()
+
+	needsDoublePluralization := namesThatNeedDoublePluralization(names)
 
 	// We allocate as many names + 16 to potentially account for duplicates
 	out = make([]codegenEvent, 0, len(names)+16)
@@ -87,18 +115,24 @@ func (a *ABI) BuildEventModels() (out []codegenEvent, err error) {
 			// Sanitize Abi struct name base on rust proto-gen sanitizer
 			rustABIStructName = sanitizeABIStructName(rustABIStructName)
 
-			protoFieldName := xstrings.ToSnakeCase(pluralizerSingleton.Plural(rustABIStructName))
 			// prost will do a to_lower_camel_case() on any struct name
 			rustGeneratedStructName := textcase.PascalCase(xstrings.ToSnakeCase(rustABIStructName))
 
 			eventID := hex.EncodeToString(event.LogID())
+
+			protoFieldName := xstrings.ToSnakeCase(pluralizerSingleton.Plural(rustABIStructName))
+			protoOutputModuleFieldSubgraphTriggerName := pluralizerSingleton.Plural(rustGeneratedStructName)
+			if needsDoublePluralization[name] {
+				protoFieldName += "_list"
+				protoOutputModuleFieldSubgraphTriggerName += "_list"
+			}
 
 			codegenEvent := codegenEvent{
 				Rust: &rustEventModel{
 					ABIStructName:                             rustGeneratedStructName,
 					ProtoMessageName:                          rustGeneratedStructName,
 					ProtoOutputModuleFieldName:                protoFieldName,
-					ProtoOutputModuleFieldSubgraphTriggerName: pluralizerSingleton.Plural(rustGeneratedStructName),
+					ProtoOutputModuleFieldSubgraphTriggerName: protoOutputModuleFieldSubgraphTriggerName,
 					TableChangeEntityName:                     xstrings.ToSnakeCase(rustABIStructName),
 				},
 
@@ -129,6 +163,8 @@ func (a *ABI) BuildCallModels() (out []codegenCall, err error) {
 	names := maps.Keys(abi.FunctionsByNameMap)
 	sort.StringSlice(names).Sort()
 
+	needsDoublePluralization := namesThatNeedDoublePluralization(names)
+
 	// We allocate as many names + 16 to potentially account for duplicates
 	out = make([]codegenCall, 0, len(names)+16)
 	for _, name := range names {
@@ -157,18 +193,23 @@ func (a *ABI) BuildCallModels() (out []codegenCall, err error) {
 			// Sanitize Abi struct name base on rust proto-gen sanitizer
 			rustABIStructName = sanitizeABIStructName(rustABIStructName)
 
-			protoFieldName := "call_" + xstrings.ToSnakeCase(pluralizerSingleton.Plural(rustABIStructName))
-
 			// prost will do a to_lower_camel_case() on any struct name
 			rustGeneratedStructName := textcase.PascalCase(xstrings.ToSnakeCase(rustABIStructName))
 			protoMessageName := textcase.PascalCase(xstrings.ToSnakeCase(rustABIStructName) + "Call")
+
+			protoFieldName := "call_" + xstrings.ToSnakeCase(pluralizerSingleton.Plural(rustABIStructName))
+			protoOutputModuleFieldSubgraphTriggerName := fmt.Sprintf("Call%s", pluralizerSingleton.Plural(rustGeneratedStructName))
+			if needsDoublePluralization[name] {
+				protoFieldName += "_list"
+				protoOutputModuleFieldSubgraphTriggerName += "List"
+			}
 
 			codegenCall := codegenCall{
 				Rust: &rustCallModel{
 					ABIStructName:                             rustGeneratedStructName,
 					ProtoMessageName:                          protoMessageName,
 					ProtoOutputModuleFieldName:                protoFieldName,
-					ProtoOutputModuleFieldSubgraphTriggerName: fmt.Sprintf("Call%s", pluralizerSingleton.Plural(rustGeneratedStructName)),
+					ProtoOutputModuleFieldSubgraphTriggerName: protoOutputModuleFieldSubgraphTriggerName,
 					TableChangeEntityName:                     "call_" + xstrings.ToSnakeCase(rustABIStructName),
 				},
 
