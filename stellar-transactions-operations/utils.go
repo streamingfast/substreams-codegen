@@ -4,8 +4,9 @@ import (
 	"regexp"
 )
 
+// Regular expression: Allows letters, numbers, and underscores, separated by commas
+var filterRegexp = regexp.MustCompile(`^[a-zA-Z0-9_]+(,[a-zA-Z0-9_]+)*$`)
+
 func isFilterCorrect(s string) bool {
-	// Regular expression: Allows lowercase letters, numbers, and underscores, separated by commas
-	re := regexp.MustCompile(`^[a-z0-9_]+(,[a-z0-9_]+)*$`)
-	return re.MatchString(s)
+	return filterRegexp.MatchString(s)
 }

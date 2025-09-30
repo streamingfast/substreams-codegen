@@ -2,7 +2,6 @@ package stellartransactionsoperations
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	codegen "github.com/streamingfast/substreams-codegen"
@@ -108,8 +107,8 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			Cmd()
 
 	case InputFilter:
-		if isValid := isFilterCorrect(msg.Value); isValid == false {
-			return loop.Seq(cmd(InvalidFilter{errors.New(fmt.Sprintf("ERROR: The specified filter does not have a correct format: %s", msg.Value))}), cmd(AskFilter{}))
+		if !isFilterCorrect(msg.Value) {
+			return loop.Seq(cmd(InvalidFilter{fmt.Errorf("ERROR: The specified filter does not have a correct format: %s", msg.Value)}), cmd(AskFilter{}))
 		}
 
 		c.State.Filter = msg.Value

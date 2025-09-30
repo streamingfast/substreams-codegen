@@ -10,8 +10,10 @@ SUBSTREAMS_CODEGEN_ENDPOINT=http://localhost:9000 substreams init
 
 ## Develop
 
+Install reflex `go install github.com/cespare/reflex@latest` and do
+
 ```bash
-DEBUG=.* go run ./cmd/substreams-codegen
+reflex -c .reflex
 ```
 
 ## Principles
