@@ -10,14 +10,14 @@ type SendFunc func(msg *pbconvo.SystemOutput, err error)
 type ConversationFactory func() Converser
 
 type Converser interface {
-	// Functions provided by the Conversation instance
-
 	SetClientVersion(uint32)
 	NextStep() loop.Cmd
 	Update(loop.Msg) loop.Cmd
-
-	// Functions provided by the *Conversation type
-
 	SetFactory(f *MsgWrapFactory)
-	GetState() any
+
+	// GetState returns the current conversation state as an interface. This cannot
+	// be generically typed here other when creating a registry of conversations,
+	// it's impossible to cast from the specific type X to ConversationState, Go
+	// doesn't allow that even though every Converser[X] is also Converser[ConversationState].
+	GetState() ConversationState
 }

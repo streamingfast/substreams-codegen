@@ -3,7 +3,10 @@ package stellarminimal
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 
+	registry "github.com/pinax-network/graph-networks-libs/packages/golang/lib"
+	networks "github.com/streamingfast/firehose-networks"
 	codegen "github.com/streamingfast/substreams-codegen"
 	"github.com/streamingfast/substreams-codegen/loop"
 )
@@ -22,7 +25,7 @@ func init() {
 		"stellar-minimal",
 		"Creates a Substreams project which indexes the full Stellar Block.",
 		"You will get a project that indexes all the data contained in the Block.",
-		codegen.ConversationFactory(New),
+		New,
 		59,
 		"Stellar",
 	)
@@ -38,7 +41,7 @@ func (c *Convo) NextStep() loop.Cmd {
 		return cmd(codegen.AskChainName{})
 	}
 
-	if !p.IsValidChainName(p.ChainName) {
+	if !p.IsValidChainInput(p.ChainName) {
 		return loop.Seq(cmd(codegen.MsgInvalidChainName{}), cmd(codegen.AskChainName{}))
 	}
 
@@ -70,9 +73,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case codegen.AskChainName:
 		var labels, values []string
-		for _, conf := range ChainConfigs {
-			labels = append(labels, conf.DisplayName)
-			values = append(values, conf.ID)
+		for _, network := range stellarNetworks() {
+			labels = append(labels, network.FullName)
+			values = append(values, network.ID)
 		}
 		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain", "chain").
 			Labels(labels...).
@@ -92,9 +95,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case codegen.InputChainName:
 		c.State.ChainName = msg.Value
-		if c.State.IsValidChainName(msg.Value) {
+		if c.State.IsValidChainInput(msg.Value) {
 			return loop.Seq(
-				c.Msg().Messagef("Got it, will be using chain %q", c.State.ChainConfig().DisplayName).Cmd(),
+				c.Msg().Messagef("Got it, will be using chain %q", c.State.ChainDisplayName()).Cmd(),
 				c.NextStep(),
 			)
 		}
@@ -111,3 +114,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 }
 
 var cmd = codegen.Cmd
+
+var stellarNetworkRegexp = regexp.MustCompile(`^stellar`)
+
+func stellarNetworks() []*registry.Network {
+	return networks.GetSubstreamsRegistry().Search(stellarNetworkRegexp)
+}

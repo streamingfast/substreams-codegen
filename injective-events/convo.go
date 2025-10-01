@@ -3,9 +3,12 @@ package injective_events
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
+	registry "github.com/pinax-network/graph-networks-libs/packages/golang/lib"
+	networks "github.com/streamingfast/firehose-networks"
 	codegen "github.com/streamingfast/substreams-codegen"
 	"github.com/streamingfast/substreams-codegen/loop"
 )
@@ -22,7 +25,7 @@ func init() {
 		"injective-events",
 		"Stream Injective Events with specific attributes if specified",
 		"Create an Injective Substreams module from specific events",
-		codegen.ConversationFactory(New),
+		New,
 		70,
 		"Cosmos",
 	)
@@ -53,7 +56,7 @@ func (c *Convo) NextStep() (out loop.Cmd) {
 		return cmd(codegen.AskChainName{})
 	}
 
-	if !isValidChainName(p.ChainName) {
+	if !p.IsValidChainInput(p.ChainName) {
 		return loop.Seq(cmd(codegen.MsgInvalidChainName{}), cmd(codegen.AskChainName{}))
 	}
 
@@ -124,8 +127,8 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case codegen.AskChainName:
 		var labels, values []string
-		for _, conf := range ChainConfigs {
-			labels = append(labels, conf.DisplayName)
+		for _, conf := range injectiveNetworks() {
+			labels = append(labels, conf.FullName)
 			values = append(values, conf.ID)
 		}
 		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain", "chain").
@@ -146,9 +149,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case codegen.InputChainName:
 		c.State.ChainName = msg.Value
-		if isValidChainName(msg.Value) {
+		if c.State.IsValidChainInput(msg.Value) {
 			return loop.Seq(
-				c.Msg().Messagef("Got it, will be using chain %q", c.State.ChainConfig().DisplayName).Cmd(),
+				c.Msg().Messagef("Got it, will be using chain %q", c.State.ChainDisplayName()).Cmd(),
 				c.NextStep(),
 			)
 		}
@@ -157,7 +160,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 	case AskInitialStartBlockType:
 		textInputMessage := "At what block do you want to start indexing data?"
 		defaultValue := "0"
-		if isTestnet(c.State.ChainName) {
+		if c.State.IsChainTestnet() {
 			defaultValue = fmt.Sprintf("%d", InjectiveTestnetDefaultStartBlock)
 			textInputMessage = fmt.Sprintf("At what block do you want to start indexing data? (the first available block on %s is: %s)", c.State.ChainName, defaultValue)
 		}
@@ -172,7 +175,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		if err != nil {
 			return loop.Quit(fmt.Errorf("invalid start block input value %q, expected a number", msg.Value))
 		}
-		if isTestnet(c.State.ChainName) && initialBlock < InjectiveTestnetDefaultStartBlock {
+		if c.State.IsChainTestnet() && initialBlock < InjectiveTestnetDefaultStartBlock {
 			initialBlock = InjectiveTestnetDefaultStartBlock
 		}
 
@@ -205,7 +208,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 
 		cmds = append(cmds, c.Action(InputEventType{}).
-			TextInput(fmt.Sprintf("Please enter the type of Event that you want to track.\n\nYou can usually find them under the transaction details in the explorer: %s.\nExamples: message, injective.exchange.v1beta1.EventCancelDerivativeOrder, wasm ...", c.State.ChainConfig().ExplorerLink), "Submit").
+			TextInput(fmt.Sprintf("Please enter the type of Event that you want to track.\n\nYou can usually find them under the transaction details in the explorer: %s.\nExamples: message, injective.exchange.v1beta1.EventCancelDerivativeOrder, wasm ...", c.State.ChainExplorerLink()), "Submit").
 			Validation(`(.|\s)*\S(.|\s)*`, "The event type cannot be empty").
 			Cmd(),
 		)
@@ -302,12 +305,10 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 	return loop.Quit(fmt.Errorf("invalid loop message: %T", msg))
 }
 
-func isValidChainName(input string) bool {
-	return ChainConfigByID[input] != nil
-}
-
-func isTestnet(input string) bool {
-	return ChainConfigByID[input].Network == "injective-testnet"
-}
-
 var cmd = codegen.Cmd
+
+var injectiveNetworkRegexp = regexp.MustCompile(`^injective`)
+
+func injectiveNetworks() []*registry.Network {
+	return networks.GetSubstreamsRegistry().Search(injectiveNetworkRegexp)
+}

@@ -3,9 +3,13 @@ package stellartransactionsoperations
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 
+	registry "github.com/pinax-network/graph-networks-libs/packages/golang/lib"
+	networks "github.com/streamingfast/firehose-networks"
 	codegen "github.com/streamingfast/substreams-codegen"
 	"github.com/streamingfast/substreams-codegen/loop"
+	pbconvo "github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1"
 )
 
 type Convo struct {
@@ -22,7 +26,7 @@ func init() {
 		"stellar-transactions-operations",
 		"Creates a Substreams project which filtering transactions or operations.",
 		"You will get a project that indexes transactions or operations by providing a filter.",
-		codegen.ConversationFactory(New),
+		New,
 		59,
 		"Stellar",
 	)
@@ -31,26 +35,26 @@ func init() {
 func (c *Convo) NextStep() loop.Cmd {
 	p := c.State
 	if p.Name == "" {
-		return cmd(codegen.AskProjectName{})
+		return codegen.Cmd(codegen.AskProjectName{})
 	}
 
 	if p.ChainName == "" {
-		return cmd(codegen.AskChainName{})
+		return codegen.Cmd(codegen.AskChainName{})
 	}
 
-	if !p.IsValidChainName(p.ChainName) {
-		return loop.Seq(cmd(codegen.MsgInvalidChainName{}), cmd(codegen.AskChainName{}))
+	if !networks.GetSubstreamsRegistry().Has(p.ChainName) {
+		return loop.SeqAnys(codegen.MsgInvalidChainName{}, codegen.AskChainName{})
 	}
 
 	if p.FilterType == "" {
-		return cmd(AskFilterType{})
+		return codegen.Cmd(AskFilterType{})
 	}
 
 	if p.Filter == "" {
-		return cmd(AskFilter{})
+		return codegen.Cmd(AskFilter{})
 	}
 
-	return cmd(codegen.RunGenerate{})
+	return codegen.Cmd(codegen.RunGenerate{})
 }
 
 func (c *Convo) Update(msg loop.Msg) loop.Cmd {
@@ -78,9 +82,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case codegen.AskChainName:
 		var labels, values []string
-		for _, conf := range ChainConfigs {
-			labels = append(labels, conf.DisplayName)
-			values = append(values, conf.ID)
+		for _, network := range stellarNetworks() {
+			labels = append(labels, network.FullName)
+			values = append(values, network.ID)
 		}
 		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain", "chain").
 			Labels(labels...).
@@ -108,7 +112,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case InputFilter:
 		if !isFilterCorrect(msg.Value) {
-			return loop.Seq(cmd(InvalidFilter{fmt.Errorf("ERROR: The specified filter does not have a correct format: %s", msg.Value)}), cmd(AskFilter{}))
+			return loop.SeqAnys(InvalidFilter{fmt.Errorf("ERROR: The specified filter does not have a correct format: %s", msg.Value)}, AskFilter{})
 		}
 
 		c.State.Filter = msg.Value
@@ -133,9 +137,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case codegen.InputChainName:
 		c.State.ChainName = msg.Value
-		if c.State.IsValidChainName(msg.Value) {
+		if networks.GetSubstreamsRegistry().Has(msg.Value) {
 			return loop.Seq(
-				c.Msg().Messagef("Got it, will be using chain %q", c.State.ChainConfig().DisplayName).Cmd(),
+				c.Msg().Messagef("Got it, will be using chain %q", c.State.ChainDisplayName()).Cmd(),
 				c.NextStep(),
 			)
 		}
@@ -151,4 +155,22 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 	return loop.Quit(fmt.Errorf("invalid loop message: %T", msg))
 }
 
-var cmd = codegen.Cmd
+type AskFilterType struct{}
+type InputFilterType struct{ pbconvo.UserInput_Selection }
+
+type AskFilter struct{}
+type InvalidFilter struct{ Err error }
+type InputFilter struct{ pbconvo.UserInput_TextInput }
+
+// Regular expression: Allows letters, numbers, and underscores, separated by commas
+var filterRegexp = regexp.MustCompile(`^[a-zA-Z0-9_]+(,[a-zA-Z0-9_]+)*$`)
+
+func isFilterCorrect(s string) bool {
+	return filterRegexp.MatchString(s)
+}
+
+var stellarNetworkRegexp = regexp.MustCompile(`^stellar`)
+
+func stellarNetworks() []*registry.Network {
+	return networks.GetSubstreamsRegistry().Search(stellarNetworkRegexp)
+}

@@ -3,10 +3,12 @@ package tronhelloworld
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 
 	registry "github.com/pinax-network/graph-networks-libs/packages/golang/lib"
 	networks "github.com/streamingfast/firehose-networks"
 	codegen "github.com/streamingfast/substreams-codegen"
+	"github.com/streamingfast/substreams-codegen/base"
 	"github.com/streamingfast/substreams-codegen/loop"
 )
 
@@ -15,10 +17,11 @@ type Convo struct {
 }
 
 func New() codegen.Converser {
-
 	return &Convo{&codegen.Conversation[*Project]{
 		State: &Project{
-			Chain: getTronNetwork(),
+			ConversationState: base.ConversationState{
+				ChainName: "tron",
+			},
 		},
 	}}
 }
@@ -27,23 +30,10 @@ func init() {
 		"tron-hello-world",
 		"Example Substreams that reads TRON blocks and extract data from `TransferContracts`.",
 		"Use this example as a starting point to create your own custom Substreams, which indexes thed data you need.",
-		codegen.ConversationFactory(New),
+		New,
 		59,
 		"TRON",
 	)
-}
-
-func getTronNetwork() *registry.Network {
-	substreamsNetworks := networks.GetSubstreamsRegistry()
-
-	// Currently, there is only Tron Mainnet. Adjust if Tron Testnet is included.
-	for _, network := range substreamsNetworks {
-		if network.Firehose.BlockType == "sf.tron.type.v1.Block" {
-			return network
-		}
-	}
-
-	return nil
 }
 
 func (c *Convo) NextStep() loop.Cmd {
@@ -95,3 +85,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 }
 
 var cmd = codegen.Cmd
+
+var tronNetworkRegexp = regexp.MustCompile(`^tron`)
+
+func tronNetworks() []*registry.Network {
+	return networks.GetSubstreamsRegistry().Search(tronNetworkRegexp)
+}

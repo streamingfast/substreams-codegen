@@ -1,4 +1,4 @@
-package stellarhelloworld
+package starknethelloworld
 
 import (
 	"testing"

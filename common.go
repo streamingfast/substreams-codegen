@@ -6,7 +6,7 @@ import (
 	"text/template"
 
 	"github.com/bmatcuk/doublestar/v4"
-	"github.com/streamingfast/firehose-networks"
+	networks "github.com/streamingfast/firehose-networks"
 )
 
 //go:embed common-templates/*
@@ -22,19 +22,12 @@ func init() {
 	}
 }
 
-func MarkdownEscape(s string) string {
-	return "```\n" + s + "\n```\n"
+func IsValidChain(input string) bool {
+	return networks.GetSubstreamsRegistry().Find(input) != nil
 }
 
-// NetworkToEndpoint maps network names to their corresponding StreamingFast endpoints
-// using the firehose-networks library
-func NetworkToEndpoint(network string) string {
-	endpoint := networks.GetSubstreamsEndpoint(network)
-	if endpoint == "" {
-		// Fallback to a generic pattern if not found in registry
-		return network + ".streamingfast.io:443"
-	}
-	return endpoint
+func MarkdownEscape(s string) string {
+	return "```\n" + s + "\n```\n"
 }
 
 func parseCommonTemplates() (*template.Template, error) {

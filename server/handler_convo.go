@@ -74,7 +74,7 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 	// Add a 5-minute timeout for the conversation to prevent hanging indefinitely
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
-	
+
 	defer func() {
 		if r := recover(); r != nil {
 			s.logger.Error("internal error first defer", zap.Any("panic", r))

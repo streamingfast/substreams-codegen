@@ -1,6 +1,6 @@
 specVersion: v0.1.0
 package:
-  name: {{ .ModuleName }}
+  name: {{ .GetModuleName }}
   version: v0.1.0
 
 imports:
@@ -23,10 +23,10 @@ binaries:
 modules:
  - name: map_my_data
    kind: map
-   initialBlock: {{ if eq .ChainNetwork "stellar" }}55411000{{ else }}1000{{ end }}
+   initialBlock: {{ if eq .GetChainNetwork "stellar" }}55411000{{ else }}1000{{ end }}
    inputs:
    - source: sf.stellar.type.v1.Block
    output:
     type: proto:mydata.v1.MyData
 
-network: {{ .ChainNetwork }}
+network: {{ .GetChainNetwork }}

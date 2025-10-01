@@ -10,14 +10,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/streamingfast/dstore"
+	"github.com/streamingfast/logging"
+	"github.com/streamingfast/substreams-codegen/server"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-
-	"github.com/streamingfast/logging"
-
-	"github.com/streamingfast/dstore"
-
-	"github.com/streamingfast/substreams-codegen/server"
 )
 
 func TestIntegration(t *testing.T) {

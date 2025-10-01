@@ -13,15 +13,13 @@ import (
 	"github.com/golang-cz/textcase"
 	"github.com/huandu/xstrings"
 	"github.com/streamingfast/eth-go"
+	"github.com/streamingfast/substreams-codegen/base"
 )
 
 type Project struct {
-	Name                   string             `json:"name"`
-	ChainName              string             `json:"chainName"`
+	base.ConversationState
 	Contracts              []*Contract        `json:"contracts"`
 	DynamicContracts       []*DynamicContract `json:"dynamic_contracts"`
-	Compile                bool               `json:"compile,omitempty"` // optional field to write in state and automatically compile with no confirmation.
-	Download               bool               `json:"download,omitempty"`
 	ConfirmEnoughContracts bool               `json:"confirm_enough_contracts,omitempty"`
 
 	currentContractIdx int
@@ -42,10 +40,6 @@ func contractNames(contracts []*Contract) (out []string) {
 }
 
 func (p *Project) ChainConfig() *ChainConfig { return ChainConfigByID[p.ChainName] }
-
-func (p *Project) GetChainName() string { return p.ChainName }
-func (p *Project) ModuleName() string   { return strings.ReplaceAll(p.Name, "-", "_") }
-func (p *Project) KebabName() string    { return strings.ReplaceAll(p.Name, "_", "-") }
 
 func (p *Project) GetContractByName(contractName string) *Contract {
 	for _, contract := range p.Contracts {

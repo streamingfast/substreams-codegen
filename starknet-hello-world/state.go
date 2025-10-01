@@ -1,19 +1,28 @@
-package stellarhelloworld
+package starknethelloworld
 
 import (
-	"strings"
+	"embed"
+
+	codegen "github.com/streamingfast/substreams-codegen"
+	"github.com/streamingfast/substreams-codegen/base"
 )
 
+//go:embed templates/*
+var templatesFS embed.FS
+
 type Project struct {
-	Name      string `json:"name"`
-	ChainName string `json:"chainName"`
-	Compile   bool   `json:"compile,omitempty"` // optional field to write in state and automatically compile with no confirmation.
-	Download  bool   `json:"download,omitempty"`
+	base.ConversationState
 }
 
-func (p *Project) ModuleName() string { return strings.ReplaceAll(p.Name, "-", "_") }
-func (p *Project) KebabName() string  { return strings.ReplaceAll(p.Name, "_", "-") }
-
-func (p *Project) ChainConfig() *ChainConfig          { return ChainConfigByID[p.ChainName] }
-func (p *Project) ChainNetwork() string               { return ChainConfigByID[p.ChainName].Network }
-func (p *Project) IsValidChainName(input string) bool { return ChainConfigByID[input] != nil }
+func (p *Project) Generate() codegen.ReturnGenerate {
+	return codegen.GenerateTemplateTree(p, templatesFS, map[string]string{
+		"proto/mydata.proto.gotmpl":     "proto/mydata.proto",
+		"src/pb/mod.rs.gotmpl":          "src/pb/mod.rs",
+		"src/lib.rs.gotmpl":             "src/lib.rs",
+		"Cargo.toml.gotmpl":             "Cargo.toml",
+		".gitignore.gotmpl":             ".gitignore",
+		"substreams.yaml.gotmpl":        "substreams.yaml",
+		"README.md.gotmpl":              "README.md",
+		"common-templates/buf.gen.yaml": "buf.gen.yaml",
+	})
+}

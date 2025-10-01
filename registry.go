@@ -21,7 +21,7 @@ type ConversationHandler struct {
 
 	Weight int
 
-	Factory ConversationFactory
+	Factory func() Converser
 }
 
 func RegisterConversation(conversationID string, title, description string, newFunc ConversationFactory, weight int, group string) {
@@ -29,10 +29,11 @@ func RegisterConversation(conversationID string, title, description string, newF
 		ID:          conversationID,
 		Title:       title,
 		Description: description,
-		Factory:     newFunc,
+		Factory:     func() Converser { return newFunc() },
 		Weight:      weight,
 		Group:       group,
 	}
+
 	Registry[conversationID] = &handler
 }
 

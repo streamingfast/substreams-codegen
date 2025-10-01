@@ -1,6 +1,7 @@
 package ethhelloworld
 
 import (
+	"fmt"
 	"testing"
 
 	codegen "github.com/streamingfast/substreams-codegen"
@@ -10,6 +11,7 @@ import (
 
 func TestConvoNextStep(t *testing.T) {
 	convo := New()
+	fmt.Println(convo.GetState().GetChainName())
 	next := func() loop.Msg {
 		return convo.NextStep()()
 	}

@@ -1,6 +1,6 @@
 specVersion: v0.1.0
 package:
-  name: {{ .ModuleName }}
+  name: {{ .GetModuleName }}
   version: v0.1.0
 
 imports:
@@ -23,7 +23,7 @@ modules:
 
  - name: map_my_data
    kind: map
-   initialBlock: {{ if eq .ChainNetwork "stellar" }}55411000{{ else }}1000{{ end }}
+   initialBlock: {{ if eq .GetChainNetwork "stellar" }}55411000{{ else }}1000{{ end }}
    inputs:
    - map: map_my_filtered_transactions
    output:
@@ -41,7 +41,7 @@ modules:
     type: proto:sf.substreams.stellar.type.v1.Operations
 {{ end }}
 
-network: {{ .ChainNetwork }}
+network: {{ .GetChainNetwork }}
 
 params:
   {{ if eq .FilterType "transactions" }}map_my_filtered_transactions{{ else }}map_my_filtered_operations{{ end }}: {{ .ComposeFilter }}
