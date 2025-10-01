@@ -78,12 +78,23 @@ func (c *Conversation[X]) HandleSubstreamsConsumptionChoice(value string) loop.C
 	}
 
 	var sinkMessage *MsgWrap
+	var dockerComposeCmd loop.Cmd
+	
 	switch value {
-	case "sql":
-		sinkMessage = c.Msg().Message(`Sink to SQL:
+	case "postgres":
+		sinkMessage = c.Msg().Message(`Sink to Postgres:
 		1. Get the binary from https://github.com/streamingfast/substreams-sink-sql/ (version 4.6.1 or above)
-		2. Run ` + "`substreams-sink-sql from-proto psql://db_user:db_password@db_host:5432/db_name ./substreams.yaml " + outputModule + "`" +
+		2. Start the Docker database: ` + "`docker compose up -d`" + `
+		3. Run ` + "`substreams-sink-sql from-proto psql://dev-node:insecure-change-me-in-prod@localhost:5432/dev-node ./substreams.yaml " + outputModule + "`" +
 			` See https://docs.substreams.dev/how-to-guides/sinks/sql-sink"`)
+		dockerComposeCmd = c.generateDockerCompose("postgres")
+	case "clickhouse":
+		sinkMessage = c.Msg().Message(`Sink to Clickhouse:
+		1. Get the binary from https://github.com/streamingfast/substreams-sink-sql/ (version 4.6.1 or above)
+		2. Start the Docker database: ` + "`docker compose up -d`" + `
+		3. Run ` + "`substreams-sink-sql from-proto clickhouse://default:@localhost:9000/default ./substreams.yaml " + outputModule + "`" +
+			` See https://docs.substreams.dev/how-to-guides/sinks/sql-sink"`)
+		dockerComposeCmd = c.generateDockerCompose("clickhouse")
 	case "parquet":
 		sinkMessage = c.Msg().Message(`Sink to Parquet file:
 			1. Get the binary from https://github.com/streamingfast/substreams-sink-files/ (version 2.1.0 or above)
@@ -118,6 +129,14 @@ func (c *Conversation[X]) HandleSubstreamsConsumptionChoice(value string) loop.C
 		sinkMessage = c.Msg().Message("Invalid choice")
 	}
 
+	if dockerComposeCmd != nil {
+		return loop.Seq(
+			sinkMessage.Cmd(),
+			dockerComposeCmd,
+			loop.Quit(nil),
+		)
+	}
+
 	return loop.Seq(
 		sinkMessage.Cmd(),
 		loop.Quit(nil),
@@ -127,7 +146,8 @@ func (c *Conversation[X]) HandleSubstreamsConsumptionChoice(value string) loop.C
 func (c *Conversation[X]) downloadedCommands(destDir string) []loop.Cmd {
 
 	values := []string{
-		"sql",
+		"postgres",
+		"clickhouse",
 		//"csv",
 		//"json",
 		"parquet",
@@ -138,7 +158,8 @@ func (c *Conversation[X]) downloadedCommands(destDir string) []loop.Cmd {
 		//"pubsub",
 	}
 	labels := []string{
-		"To SQL",
+		"To Postgres",
+		"To Clickhouse",
 		//"To CSV Files",
 		//"To JSON Files",
 		"To Parquet Files",
@@ -210,4 +231,62 @@ func (c *Conversation[X]) CmdDownloadFiles(msg ReturnGenerate) loop.Cmd {
 		c.HandleDownloaded("{project folder}"),
 	)
 
+}
+
+func (c *Conversation[X]) generateDockerCompose(dbType string) loop.Cmd {
+	var dockerComposeContent string
+	
+	if dbType == "postgres" {
+		dockerComposeContent = `version: "3"
+services:
+  postgres:
+    container_name: postgres-substreams
+    image: postgres:17
+    ports:
+      - "5432:5432"
+    command: ["postgres", "-cshared_preload_libraries=pg_stat_statements"]
+    environment:
+      POSTGRES_USER: dev-node
+      POSTGRES_PASSWORD: insecure-change-me-in-prod
+      POSTGRES_DB: dev-node
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
+      POSTGRES_HOST_AUTH_METHOD: md5
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 30s
+      timeout: 10s
+      retries: 15
+  pgweb:
+    container_name: pgweb-substreams
+    image: sosedoff/pgweb:0.16.1
+    restart: on-failure
+    ports:
+      - "8081:8081"
+    command: ["pgweb", "--bind=0.0.0.0", "--listen=8081", "--binary-codec=hex"]
+    links:
+      - postgres:postgres
+    environment:
+      - PGWEB_DATABASE_URL=postgres://dev-node:insecure-change-me-in-prod@postgres:5432/dev-node?sslmode=disable
+    depends_on:
+      - postgres`
+	} else if dbType == "clickhouse" {
+		dockerComposeContent = `version: "3"
+services:
+  clickhouse:
+    container_name: clickhouse-substreams
+    image: clickhouse/clickhouse-server:23.9
+    user: "101:101"
+    hostname: clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+      - "9005:9005"`
+	}
+	
+	downloadCmd := c.Action(InputSourceDownloaded{}).DownloadFiles()
+	downloadCmd.AddFile("docker-compose.yml", []byte(dockerComposeContent), "text/plain", "Docker Compose configuration for "+dbType+" database")
+	
+	return downloadCmd.Cmd()
 }
