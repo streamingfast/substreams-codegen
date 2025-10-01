@@ -1,21 +1,38 @@
 package solanchor
 
 import (
-	"strings"
+	"embed"
+
+	codegen "github.com/streamingfast/substreams-codegen"
+	"github.com/streamingfast/substreams-codegen/base"
 )
 
+//go:embed templates/*
+var templatesFS embed.FS
+
 type Project struct {
-	Name            string `json:"name"`
-	ChainName       string `json:"chainName"`
-	Compile         bool   `json:"compile,omitempty"` // optional field to write in state and automatically compile with no confirmation.
-	Download        bool   `json:"download,omitempty"`
+	base.ConversationState
 	InitialBlock    uint64 `json:"initialBlock,omitempty"`
 	InitialBlockSet bool   `json:"initialBlockSet,omitempty"`
 	IdlFormat       string `json:"idlFormat,omitempty"`
-	idl             *IDL
 	IdlString       string `json:"idlString,omitempty"`
+
+	idl *IDL
 }
 
-func (p *Project) Idl() *IDL          { return p.idl }
-func (p *Project) ModuleName() string { return strings.ReplaceAll(p.Name, "-", "_") }
-func (p *Project) KebabName() string  { return strings.ReplaceAll(p.Name, "_", "-") }
+// use the output type form the Project to render the templates
+func (p *Project) Generate() codegen.ReturnGenerate {
+	return codegen.GenerateTemplateTree(p, templatesFS, map[string]string{
+		"proto/program.proto.gotmpl": "proto/program.proto",
+		"idls/program.json.gotmpl":   "idls/program.json",
+		"src/lib.rs.gotmpl":          "src/lib.rs",
+		"src/idl/mod.rs.gotmpl":      "src/idl/mod.rs",
+		".gitignore.gotmpl":          ".gitignore",
+		"buf.gen.yaml.gotmpl":        "buf.gen.yaml",
+		"Cargo.lock.gotmpl":          "Cargo.lock",
+		"Cargo.toml.gotmpl":          "Cargo.toml",
+		"substreams.yaml.gotmpl":     "substreams.yaml",
+	})
+}
+
+func (p *Project) Idl() *IDL { return p.idl }

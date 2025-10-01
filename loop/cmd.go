@@ -48,6 +48,21 @@ func Seq(cmds ...Cmd) Cmd {
 	}
 }
 
+// SeqAnys is like Seq but accepts any type and ignores nils.
+func SeqAnys(inputs ...any) Cmd {
+	var cmds []Cmd
+	if len(inputs) > 0 {
+		cmds = make([]Cmd, 0, len(inputs))
+		for _, in := range inputs {
+			if in != nil {
+				cmds = append(cmds, func() Msg { return in })
+			}
+		}
+	}
+
+	return Seq(cmds...)
+}
+
 func NewQuitMsg(err error) Msg {
 	return QuitMsg{err}
 }

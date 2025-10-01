@@ -1,14 +1,31 @@
 package mantra_events
 
 import (
+	"embed"
 	"fmt"
 	"sort"
 	"strings"
+
+	codegen "github.com/streamingfast/substreams-codegen"
+	"github.com/streamingfast/substreams-codegen/base"
 )
+
+//go:embed templates/*
+var templatesFS embed.FS
 
 const EVENTS_DATA_TYPE = "events"
 const EVENT_GROUPS_DATA_TYPE = "event_groups"
 const TRXS_DATA_TYPE = "transactions"
+
+type Project struct {
+	base.ConversationState
+	InitialBlock    uint64       `json:"initialBlock,omitempty"`
+	InitialBlockSet bool         `json:"initialBlockSet,omitempty"`
+	DataType        string       `json:"dataType,omitempty"`
+	EventDescs      []*eventDesc `json:"messageTypes,omitempty"`
+	currentEventIdx int
+	EventsComplete  bool `json:"eventsComplete,omitempty"`
+}
 
 type eventDesc struct {
 	EventType  string            `json:"eventType"`
@@ -16,21 +33,17 @@ type eventDesc struct {
 	Incomplete bool              `json:"incomplete,omitempty"`
 }
 
-type Project struct {
-	Name            string       `json:"name"`
-	ChainName       string       `json:"chainName"`
-	InitialBlock    uint64       `json:"initialBlock,omitempty"`
-	InitialBlockSet bool         `json:"initialBlockSet,omitempty"`
-	Compile         bool         `json:"compile,omitempty"` // optional field to write in state and automatically compile with no confirmation.
-	Download        bool         `json:"download,omitempty"`
-	DataType        string       `json:"dataType,omitempty"`
-	EventDescs      []*eventDesc `json:"messageTypes,omitempty"`
-	currentEventIdx int
-	EventsComplete  bool `json:"eventsComplete,omitempty"`
+func (p *Project) Generate() codegen.ReturnGenerate {
+	return codegen.GenerateTemplateTree(p, templatesFS, map[string]string{
+		".gitignore.gotmpl":             ".gitignore",
+		"README.md.gotmpl":              "README.md",
+		"substreams.yaml.gotmpl":        "substreams.yaml",
+		"common-templates/buf.gen.yaml": "buf.gen.yaml",
+		"Cargo.toml.gotmpl":             "Cargo.toml",
+		"src/lib.rs.gotmpl":             "src/lib.rs",
+		"proto/mydata.proto.gotmpl":     "proto/mydata.proto",
+	})
 }
-
-func (p *Project) ChainConfig() *ChainConfig { return ChainConfigByID[p.ChainName] }
-func (p *Project) KebabName() string         { return strings.ReplaceAll(p.Name, "_", "-") }
 
 func (e eventDesc) GetEventQuery() string {
 	attributes := make([]string, 0, len(e.Attributes))

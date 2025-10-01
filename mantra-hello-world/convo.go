@@ -3,8 +3,11 @@ package mantrahelloworld
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
 
+	registry "github.com/pinax-network/graph-networks-libs/packages/golang/lib"
+	networks "github.com/streamingfast/firehose-networks"
 	codegen "github.com/streamingfast/substreams-codegen"
 	"github.com/streamingfast/substreams-codegen/loop"
 )
@@ -20,7 +23,7 @@ func init() {
 		"mantra-hello-world",
 		"Creates a Substreams that extracts 'transfer' Mantra events from blocks",
 		"You will get a very simple project to get started with Substreams.",
-		codegen.ConversationFactory(New),
+		New,
 		72,
 		"Cosmos",
 	)
@@ -43,7 +46,7 @@ func (c *Convo) NextStep() loop.Cmd {
 		return cmd(codegen.AskChainName{})
 	}
 
-	if !p.IsValidChainName(p.ChainName) {
+	if !p.IsValidChainInput(p.ChainName) {
 		return loop.Seq(cmd(codegen.MsgInvalidChainName{}), cmd(codegen.AskChainName{}))
 	}
 
@@ -79,8 +82,8 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case codegen.AskChainName:
 		var labels, values []string
-		for _, conf := range ChainConfigs {
-			labels = append(labels, conf.DisplayName)
+		for _, conf := range mantraNetworks() {
+			labels = append(labels, conf.FullName)
 			values = append(values, conf.ID)
 		}
 		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain", "chain").
@@ -101,9 +104,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case codegen.InputChainName:
 		c.State.ChainName = msg.Value
-		if c.State.IsValidChainName(msg.Value) {
+		if c.State.IsValidChainInput(msg.Value) {
 			return loop.Seq(
-				c.Msg().Messagef("Got it, will be using chain %q", c.State.ChainConfig().DisplayName).Cmd(),
+				c.Msg().Messagef("Got it, will be using chain %q", c.State.ChainDisplayName()).Cmd(),
 				c.NextStep(),
 			)
 		}
@@ -112,7 +115,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 	case codegen.AskInitialStartBlockType:
 		textInputMessage := "At what block do you want to start indexing data?"
 		defaultValue := "0"
-		if c.State.IsTestnet(c.State.ChainName) {
+		if c.State.IsChainTestnet() {
 			defaultValue = fmt.Sprintf("%d", MantraTestnetDefaultStartBlock)
 			textInputMessage = fmt.Sprintf("At what block do you want to start indexing data? (the first available block on %s is: %s)", c.State.ChainName, defaultValue)
 		}
@@ -127,7 +130,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		if err != nil {
 			return loop.Quit(fmt.Errorf("invalid start block input value %q, expected a number", msg.Value))
 		}
-		if c.State.IsTestnet(c.State.ChainName) && initialBlock < MantraTestnetDefaultStartBlock {
+		if c.State.IsChainTestnet() && initialBlock < MantraTestnetDefaultStartBlock {
 			initialBlock = MantraTestnetDefaultStartBlock
 		}
 
@@ -146,3 +149,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 }
 
 var cmd = codegen.Cmd
+
+var mantraNetworkRegexp = regexp.MustCompile(`^mantra`)
+
+func mantraNetworks() []*registry.Network {
+	return networks.GetSubstreamsRegistry().Search(mantraNetworkRegexp)
+}

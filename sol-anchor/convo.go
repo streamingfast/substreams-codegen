@@ -27,7 +27,7 @@ func init() {
 		"sol-anchor-beta",
 		"Given an Anchor JSON IDL, create a Substreams that decodes instructions and events",
 		"Allows you to decode data based on an Anchor JSON IDL",
-		codegen.ConversationFactory(New),
+		New,
 		2000,
 		"Solana",
 	)

@@ -1,6 +1,7 @@
 package evm_events_calls_raw
 
 import (
+	"embed"
 	"fmt"
 	"math"
 	"regexp"
@@ -9,12 +10,16 @@ import (
 	"github.com/codemodus/kace"
 	"github.com/golang-cz/textcase"
 	"github.com/huandu/xstrings"
+	codegen "github.com/streamingfast/substreams-codegen"
+	"github.com/streamingfast/substreams-codegen/base"
 	evm_events_calls "github.com/streamingfast/substreams-codegen/evm-events-calls"
 )
 
+//go:embed templates/*
+var templatesFS embed.FS
+
 type Project struct {
-	Name                   string             `json:"name"`
-	ChainName              string             `json:"chainName"`
+	base.ConversationState
 	Contracts              []*Contract        `json:"contracts"`
 	DynamicContracts       []*DynamicContract `json:"dynamic_contracts"`
 	Compile                bool               `json:"compile,omitempty"` // optional field to write in state and automatically compile with no confirmation.
@@ -22,6 +27,25 @@ type Project struct {
 	ConfirmEnoughContracts bool               `json:"confirm_enough_contracts,omitempty"`
 
 	currentContractIdx int
+}
+
+func (p *Project) Generate() codegen.ReturnGenerate {
+	res := codegen.GenerateTemplateTree(p, templatesFS, map[string]string{
+		"proto/contract.proto.gotmpl":   "proto/contract.proto",
+		"src/pb/mod.rs.gotmpl":          "src/pb/mod.rs",
+		"src/lib.rs.gotmpl":             "src/lib.rs",
+		"Cargo.toml.gotmpl":             "Cargo.toml",
+		"rust-toolchain.toml":           "rust-toolchain.toml",
+		".gitignore.gotmpl":             ".gitignore",
+		"substreams.yaml.gotmpl":        "substreams.yaml",
+		"README.md.gotmpl":              "README.md",
+		"common-templates/buf.gen.yaml": "buf.gen.yaml",
+	})
+	if res.Err != nil {
+		return res
+	}
+
+	return res
 }
 
 func dynamicContractNames(contracts []*DynamicContract) (out []string) {
@@ -39,9 +63,6 @@ func contractNames(contracts []*Contract) (out []string) {
 }
 
 func (p *Project) ChainConfig() *evm_events_calls.ChainConfig { return ChainConfigByID[p.ChainName] }
-
-func (p *Project) ModuleName() string { return strings.ReplaceAll(p.Name, "-", "_") }
-func (p *Project) KebabName() string  { return strings.ReplaceAll(p.Name, "_", "-") }
 
 func (p *Project) GetContractByName(contractName string) *Contract {
 	for _, contract := range p.Contracts {

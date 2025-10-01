@@ -8,6 +8,7 @@ import (
 
 	codegen "github.com/streamingfast/substreams-codegen"
 	"github.com/streamingfast/substreams-codegen/loop"
+	pbconvo "github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1"
 )
 
 type Convo struct {
@@ -25,7 +26,7 @@ func init() {
 		"sol-transactions",
 		"Get Solana transactions filtered by one or several Program IDs",
 		"Allows you to specified a regex containing the Program IDs used to filter the Solana transactions",
-		codegen.ConversationFactory(New),
+		New,
 		2001,
 		"Solana",
 	)
@@ -116,3 +117,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	return loop.Quit(fmt.Errorf("invalid loop message: %T", msg))
 }
+
+type AskFilter struct{}
+type InputFilter struct{ pbconvo.UserInput_TextInput }
+type ShowInstructions struct{}

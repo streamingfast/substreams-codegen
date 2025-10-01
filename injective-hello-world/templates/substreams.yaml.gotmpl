@@ -1,6 +1,6 @@
 specVersion: v0.1.0
 package:
-  name: {{ .ModuleName }}
+  name: {{ .GetModuleName }}
   version: v0.1.0
 
 imports:
@@ -41,4 +41,4 @@ modules:
   #
   # see https://substreams.dev/streamingfast/injective-common/v0.2.2 for details
 
-network: {{ .ChainNetwork }}
+network: {{ .GetChainNetwork }}

@@ -21,7 +21,7 @@ protobuf:
     - google
 
 modules:
-  - name: {{ .ModuleName }}
+  - name: {{ .GetModuleName }}
 {{- if .IsEvents }}
     use: mantra:filtered_events{{ if .HasAttributeValues }}_by_attribute_value{{ end }}
 {{- else if .IsEventGroups }}
@@ -40,11 +40,11 @@ modules:
   - name: map_my_data
     kind: map
     inputs:
-    - map: {{ .ModuleName }}
+    - map: {{ .GetModuleName }}
     output:
      type: proto:mydata.v1.MyData
 
 params:
-  {{ .ModuleName }}: {{ .GetEventsQuery }}
+  {{ .GetModuleName }}: {{ .GetEventsQuery }}
 
 network: mantra-mainnet

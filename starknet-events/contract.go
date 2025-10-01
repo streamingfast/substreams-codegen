@@ -10,6 +10,7 @@ import (
 
 	"github.com/NethermindEth/juno/core/felt"
 	starknetRPC "github.com/NethermindEth/starknet.go/rpc"
+	registry "github.com/pinax-network/graph-networks-libs/packages/golang/lib"
 )
 
 type Alias struct {
@@ -126,8 +127,8 @@ func (c *Contract) setAliasesForEvents() {
 	c.Aliases = aliases
 }
 
-func (c *Contract) fetchABI(config *ChainConfig) (string, error) {
-	client, err := starknetRPC.NewProvider(os.Getenv(config.EndpointEnvVar))
+func (c *Contract) fetchABI(network *registry.Network, endpointVar string) (string, error) {
+	client, err := starknetRPC.NewProvider(os.Getenv(endpointVar))
 	if err != nil {
 		return "", fmt.Errorf("creating rpc client: %w", err)
 	}
@@ -175,10 +176,53 @@ func (c *Contract) handleContractAddress(inputAddress string) {
 	// Address not padded
 	withoutPrefix := strings.TrimPrefix(inputAddress, "0x")
 	c.Address = "0x" + strings.Repeat("0", 64-len(withoutPrefix)) + withoutPrefix
-
-	return
 }
 
 func (c *Contract) AddressWithoutPrefix() string {
 	return strings.TrimPrefix(c.Address, "0x")
+}
+
+func setNonGoldenAliases(potentialsGoldenEvent map[string]*StarknetEvent, goldenName string, aliases []*Alias) []*Alias {
+	for _, event := range potentialsGoldenEvent {
+		eventName := event.Name
+
+		if eventName == goldenName {
+			continue
+		}
+
+		_, newName := eventNameInfo(eventName)
+
+		alias := NewAlias(event.Name, newName)
+		aliases = append(aliases, alias)
+	}
+
+	return aliases
+}
+
+func eventNameInfo(eventName string) (lastPart, aliasName string) {
+	splitEventName := strings.Split(eventName, "::")
+	if len(splitEventName) < 2 {
+		panic("parsed event name does not contain enough parts to have an alias")
+	}
+
+	lastPart = splitEventName[len(splitEventName)-1]
+	return lastPart, splitEventName[len(splitEventName)-2] + lastPart
+}
+
+func detectGoldenEvent(potentialsGoldenEvent map[string]*StarknetEvent) string {
+	for _, event := range potentialsGoldenEvent {
+		seen := make(map[string]struct{})
+		for _, variant := range event.Variants {
+			if _, found := potentialsGoldenEvent[variant.Type]; found {
+				seen[variant.Type] = struct{}{}
+			}
+
+			// Equivalent: Current Event Enum contains all other potentials "golden" events
+			if len(seen) == (len(potentialsGoldenEvent) - 1) {
+				return event.Name
+			}
+		}
+	}
+
+	return ""
 }

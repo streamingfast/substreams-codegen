@@ -6,6 +6,7 @@ import (
 	"text/template"
 
 	"github.com/bmatcuk/doublestar/v4"
+	networks "github.com/streamingfast/firehose-networks"
 )
 
 //go:embed common-templates/*
@@ -19,6 +20,10 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func IsValidChain(input string) bool {
+	return networks.GetSubstreamsRegistry().Find(input) != nil
 }
 
 func MarkdownEscape(s string) string {

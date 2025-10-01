@@ -4,11 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/dustin/go-humanize"
+	registry "github.com/pinax-network/graph-networks-libs/packages/golang/lib"
 
+	networks "github.com/streamingfast/firehose-networks"
 	codegen "github.com/streamingfast/substreams-codegen"
 	"github.com/streamingfast/substreams-codegen/loop"
 )
@@ -33,7 +36,7 @@ func init() {
 		"starknet-events-beta",
 		"Filtered and decode desired Starknet events and create a substreams as source",
 		"Given a list of contracts and their ABIs, this will build an Starknet substreams that decodes events",
-		codegen.ConversationFactory(New),
+		New,
 		72,
 		"Starknet",
 	)
@@ -51,7 +54,7 @@ func (c *Convo) NextStep() loop.Cmd {
 		return cmd(codegen.AskChainName{})
 	}
 
-	if !isValidChainName(p.ChainName) {
+	if !c.State.IsValidChainInput(p.ChainName) {
 		return loop.Seq(cmd(codegen.MsgInvalidChainName{}), cmd(codegen.AskChainName{}))
 	}
 
@@ -132,13 +135,13 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			return QuitInvalidContext
 		}
 
-		config := c.State.ChainConfig()
-		if config.EndpointEnvVar == "" {
+		endpointVar := c.State.GetRPCProviderEndpointVar()
+		if endpointVar == "" {
 			return cmd(AskContractABI{})
 		}
 
 		return func() loop.Msg {
-			abi, err := contract.fetchABI(config)
+			abi, err := contract.fetchABI(c.State.FindNetworkFromChainName(), endpointVar)
 			return ReturnFetchContractABI{abi: abi, err: err}
 		}
 
@@ -386,8 +389,8 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case codegen.AskChainName:
 		var labels, values []string
-		for _, conf := range ChainConfigs {
-			labels = append(labels, conf.DisplayName)
+		for _, conf := range starknetNetworks() {
+			labels = append(labels, conf.FullName)
 			values = append(values, conf.ID)
 		}
 		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain", "chain").
@@ -408,9 +411,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case codegen.InputChainName:
 		c.State.ChainName = msg.Value
-		if c.State.IsValidChainName(msg.Value) {
+		if c.State.IsValidChainInput(msg.Value) {
 			return loop.Seq(
-				c.Msg().Messagef("Got it, will be using chain %q", c.State.ChainConfig().DisplayName).Cmd(),
+				c.Msg().Messagef("Got it, will be using chain %q", c.State.ChainDisplayName()).Cmd(),
 				c.NextStep(),
 			)
 		}
@@ -445,4 +448,10 @@ func (c *Convo) contextContract() *Contract {
 		return nil
 	}
 	return p.Contracts[p.currentContractIdx]
+}
+
+var starknetNetworkRegexp = regexp.MustCompile(`^starknet`)
+
+func starknetNetworks() []*registry.Network {
+	return networks.GetSubstreamsRegistry().Search(starknetNetworkRegexp)
 }

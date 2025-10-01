@@ -6,6 +6,7 @@ import (
 
 	codegen "github.com/streamingfast/substreams-codegen"
 	"github.com/streamingfast/substreams-codegen/loop"
+	pbconvo "github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1"
 )
 
 type Convo struct {
@@ -22,7 +23,7 @@ func init() {
 		"tron-transactions",
 		"Creates a Substreams that outputs a transactions based on your provided parameters.",
 		"Given a few parameters, you will get a project that indexes transactions.",
-		codegen.ConversationFactory(New),
+		New,
 		59,
 		"TRON",
 	)
@@ -93,3 +94,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 }
 
 var cmd = codegen.Cmd
+
+type AskFilter struct{}
+type InvalidFilter struct{ Err error }
+type InputFilter struct{ pbconvo.UserInput_TextInput }

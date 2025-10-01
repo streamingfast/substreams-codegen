@@ -1,9 +1,12 @@
-package stellarhelloworld
+package starknethelloworld
 
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 
+	registry "github.com/pinax-network/graph-networks-libs/packages/golang/lib"
+	networks "github.com/streamingfast/firehose-networks"
 	codegen "github.com/streamingfast/substreams-codegen"
 	"github.com/streamingfast/substreams-codegen/loop"
 )
@@ -22,7 +25,7 @@ func init() {
 		"starknet-hello-world",
 		"Creates a Substreams that indexes Starknet events from the Starknet Token Contract",
 		"You will get a very simple project to get started with Substreams.",
-		codegen.ConversationFactory(New),
+		New,
 		59,
 		"Starknet",
 	)
@@ -38,7 +41,7 @@ func (c *Convo) NextStep() loop.Cmd {
 		return cmd(codegen.AskChainName{})
 	}
 
-	if !p.IsValidChainName(p.ChainName) {
+	if !p.IsValidChainInput(p.ChainName) {
 		return loop.Seq(cmd(codegen.MsgInvalidChainName{}), cmd(codegen.AskChainName{}))
 	}
 
@@ -70,8 +73,8 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case codegen.AskChainName:
 		var labels, values []string
-		for _, conf := range ChainConfigs {
-			labels = append(labels, conf.DisplayName)
+		for _, conf := range starknetNetworks() {
+			labels = append(labels, conf.FullName)
 			values = append(values, conf.ID)
 		}
 		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain", "chain").
@@ -92,9 +95,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case codegen.InputChainName:
 		c.State.ChainName = msg.Value
-		if c.State.IsValidChainName(msg.Value) {
+		if c.State.IsValidChainInput(msg.Value) {
 			return loop.Seq(
-				c.Msg().Messagef("Got it, will be using chain %q", c.State.ChainConfig().DisplayName).Cmd(),
+				c.Msg().Messagef("Got it, will be using chain %q", c.State.ChainDisplayName()).Cmd(),
 				c.NextStep(),
 			)
 		}
@@ -111,3 +114,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 }
 
 var cmd = codegen.Cmd
+
+var starknetNetworkRegexp = regexp.MustCompile(`^starknet`)
+
+func starknetNetworks() []*registry.Network {
+	return networks.GetSubstreamsRegistry().Search(starknetNetworkRegexp)
+}

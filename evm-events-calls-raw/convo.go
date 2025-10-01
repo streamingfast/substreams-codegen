@@ -20,7 +20,7 @@ func init() {
 		"evm-events-calls-raw",
 		"(without ABI) Get raw Ethereum events/calls and create a Substreams as source",
 		"Given a list of contract addresses, ge the raw events and calls, without using an ABI",
-		codegen.ConversationFactory(New),
+		New,
 		82,
 		"EVM",
 	)

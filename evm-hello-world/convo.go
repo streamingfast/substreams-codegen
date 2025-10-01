@@ -30,9 +30,13 @@ type Convo struct {
 }
 
 func New() codegen.Converser {
-	return &Convo{&codegen.Conversation[*Project]{
+	c := &Convo{&codegen.Conversation[*Project]{
 		State: &Project{},
 	}}
+
+	fmt.Println("Get state", c.GetState().GetChainName())
+
+	return c
 }
 
 func (c *Convo) NextStep() (out loop.Cmd) {
