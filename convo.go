@@ -85,7 +85,7 @@ func (c *Conversation[X]) HandleSubstreamsConsumptionChoice(value string) loop.C
 		sinkMessage = c.Msg().Message(`Sink to Postgres:
 		1. Get the binary from https://github.com/streamingfast/substreams-sink-sql/ (version 4.6.1 or above)
 		2. Start the Docker database: ` + "`docker compose up -d`" + `
-		3. Run ` + "`substreams-sink-sql from-proto psql://dev-node:insecure-change-me-in-prod@localhost:5432/dev-node ./substreams.yaml " + outputModule + "`" +
+		3. Run ` + "`substreams-sink-sql from-proto psql://dev:insecure@localhost:5432/main ./substreams.yaml " + outputModule + "`" +
 			` See https://docs.substreams.dev/how-to-guides/sinks/sql-sink"`)
 		dockerComposeCmd = c.generateDockerCompose("postgres")
 	case "clickhouse":
@@ -246,9 +246,9 @@ services:
       - "5432:5432"
     command: ["postgres", "-cshared_preload_libraries=pg_stat_statements"]
     environment:
-      POSTGRES_USER: dev-node
-      POSTGRES_PASSWORD: insecure-change-me-in-prod
-      POSTGRES_DB: dev-node
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: insecure
+      POSTGRES_DB: main
       POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
       POSTGRES_HOST_AUTH_METHOD: md5
     volumes:
@@ -268,7 +268,7 @@ services:
     links:
       - postgres:postgres
     environment:
-      - PGWEB_DATABASE_URL=postgres://dev-node:insecure-change-me-in-prod@postgres:5432/dev-node?sslmode=disable
+      - PGWEB_DATABASE_URL=postgres://dev:insecure@postgres:5432/main?sslmode=disable
     depends_on:
       - postgres`
 	} else if dbType == "clickhouse" {
@@ -276,7 +276,7 @@ services:
 services:
   clickhouse:
     container_name: clickhouse-substreams
-    image: clickhouse/clickhouse-server:23.9
+    image: clickhouse/clickhouse-server:latest
     user: "101:101"
     hostname: clickhouse
     ports:
