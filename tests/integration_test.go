@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -179,16 +180,28 @@ func runTestsInDocker(t *testing.T, cases []struct {
 	apiKeyNeeded          bool
 }, endpoint string) {
 
+	// Determine the correct build context based on current working directory
+	cwd, err := os.Getwd()
+	require.NoError(t, err)
+	
+	var buildContext string
+	if strings.HasSuffix(cwd, "/tests") {
+		// Running from tests directory, build context is current directory
+		buildContext = "."
+	} else {
+		// Running from root directory, build context is tests subdirectory
+		buildContext = "./tests"
+	}
+
 	buildArgs := []string{
 		"build",
 		"-t",
 		"substreams-test-image",
-		".",
+		buildContext,
 	}
 
 	ctx := context.Background()
 	buildCmd := exec.CommandContext(ctx, "docker", buildArgs...)
-	buildCmd.Dir = "./tests"
 
 	output, err := buildCmd.CombinedOutput()
 	if err != nil {
