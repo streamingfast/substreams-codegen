@@ -65,7 +65,7 @@ jobs:
         run: |
           curl -L https://github.com/streamingfast/substreams/releases/download/v1.16.6/substreams_linux_x86_64.tar.gz | tar -xz
           sudo mv substreams /usr/local/bin/
-          substreams version
+          substreams --version
 
       - name: Install buf CLI
         run: |
