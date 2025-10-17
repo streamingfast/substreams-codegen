@@ -1,6 +1,6 @@
 module github.com/streamingfast/substreams-codegen
 
-go 1.24.2
+go 1.23
 
 require (
 	connectrpc.com/connect v1.16.2

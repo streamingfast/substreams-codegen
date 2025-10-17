@@ -31,11 +31,11 @@ func (p *Project) Generate() codegen.ReturnGenerate {
 	}
 
 	for _, contract := range p.Contracts {
-		res.ProjectFiles[fmt.Sprintf("abi/%s_contract.abi.json", contract.Name)] = []byte(contract.Abi.raw)
+		res.ProjectFiles[fmt.Sprintf("abi/%s_contract.abi.json", contract.Name)] = codegen.PrettifyJSON([]byte(contract.Abi.raw))
 	}
 
 	for _, dds := range p.DynamicContracts {
-		res.ProjectFiles[fmt.Sprintf("abi/%s_contract.abi.json", dds.Name)] = []byte(dds.Abi.raw)
+		res.ProjectFiles[fmt.Sprintf("abi/%s_contract.abi.json", dds.Name)] = codegen.PrettifyJSON([]byte(dds.Abi.raw))
 	}
 
 	return res

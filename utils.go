@@ -2,6 +2,7 @@ package codegen
 
 import (
 	"archive/zip"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -74,4 +75,26 @@ func ZipFiles(files map[string][]byte) ([]byte, error) {
 	}
 
 	return zipFileB, nil
+}
+
+// PrettifyJSON takes raw JSON bytes and returns prettified JSON with proper indentation.
+// If the input is not valid JSON, it returns the original content unchanged.
+func PrettifyJSON(rawJSON []byte) []byte {
+	if len(rawJSON) == 0 {
+		return rawJSON
+	}
+
+	var jsonData interface{}
+	if err := json.Unmarshal(rawJSON, &jsonData); err != nil {
+		// If it's not valid JSON, return the original content
+		return rawJSON
+	}
+
+	prettified, err := json.MarshalIndent(jsonData, "", "  ")
+	if err != nil {
+		// If prettification fails, return the original content
+		return rawJSON
+	}
+
+	return prettified
 }
