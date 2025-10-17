@@ -106,6 +106,10 @@ func TestIntegration(t *testing.T) {
 			name:      "sol-anchor-sanctum.json",
 			stateFile: "./sol-anchor/sanctum.json",
 		},
+		{
+			name:      "near-hello-world",
+			stateFile: "./near-hello-world/generator.json",
+		},
 	}
 
 	var zlog, _ = logging.RootLogger("test", "test")

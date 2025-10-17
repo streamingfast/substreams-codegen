@@ -1,6 +1,6 @@
 specVersion: v0.1.0
 package:
-  name: my_project
+  name: {{ .Name }}
   version: v0.1.0
 
 protobuf:
@@ -15,7 +15,7 @@ protobuf:
 binaries:
   default:
     type: wasm/rust-v1
-    file: ./target/wasm32-unknown-unknown/release/substreams.wasm
+    file: ./target/wasm32-unknown-unknown/release/{{ .Name }}.wasm
 
 modules:
  - name: map_my_data
@@ -27,4 +27,3 @@ modules:
     type: proto:mydata.v1.MyData
 
 network: {{ .ChainName }}
-

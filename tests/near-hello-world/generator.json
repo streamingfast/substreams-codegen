@@ -1,0 +1,9 @@
+{
+  "generator": "near-hello-world",
+  "state": {
+    "name": "my_project",
+    "chainName": "mainnet",
+    "initialBlock": 9820210,
+    "initialBlockSet": true
+  }
+}

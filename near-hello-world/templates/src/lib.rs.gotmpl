@@ -1,13 +1,10 @@
 mod pb;
 
-use crate::pb::{
-    mydata::v1::{MyData, NearTransaction, NearAction},
-    sf::near::r#type::v1::Block,
-};
+use crate::pb::mydata::v1::{MyData, NearTransaction, NearAction};
 use pb::mydata::v1 as mydata;
-use prost::Message;
 use prost_types::Timestamp;
 use substreams::Hex;
+use substreams_near::pb::sf::near::r#type::v1::Block;
 
 #[substreams::handlers::map]
 fn map_my_data(block: Block) -> Result<mydata::MyData, substreams::errors::Error> {
@@ -54,4 +51,3 @@ fn map_my_data(block: Block) -> Result<mydata::MyData, substreams::errors::Error
         transactions,
     })
 }
-
