@@ -16,7 +16,7 @@ jobs:
     if: "${{ !startsWith(github.event.head_commit.message, 'GitBook: [#') }}"
 
     env:
-      INTEGRATION_TESTS_IN_DOCKER: "true"
+      INTEGRATION_TESTS_IN_DOCKER: "false"
       RUN_INTEGRATION_TESTS: "true"
       CI: "true"
       CODEGEN_MAINNET_API_KEY: ${{ secrets.CODEGEN_MAINNET_API_KEY }}
@@ -53,6 +53,26 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          override: true
+
+      - name: Install substreams CLI
+        run: |
+          curl -L https://github.com/streamingfast/substreams/releases/download/v1.16.6/substreams_linux_x86_64.tar.gz | tar -xz
+          sudo mv substreams /usr/local/bin/
+          substreams version
+
+      - name: Install buf CLI
+        run: |
+          curl -sSL "https://github.com/bufbuild/buf/releases/download/v1.28.1/buf-Linux-x86_64" -o buf
+          sudo mv buf /usr/local/bin/
+          sudo chmod +x /usr/local/bin/buf
+          buf --version
 
       - name: Run Tests
         run: go test -v ./... -timeout 1800s

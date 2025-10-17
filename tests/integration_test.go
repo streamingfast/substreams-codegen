@@ -194,7 +194,7 @@ func runTestsInDocker(t *testing.T, cases []struct {
 
 	output, err := buildCmd.CombinedOutput()
 	if err != nil {
-		t.Error(string(output))
+		t.Fatalf("Docker build failed: %v\nOutput: %s", err, string(output))
 	}
 
 	for _, c := range cases {
@@ -222,7 +222,7 @@ func runTestsInDocker(t *testing.T, cases []struct {
 			runCmd := exec.CommandContext(ctx, "docker", runArgs...)
 			output, err = runCmd.CombinedOutput()
 			if err != nil {
-				t.Error(string(output))
+				t.Fatalf("Docker run failed for %s: %v\nOutput: %s", c.name, err, string(output))
 			}
 
 		})
