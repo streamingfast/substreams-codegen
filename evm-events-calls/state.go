@@ -110,11 +110,11 @@ func (p *Project) GenerateEventsBlockFilterQuery() string {
 		}
 
 		if query == "" {
-			query = fmt.Sprintf("evt_addr:%s", contract.Address)
+			query = fmt.Sprintf("evt_addr:%s", strings.ToLower(contract.Address))
 			continue
 		}
 
-		query += fmt.Sprintf(" || evt_addr:%s", contract.Address)
+		query += fmt.Sprintf(" || evt_addr:%s", strings.ToLower(contract.Address))
 	}
 
 	return query
@@ -128,11 +128,11 @@ func (p *Project) GenerateCallsBlockFilterQuery() string {
 		}
 
 		if query == "" {
-			query = fmt.Sprintf("call_to:%s", contract.Address)
+			query = fmt.Sprintf("call_to:%s", strings.ToLower(contract.Address))
 			continue
 		}
 
-		query += fmt.Sprintf(" || call_to:%s", contract.Address)
+		query += fmt.Sprintf(" || call_to:%s", strings.ToLower(contract.Address))
 	}
 
 	return query
@@ -339,7 +339,7 @@ func (d DynamicContract) FactoryInitialBlock() uint64 {
 	return *d.parentContract.InitialBlock
 }
 func (d DynamicContract) GenerateStoreQuery() string {
-	return fmt.Sprintf("evt_addr:%s && evt_sig:%s", d.parentContract.Address, "0x"+d.parentContract.FactoryCreationEvent)
+	return fmt.Sprintf("evt_addr:%s && evt_sig:%s", strings.ToLower(d.parentContract.Address), "0x"+d.parentContract.FactoryCreationEvent)
 }
 func (d DynamicContract) ParentContract() *Contract   { return d.parentContract }
 func (d DynamicContract) Identifier() string          { return d.Name }
