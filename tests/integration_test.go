@@ -200,13 +200,18 @@ func runTestsInDocker(t *testing.T, cases []struct {
 		buildContext,
 	}
 
-	ctx := context.Background()
+	// Add timeout for Docker build to prevent hanging
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+	
+	fmt.Printf("Building Docker image with command: docker %s\n", strings.Join(buildArgs, " "))
 	buildCmd := exec.CommandContext(ctx, "docker", buildArgs...)
 
 	output, err := buildCmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("Failed to build Docker image: %v\nOutput: %s", err, string(output))
 	}
+	fmt.Println("Docker image built successfully")
 
 	for _, c := range cases {
 		c := c
@@ -228,10 +233,17 @@ func runTestsInDocker(t *testing.T, cases []struct {
 				"substreams-test-image",
 			}
 
-			runCmd := exec.CommandContext(ctx, "docker", runArgs...)
+			// Add timeout for Docker run to prevent hanging
+			runCtx, runCancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			defer runCancel()
+			
+			fmt.Printf("Running Docker container for test %s\n", c.name)
+			runCmd := exec.CommandContext(runCtx, "docker", runArgs...)
 			output, err = runCmd.CombinedOutput()
 			if err != nil {
-				t.Error(string(output))
+				t.Errorf("Docker run failed for test %s: %v\nOutput: %s", c.name, err, string(output))
+			} else {
+				fmt.Printf("Test %s completed successfully\n", c.name)
 			}
 
 		})
