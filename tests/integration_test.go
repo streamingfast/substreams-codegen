@@ -184,17 +184,15 @@ func runTestsInDocker(t *testing.T, cases []struct {
 		"-t",
 		"substreams-test-image",
 		".",
-		"--platform",
-		"linux/amd64",
 	}
 
 	ctx := context.Background()
 	buildCmd := exec.CommandContext(ctx, "docker", buildArgs...)
-	buildCmd.Dir = "./"
+	buildCmd.Dir = "./tests"
 
 	output, err := buildCmd.CombinedOutput()
 	if err != nil {
-		t.Error(string(output))
+		t.Fatalf("Failed to build Docker image: %v\nOutput: %s", err, string(output))
 	}
 
 	for _, c := range cases {
@@ -208,8 +206,6 @@ func runTestsInDocker(t *testing.T, cases []struct {
 				"-t",
 				"--name",
 				c.name,
-				"--platform",
-				"linux/amd64",
 				"-v",
 				fmt.Sprintf("%s:/app/generator.json", c.stateFile),
 				"-e",
