@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -179,23 +180,38 @@ func runTestsInDocker(t *testing.T, cases []struct {
 	apiKeyNeeded          bool
 }, endpoint string) {
 
+	// Determine the correct build context based on current working directory
+	cwd, err := os.Getwd()
+	require.NoError(t, err)
+	
+	var buildContext string
+	if strings.HasSuffix(cwd, "/tests") {
+		// Running from tests directory, build context is current directory
+		buildContext = "."
+	} else {
+		// Running from root directory, build context is tests subdirectory
+		buildContext = "./tests"
+	}
+
 	buildArgs := []string{
 		"build",
 		"-t",
 		"substreams-test-image",
-		".",
-		"--platform",
-		"linux/amd64",
+		buildContext,
 	}
 
-	ctx := context.Background()
+	// Add timeout for Docker build to prevent hanging
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+	
+	fmt.Printf("Building Docker image with command: docker %s\n", strings.Join(buildArgs, " "))
 	buildCmd := exec.CommandContext(ctx, "docker", buildArgs...)
-	buildCmd.Dir = "./"
 
 	output, err := buildCmd.CombinedOutput()
 	if err != nil {
-		t.Error(string(output))
+		t.Fatalf("Failed to build Docker image: %v\nOutput: %s", err, string(output))
 	}
+	fmt.Println("Docker image built successfully")
 
 	for _, c := range cases {
 		c := c
@@ -208,8 +224,6 @@ func runTestsInDocker(t *testing.T, cases []struct {
 				"-t",
 				"--name",
 				c.name,
-				"--platform",
-				"linux/amd64",
 				"-v",
 				fmt.Sprintf("%s:/app/generator.json", c.stateFile),
 				"-e",
@@ -219,10 +233,17 @@ func runTestsInDocker(t *testing.T, cases []struct {
 				"substreams-test-image",
 			}
 
-			runCmd := exec.CommandContext(ctx, "docker", runArgs...)
+			// Add timeout for Docker run to prevent hanging
+			runCtx, runCancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			defer runCancel()
+			
+			fmt.Printf("Running Docker container for test %s\n", c.name)
+			runCmd := exec.CommandContext(runCtx, "docker", runArgs...)
 			output, err = runCmd.CombinedOutput()
 			if err != nil {
-				t.Error(string(output))
+				t.Errorf("Docker run failed for test %s: %v\nOutput: %s", c.name, err, string(output))
+			} else {
+				fmt.Printf("Test %s completed successfully\n", c.name)
 			}
 
 		})

@@ -3,6 +3,7 @@ package evm_events_calls
 import (
 	"testing"
 
+	"github.com/streamingfast/eth-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -142,6 +143,135 @@ func TestNamesThatNeedDoublePluralization(t *testing.T) {
 
 			// Alternatively, can use require.Equal for exact map comparison
 			require.Equal(t, tt.expected, result, "Maps should be equal")
+		})
+	}
+}
+
+func TestIndexedDynamicValueHandling(t *testing.T) {
+	// Test ABI with indexed string parameter (dynamic type)
+	abiJSON := `[
+		{
+			"anonymous": false,
+			"inputs": [
+				{
+					"indexed": true,
+					"internalType": "string",
+					"name": "param0",
+					"type": "string"
+				},
+				{
+					"indexed": false,
+					"internalType": "uint256",
+					"name": "value",
+					"type": "uint256"
+				}
+			],
+			"name": "EventStringIdx",
+			"type": "event"
+		}
+	]`
+
+	abi, err := eth.ParseABIFromBytes([]byte(abiJSON))
+	require.NoError(t, err)
+
+	abiWrapper := &ABI{abi: abi, raw: abiJSON}
+	events, err := abiWrapper.BuildEventModels()
+	require.NoError(t, err)
+	require.Len(t, events, 1)
+
+	event := events[0]
+	
+	// Check that the indexed dynamic parameter is handled correctly
+	// The transformation code should handle IndexedDynamicValue<String>
+	transformCode, exists := event.Rust.ProtoFieldABIConversionMap["param0"]
+	require.True(t, exists, "param0 should have transformation code")
+	
+	// For indexed dynamic values, we expect the transformation to access the hash field
+	assert.Contains(t, transformCode, ".hash", "Indexed dynamic string should use .hash field")
+	
+	// The non-indexed parameter should use normal transformation
+	transformCode2, exists := event.Rust.ProtoFieldABIConversionMap["value"]
+	require.True(t, exists, "value should have transformation code")
+	assert.NotContains(t, transformCode2, ".hash", "Non-indexed parameter should not use .hash field")
+	
+	// Check proto field types
+	require.Len(t, event.Proto.Fields, 2, "Should have 2 proto fields")
+	
+	// Find the param0 field (indexed dynamic string)
+	var param0Field, valueField *ProtoField
+	for i := range event.Proto.Fields {
+		if event.Proto.Fields[i].Name == "param0" {
+			param0Field = &event.Proto.Fields[i]
+		} else if event.Proto.Fields[i].Name == "value" {
+			valueField = &event.Proto.Fields[i]
+		}
+	}
+	
+	require.NotNil(t, param0Field, "param0 field should exist")
+	require.NotNil(t, valueField, "value field should exist")
+	
+	// Indexed dynamic string should be bytes (hash)
+	assert.Equal(t, "bytes", param0Field.Type, "Indexed dynamic string should be bytes proto field")
+	
+	// Non-indexed uint256 should be string
+	assert.Equal(t, "string", valueField.Type, "uint256 should be string proto field")
+}
+
+func TestIsDynamicType(t *testing.T) {
+	tests := []struct {
+		name     string
+		abiJSON  string
+		expected bool
+	}{
+		{
+			name: "string type is dynamic",
+			abiJSON: `[{
+				"inputs": [{"type": "string", "name": "test"}],
+				"name": "TestEvent",
+				"type": "event"
+			}]`,
+			expected: true,
+		},
+		{
+			name: "bytes type is dynamic",
+			abiJSON: `[{
+				"inputs": [{"type": "bytes", "name": "test"}],
+				"name": "TestEvent",
+				"type": "event"
+			}]`,
+			expected: true,
+		},
+		{
+			name: "uint256 type is not dynamic",
+			abiJSON: `[{
+				"inputs": [{"type": "uint256", "name": "test"}],
+				"name": "TestEvent",
+				"type": "event"
+			}]`,
+			expected: false,
+		},
+		{
+			name: "address type is not dynamic",
+			abiJSON: `[{
+				"inputs": [{"type": "address", "name": "test"}],
+				"name": "TestEvent",
+				"type": "event"
+			}]`,
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			abi, err := eth.ParseABIFromBytes([]byte(tt.abiJSON))
+			require.NoError(t, err)
+			
+			events := abi.LogEventsByNameMap["TestEvent"]
+			require.Len(t, events, 1)
+			
+			param := events[0].Parameters[0]
+			result := isDynamicType(param.Type)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }

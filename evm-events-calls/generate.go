@@ -47,6 +47,17 @@ func sanitizeTableChangesColumnNames(name string) string {
 
 const SKIP_FIELD = "skip"
 
+// isDynamicType returns true if the Solidity type is dynamic (string, bytes, or dynamic array)
+// These types, when indexed in events, are stored as hashes and require IndexedDynamicValue wrapper
+func isDynamicType(fieldType eth.SolidityType) bool {
+	switch fieldType.(type) {
+	case eth.StringType, eth.BytesType, eth.ArrayType:
+		return true
+	default:
+		return false
+	}
+}
+
 func generateFieldClickhouseTypes(fieldType eth.SolidityType) string {
 	switch v := fieldType.(type) {
 	case eth.AddressType:
@@ -245,14 +256,29 @@ func generateFieldTableChangeCode(fieldType eth.SolidityType, fieldAccess string
 }
 
 func generateFieldTransformCode(fieldType eth.SolidityType, fieldAccess string, byRef bool) string {
+	return generateFieldTransformCodeWithIndexed(fieldType, fieldAccess, byRef, false)
+}
+
+func generateFieldTransformCodeWithIndexed(fieldType eth.SolidityType, fieldAccess string, byRef bool, isIndexedDynamic bool) string {
 	switch v := fieldType.(type) {
 	case eth.AddressType:
 		return fieldAccess
 
-	case eth.BooleanType, eth.StringType:
+	case eth.BooleanType:
+		return fieldAccess
+
+	case eth.StringType:
+		if isIndexedDynamic {
+			// For indexed dynamic string, we need to access the hash field
+			return fmt.Sprintf("%s.hash", fieldAccess)
+		}
 		return fieldAccess
 
 	case eth.BytesType:
+		if isIndexedDynamic {
+			// For indexed dynamic bytes, we need to access the hash field
+			return fmt.Sprintf("%s.hash", fieldAccess)
+		}
 		return fieldAccess
 
 	case eth.FixedSizeBytesType:
@@ -274,7 +300,7 @@ func generateFieldTransformCode(fieldType eth.SolidityType, fieldAccess string, 
 		return fmt.Sprintf("%s.to_string()", fieldAccess)
 
 	case eth.FixedSizeArrayType:
-		inner := generateFieldTransformCode(v.ElementType, "x", byRef)
+		inner := generateFieldTransformCodeWithIndexed(v.ElementType, "x", byRef, false)
 		if inner == SKIP_FIELD {
 			fmt.Println("skip case eth.FixedSizeArrayType:")
 			return SKIP_FIELD
@@ -288,7 +314,12 @@ func generateFieldTransformCode(fieldType eth.SolidityType, fieldAccess string, 
 		return fmt.Sprintf("%s.%s.map(|x| %s).collect::<Vec<_>>()", fieldAccess, iter, inner)
 
 	case eth.ArrayType:
-		inner := generateFieldTransformCode(v.ElementType, "x", byRef)
+		if isIndexedDynamic {
+			// For indexed dynamic arrays, we need to access the hash field
+			return fmt.Sprintf("%s.hash", fieldAccess)
+		}
+		
+		inner := generateFieldTransformCodeWithIndexed(v.ElementType, "x", byRef, false)
 		if inner == SKIP_FIELD {
 			return SKIP_FIELD
 		}

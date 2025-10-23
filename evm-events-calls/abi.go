@@ -300,7 +300,10 @@ func (e *rustEventModel) populateFields(log *eth.LogEventDef) error {
 		name := codegen.SanitizeProtoFieldName(parameter.Name)
 		name = xstrings.ToSnakeCase(name)
 
-		toProtoCode := generateFieldTransformCode(parameter.Type, "event."+name, false)
+		// Check if this is an indexed dynamic parameter that needs special handling
+		isIndexedDynamic := parameter.Indexed && isDynamicType(parameter.Type)
+		
+		toProtoCode := generateFieldTransformCodeWithIndexed(parameter.Type, "event."+name, false, isIndexedDynamic)
 		if toProtoCode == SKIP_FIELD {
 			continue
 		}
@@ -525,7 +528,7 @@ type protoEventModel struct {
 	MessageHash string
 
 	OutputModuleFieldName string
-	Fields                []protoField
+	Fields                []ProtoField
 }
 
 type protoCallModel struct {
@@ -533,7 +536,7 @@ type protoCallModel struct {
 	MessageName string
 
 	OutputModuleFieldName string
-	Fields                []protoField
+	Fields                []ProtoField
 }
 
 func (e *protoEventModel) populateFields(log *eth.LogEventDef) error {
@@ -541,12 +544,15 @@ func (e *protoEventModel) populateFields(log *eth.LogEventDef) error {
 		return nil
 	}
 
-	e.Fields = make([]protoField, 0, len(log.Parameters))
+	e.Fields = make([]ProtoField, 0, len(log.Parameters))
 	for _, parameter := range log.Parameters {
 		fieldName := codegen.SanitizeProtoFieldName(parameter.Name)
 		fieldName = xstrings.ToSnakeCase(fieldName)
 
-		fieldType := getProtoFieldType(parameter.Type)
+		// Check if this is an indexed dynamic parameter that needs special handling
+		isIndexedDynamic := parameter.Indexed && isDynamicType(parameter.Type)
+		
+		fieldType := getProtoFieldTypeWithIndexed(parameter.Type, isIndexedDynamic)
 		if fieldType == SKIP_FIELD {
 			continue
 		}
@@ -555,7 +561,7 @@ func (e *protoEventModel) populateFields(log *eth.LogEventDef) error {
 			return fmt.Errorf("field type %q on parameter with name %q is not supported right now", parameter.TypeName, parameter.Name)
 		}
 
-		e.Fields = append(e.Fields, protoField{Name: fieldName, Type: fieldType})
+		e.Fields = append(e.Fields, ProtoField{Name: fieldName, Type: fieldType})
 	}
 
 	return nil
@@ -566,7 +572,7 @@ func (e *protoCallModel) populateFields(call *eth.MethodDef) error {
 		return nil
 	}
 
-	e.Fields = make([]protoField, 0, len(call.Parameters)+len(call.ReturnParameters))
+	e.Fields = make([]ProtoField, 0, len(call.Parameters)+len(call.ReturnParameters))
 
 	for _, parameter := range call.Parameters {
 		fieldName := codegen.SanitizeProtoFieldName(parameter.Name)
@@ -580,7 +586,7 @@ func (e *protoCallModel) populateFields(call *eth.MethodDef) error {
 			return fmt.Errorf("field type %q on parameter with name %q is not supported right now", parameter.TypeName, parameter.Name)
 		}
 
-		e.Fields = append(e.Fields, protoField{Name: fieldName, Type: fieldType})
+		e.Fields = append(e.Fields, ProtoField{Name: fieldName, Type: fieldType})
 	}
 
 	for _, parameter := range call.ReturnParameters {
@@ -595,13 +601,21 @@ func (e *protoCallModel) populateFields(call *eth.MethodDef) error {
 			return fmt.Errorf("field type %q on parameter with name %q is not supported right now", parameter.TypeName, parameter.Name)
 		}
 
-		e.Fields = append(e.Fields, protoField{Name: fieldName, Type: fieldType})
+		e.Fields = append(e.Fields, ProtoField{Name: fieldName, Type: fieldType})
 	}
 
 	return nil
 }
 
 func getProtoFieldType(solidityType eth.SolidityType) string {
+	return getProtoFieldTypeWithIndexed(solidityType, false)
+}
+
+func getProtoFieldTypeWithIndexed(solidityType eth.SolidityType, isIndexedDynamic bool) string {
+	// For indexed dynamic values, we always store the hash as bytes
+	if isIndexedDynamic {
+		return "bytes"
+	}
 	switch v := solidityType.(type) {
 	case eth.AddressType, eth.BytesType, eth.FixedSizeBytesType:
 		return "bytes"
@@ -631,7 +645,7 @@ func getProtoFieldType(solidityType eth.SolidityType) string {
 
 	case eth.FixedSizeArrayType:
 		// Flaky, I think we should support a single level of "array"
-		fieldType := getProtoFieldType(v.ElementType)
+		fieldType := getProtoFieldTypeWithIndexed(v.ElementType, false)
 		if fieldType == SKIP_FIELD {
 			return SKIP_FIELD
 		}
@@ -639,7 +653,7 @@ func getProtoFieldType(solidityType eth.SolidityType) string {
 
 	case eth.ArrayType:
 		// Flaky, I think we should support a single level of "array"
-		fieldType := getProtoFieldType(v.ElementType)
+		fieldType := getProtoFieldTypeWithIndexed(v.ElementType, false)
 		if fieldType == SKIP_FIELD {
 			return SKIP_FIELD
 		}
@@ -653,7 +667,7 @@ func getProtoFieldType(solidityType eth.SolidityType) string {
 	}
 }
 
-type protoField struct {
+type ProtoField struct {
 	Name string
 	Type string
 }
