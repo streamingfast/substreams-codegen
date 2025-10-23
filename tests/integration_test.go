@@ -56,6 +56,10 @@ func TestIntegration(t *testing.T) {
 			stateFile: "./starknet-hello-world/generator.json",
 		},
 		{
+			name:      "near-hello-world",
+			stateFile: "./near-hello-world/generator.json",
+		},
+		{
 			name:      "injective-events",
 			stateFile: "./injective-events/generator.json",
 		},
