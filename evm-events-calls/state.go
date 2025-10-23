@@ -241,9 +241,9 @@ type BaseContract struct {
 	RawABI      json.RawMessage `json:"rawAbi,omitempty"`
 
 	abiFetchedInThisSession bool
-	Abi                     *ABI
+	abi                     *ABI
 	emptyABI                bool
-	AbiType                 string
+	abiType                 string
 }
 
 func (c *BaseContract) Identifier() string { return c.Name }
@@ -259,7 +259,7 @@ func (c *BaseContract) EventFields(event string) ([]*eth.LogParameter, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid event ID %q: %w", event, err)
 	}
-	eventDef := c.Abi.abi.FindLogByTopic(hash)
+	eventDef := c.abi.abi.FindLogByTopic(hash)
 	if eventDef == nil {
 		return nil, fmt.Errorf("cannot find event definition for %q", event)
 	}
@@ -267,7 +267,7 @@ func (c *BaseContract) EventFields(event string) ([]*eth.LogParameter, error) {
 }
 
 func (c *BaseContract) CallModels() []codegenCall {
-	calls, err := c.Abi.BuildCallModels()
+	calls, err := c.abi.BuildCallModels()
 	if err != nil {
 		panic(err)
 	}
@@ -275,7 +275,7 @@ func (c *BaseContract) CallModels() []codegenCall {
 }
 
 func (c *BaseContract) EventModels() []codegenEvent {
-	evts, err := c.Abi.BuildEventModels()
+	evts, err := c.abi.BuildEventModels()
 	if err != nil {
 		panic(err)
 	}

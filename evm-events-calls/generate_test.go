@@ -83,13 +83,13 @@ func Test_Generate(t *testing.T) {
 			for _, contract := range p.Contracts {
 				res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
 				require.NoError(t, res.Err)
-				contract.Abi = res.Abi
+				contract.abi = res.Abi
 			}
 
 			for _, dynamicContract := range p.DynamicContracts {
 				res := cmdDecodeDynamicABI(dynamicContract)().(ReturnRunDecodeDynamicContractABI)
 				require.NoError(t, res.err)
-				dynamicContract.Abi = res.abi
+				dynamicContract.abi = res.abi
 
 				for _, contract := range p.Contracts {
 					if contract.Name == dynamicContract.ParentContractName {
@@ -174,7 +174,7 @@ func TestUniFactory(t *testing.T) {
 	for _, contract := range p.Contracts {
 		res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
 		require.NoError(t, res.Err)
-		contract.Abi = res.Abi
+		contract.abi = res.Abi
 	}
 
 	res := p.Generate()
@@ -198,7 +198,7 @@ func TestBaycSQL(t *testing.T) {
 	for _, contract := range p.Contracts {
 		res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
 		require.NoError(t, res.Err)
-		contract.Abi = res.Abi
+		contract.abi = res.Abi
 	}
 
 	res := p.Generate()
@@ -216,13 +216,13 @@ func Test_Uniswapv3riggersDynamicDatasources(t *testing.T) {
 	for _, contract := range p.Contracts {
 		res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
 		require.NoError(t, res.Err)
-		contract.Abi = res.Abi
+		contract.abi = res.Abi
 	}
 
 	for _, contract := range p.DynamicContracts {
 		res := cmdDecodeDynamicABI(contract)().(ReturnRunDecodeDynamicContractABI)
 		require.NoError(t, res.err)
-		contract.Abi = res.abi
+		contract.abi = res.abi
 		contract.parentContract = p.Contracts[0]
 	}
 
@@ -244,7 +244,7 @@ func Test_BaycTriggers(t *testing.T) {
 	for _, contract := range p.Contracts {
 		res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
 		require.NoError(t, res.Err)
-		contract.Abi = res.Abi
+		contract.abi = res.Abi
 	}
 
 	res := p.Generate()

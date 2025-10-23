@@ -81,7 +81,7 @@ func (c *Convo) NextStep() (out loop.Cmd) {
 			return cmd(AskContractAddress{})
 		}
 
-		if contract.Abi == nil || contract.Abi.abi == nil {
+		if contract.abi == nil || contract.abi.abi == nil {
 			// if the user pasted an empty ABI, we would restart the process or choosing a contract address
 			if contract.emptyABI {
 				contract.Address = ""     // reset the address
@@ -133,7 +133,7 @@ func (c *Convo) NextStep() (out loop.Cmd) {
 			if !dynContract.TrackEvents && !dynContract.TrackCalls {
 				return notifyContext(cmd(AskDynamicContractTrackWhat{}))
 			}
-			if dynContract.Abi == nil {
+			if dynContract.abi == nil {
 				// if the user pasted an empty ABI, we would restart the process or choosing a contract address
 				if dynContract.emptyABI {
 					dynContract.ReferenceContractAddress = "" // reset the reference address
@@ -293,9 +293,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			return QuitInvalidContext
 		}
 
-		if contract.AbiType == "string" {
+		if contract.abiType == "string" {
 			return loop.Seq(cmd(AskContractABIString{}))
-		} else if contract.AbiType == "file" {
+		} else if contract.abiType == "file" {
 			return loop.Seq(cmd(AskContractABIFile{}))
 		}
 
@@ -312,7 +312,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			return QuitInvalidContext
 		}
 
-		contract.AbiType = msg.Value
+		contract.abiType = msg.Value
 
 		return c.NextStep()
 
@@ -508,7 +508,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		if msg.Err != nil {
 			return loop.Quit(fmt.Errorf("decoding ABI for contract %q: %w", contract.Name, msg.Err))
 		}
-		contract.Abi = msg.Abi
+		contract.abi = msg.Abi
 		evt := contract.EventModels()
 		calls := contract.CallModels()
 
@@ -577,7 +577,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 			return loop.Quit(fmt.Errorf("decoding ABI for dynamic contract of %q: %w", factory.Name, msg.err))
 		}
 		contract := c.State.dynamicContractOf(factory.Name)
-		contract.Abi = msg.abi
+		contract.abi = msg.abi
 		evt := contract.EventModels()
 		calls := contract.CallModels()
 
@@ -819,7 +819,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 			return QuitInvalidContext
 		}
 
-		events := contract.Abi.EventIDsToSig()
+		events := contract.abi.EventIDsToSig()
 
 		values := make([]string, 0)
 

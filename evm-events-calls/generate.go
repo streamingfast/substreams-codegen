@@ -31,11 +31,11 @@ func (p *Project) Generate() codegen.ReturnGenerate {
 	}
 
 	for _, contract := range p.Contracts {
-		res.ProjectFiles[fmt.Sprintf("abi/%s_contract.abi.json", contract.Name)] = codegen.PrettifyJSON([]byte(contract.Abi.raw))
+		res.ProjectFiles[fmt.Sprintf("abi/%s_contract.abi.json", contract.Name)] = codegen.PrettifyJSON([]byte(contract.abi.raw))
 	}
 
 	for _, dds := range p.DynamicContracts {
-		res.ProjectFiles[fmt.Sprintf("abi/%s_contract.abi.json", dds.Name)] = codegen.PrettifyJSON([]byte(dds.Abi.raw))
+		res.ProjectFiles[fmt.Sprintf("abi/%s_contract.abi.json", dds.Name)] = codegen.PrettifyJSON([]byte(dds.abi.raw))
 	}
 
 	return res
@@ -318,7 +318,7 @@ func generateFieldTransformCodeWithIndexed(fieldType eth.SolidityType, fieldAcce
 			// For indexed dynamic arrays, we need to access the hash field
 			return fmt.Sprintf("%s.hash", fieldAccess)
 		}
-		
+
 		inner := generateFieldTransformCodeWithIndexed(v.ElementType, "x", byRef, false)
 		if inner == SKIP_FIELD {
 			return SKIP_FIELD

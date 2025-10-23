@@ -33,7 +33,7 @@ type Contract struct {
 	Aliases      []*Alias        `json:"aliases"`
 	RawABI       json.RawMessage `json:"rawAbi,omitempty"`
 
-	Abi                     *ABI
+	abi                     *ABI
 	emptyABI                bool
 	abiFetchedInThisSession bool
 }
@@ -57,7 +57,7 @@ func (c *Contract) SetAliases() {
 
 // This is a bit hacky, but it works for now!
 func (c *Contract) setAliasesForOtherItems() {
-	otherItems := c.Abi.otherItems
+	otherItems := c.abi.otherItems
 
 	seen := make(map[string]int)
 	for _, item := range otherItems {
@@ -77,7 +77,7 @@ func (c *Contract) setAliasesForOtherItems() {
 	}
 }
 func (c *Contract) setAliasesForEvents() {
-	events := c.Abi.decodedEvents
+	events := c.abi.decodedEvents
 
 	aliases := make([]*Alias, 0)
 	seen := make(map[string]struct{})
