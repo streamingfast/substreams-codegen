@@ -1,0 +1,17 @@
+// @generated
+pub mod mydata {
+    pub mod v1 {
+        include!(concat!(env!("OUT_DIR"), "/mydata.v1.rs"));
+    }
+}
+
+pub mod sf {
+    pub mod near {
+        pub mod r#type {
+            pub mod v1 {
+                include!(concat!(env!("OUT_DIR"), "/sf.near.type.v1.rs"));
+            }
+        }
+    }
+}
+
