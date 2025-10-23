@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package mydata.v1;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+message MyData {
+  uint64 block_number = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  repeated NearTransaction transactions = 3;
+}
+
+message NearTransaction {
+  string signer_id = 1;
+  string receiver_id = 2;
+  repeated NearAction actions = 3;
+  string transaction_hash = 4;
+}
+
+message NearAction {
+  string action_type = 1;
+  google.protobuf.Any action_data = 2;
+}
