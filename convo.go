@@ -79,7 +79,7 @@ func (c *Conversation[X]) HandleSubstreamsConsumptionChoice(value string) loop.C
 
 	var sinkMessage *MsgWrap
 	var dockerComposeCmd loop.Cmd
-	
+
 	switch value {
 	case "postgres":
 		sinkMessage = c.Msg().Message(`Sink to Postgres:
@@ -235,7 +235,7 @@ func (c *Conversation[X]) CmdDownloadFiles(msg ReturnGenerate) loop.Cmd {
 
 func (c *Conversation[X]) generateDockerCompose(dbType string) loop.Cmd {
 	var dockerComposeContent string
-	
+
 	if dbType == "postgres" {
 		dockerComposeContent = `version: "3"
 services:
@@ -284,9 +284,9 @@ services:
       - "9000:9000"
       - "9005:9005"`
 	}
-	
+
 	downloadCmd := c.Action(InputSourceDownloaded{}).DownloadFiles()
 	downloadCmd.AddFile("docker-compose.yml", []byte(dockerComposeContent), "text/plain", "Docker Compose configuration for "+dbType+" database")
-	
+
 	return downloadCmd.Cmd()
 }

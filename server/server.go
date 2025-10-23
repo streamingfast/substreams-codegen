@@ -1,8 +1,8 @@
 package server
 
 import (
-	_ "embed"
 	"context"
+	_ "embed"
 	"net/http"
 	"regexp"
 	"strings"
@@ -58,7 +58,7 @@ func (s *server) Run() {
 		ctx := context.Background()
 		interval := 12 * time.Hour
 		s.logger.Info("scheduling firehose-networks registry updates", zap.Duration("interval", interval))
-		
+
 		networks.ScheduleUpdateLatestRegistry(ctx, interval, s.logger)
 	}()
 
