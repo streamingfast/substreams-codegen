@@ -205,12 +205,10 @@ func runTestsInDocker(t *testing.T, cases []struct {
 			absStateFile, err := filepath.Abs(c.stateFile)
 			require.NoError(t, err)
 
-			// Create and start container using the pre-built image
-			runCtx, runCancel := context.WithTimeout(ctx, 10*time.Minute)
-			defer runCancel()
-
+			// Create and start container using the pre-built image with retry logic
 			fmt.Printf("Starting container for test %s\n", c.name)
-			container, err := testcontainers.GenericContainer(runCtx, testcontainers.GenericContainerRequest{
+
+			container, err := runContainerWithRetry(ctx, testcontainers.GenericContainerRequest{
 				ContainerRequest: testcontainers.ContainerRequest{
 					Image: imageName,
 					Env: map[string]string{
@@ -224,11 +222,13 @@ func runTestsInDocker(t *testing.T, cases []struct {
 							FileMode:          0644,
 						},
 					},
+					// The entrypoint will run the test automatically, so this is essentially
+					// how long we allow the container to take to complete.
 					WaitingFor: wait.ForExit().WithExitTimeout(5 * time.Minute),
 				},
 				Started: true,
-			})
-			require.NoError(t, err, "Failed to start container for test %s", c.name)
+			}, c.name)
+			require.NoError(t, err)
 
 			defer func() {
 				printContainerLogs(ctx, container, t.Name())
@@ -249,6 +249,32 @@ func runTestsInDocker(t *testing.T, cases []struct {
 			}
 		})
 	}
+}
+
+// runContainerWithRetry runs a container with retry logic to handle transient failures. The mere
+// fact on starting the container will kick in the entrypoint.sh bash script which does all the work.
+// So if the container finishes, it means the test is done.
+func runContainerWithRetry(ctx context.Context, req testcontainers.GenericContainerRequest, testName string) (testcontainers.Container, error) {
+	const maxRetries = 3
+
+	var container testcontainers.Container
+	var err error
+
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		container, err = testcontainers.GenericContainer(ctx, req)
+		if err == nil {
+			return container, nil
+		}
+
+		// Retry on any error during container startup
+		if attempt < maxRetries {
+			fmt.Printf("Container startup attempt %d/%d failed for test %s: %v, retrying...\n",
+				attempt, maxRetries, testName, err)
+			time.Sleep(time.Second) // Brief pause before retry
+		}
+	}
+
+	return nil, fmt.Errorf("failed to start container after %d attempts: %w", maxRetries, err)
 }
 
 func printContainerLogs(ctx context.Context, container testcontainers.Container, testName string) {
