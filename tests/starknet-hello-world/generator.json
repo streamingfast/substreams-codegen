@@ -3,6 +3,6 @@
   "state": {
     "name": "my_project",
     "chainName": "starknet-mainnet",
-    "initialBlockSet": true
+    "substreamsSinkChoice": "postgres"
   }
 }

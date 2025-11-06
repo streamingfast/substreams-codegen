@@ -2,23 +2,25 @@ syntax = "proto3";
 
 package mydata.v1;
 
-import "google/protobuf/any.proto";
-import "google/protobuf/timestamp.proto";
-
+// MyData represents the data that you map out from a NEAR block to your own needs.
+// You can structure it however you want, this is controlled by you, so adjust
+// based on your needs.
+//
+// In this example, we define a MyData message that contains a list of transactions,
+// and each transaction contains its hash, signer ID, receiver ID, and a list of
+// function call actions with their names and arguments.
 message MyData {
-  uint64 block_number = 1;
-  google.protobuf.Timestamp timestamp = 2;
-  repeated NearTransaction transactions = 3;
+  repeated Transaction transactions = 1;
 }
 
-message NearTransaction {
-  string signer_id = 1;
-  string receiver_id = 2;
-  repeated NearAction actions = 3;
-  string transaction_hash = 4;
+message Transaction {
+  string transaction_hash = 1;
+  string signer_id = 2;
+  string receiver_id = 3;
+  repeated CallAction actions = 4;
 }
 
-message NearAction {
-  string action_type = 1;
-  google.protobuf.Any action_data = 2;
+message CallAction {
+  string name = 1;
+  bytes args = 2;
 }

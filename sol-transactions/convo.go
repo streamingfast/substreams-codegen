@@ -1,15 +1,20 @@
 package soltransactions
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 
 	codegen "github.com/streamingfast/substreams-codegen"
+	"github.com/streamingfast/substreams-codegen/chains"
 	"github.com/streamingfast/substreams-codegen/loop"
 	pbconvo "github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1"
+	"github.com/streamingfast/substreams-codegen/text"
 )
+
+var sharedFlowConfig = codegen.SharedFlowConfig{
+	ValidChains: chains.SolanaNetworks(),
+}
 
 type Convo struct {
 	*codegen.Conversation[*Project]
@@ -35,10 +40,11 @@ func init() {
 var cmd = codegen.Cmd
 
 func (c *Convo) NextStep() loop.Cmd {
-	p := c.State
-	if p.Name == "" {
-		return cmd(codegen.AskProjectName{})
+	if !c.IsPreSharedFlowDone(sharedFlowConfig) {
+		return c.NextPreSharedFlowStep(sharedFlowConfig)
 	}
+
+	p := c.State
 
 	if !p.InitialBlockSet {
 		return cmd(codegen.AskInitialStartBlockType{})
@@ -48,38 +54,19 @@ func (c *Convo) NextStep() loop.Cmd {
 		return cmd(AskFilter{})
 	}
 
-	return cmd(codegen.RunGenerate{})
+	return c.NextPostSharedFlowStep(sharedFlowConfig)
 }
 
 func (c *Convo) Update(msg loop.Msg) loop.Cmd {
+	if c.IsPreSharedFlowMsg(msg, sharedFlowConfig) {
+		return c.UpdatePreSharedFlowMsg(msg, sharedFlowConfig, c.NextStep)
+	}
+
+	if c.IsPostSharedFlowMsg(msg, sharedFlowConfig) {
+		return c.UpdatePostSharedFlowMsg(msg, sharedFlowConfig)
+	}
+
 	switch msg := msg.(type) {
-	case codegen.MsgStart:
-		c.SetClientVersion(msg.Version)
-		var msgCmd loop.Cmd
-		if msg.Hydrate != nil {
-			if err := json.Unmarshal([]byte(msg.Hydrate.SavedState), &c.State); err != nil {
-				return loop.Quit(fmt.Errorf(`something went wrong, here's an error message to share with our devs (%s); we've notified them already`, err))
-			}
-
-			msgCmd = c.Msg().Message("Ok, I reloaded your state.").Cmd()
-		} else {
-			msgCmd = c.Msg().Message("Ok, let's start a new package.").Cmd()
-		}
-		return loop.Seq(msgCmd, c.NextStep())
-
-	case codegen.AskProjectName:
-		return c.CmdAskProjectName()
-
-	case codegen.InputSubstreamsConsumptionChoice:
-		return c.HandleSubstreamsConsumptionChoice(msg.Value)
-
-	case codegen.InputSourceDownloaded:
-		return c.HandleDownloaded(msg.Value)
-
-	case codegen.InputProjectName:
-		c.State.Name = msg.Value
-		return c.NextStep()
-
 	case codegen.AskInitialStartBlockType:
 		return c.Action(codegen.InputAskInitialStartBlockType{}).
 			TextInput(codegen.InputAskInitialStartBlockTypeTextInput(), "Submit").
@@ -99,20 +86,29 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case AskFilter:
 		return c.Action(InputFilter{}).
-			TextInput(fmt.Sprintf("Filter the transaction by Program IDs and/or accounts.\nSupported operators are: logical or '||', logical and '&&' and parenthesis: '()'. \n\nEXAMPLE: to only consume TRANSACTIONS containing:\n   - ComputeBudget instructions\n        OR\n   - Token Instructions where the account '3MQw72oGrizUDEcD9gZYMgqo1pc364y5GnnJHcGpvurK' is included\n'program:ComputeBudget111111111111111111111111111111 || (program:TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA && account:3MQw72oGrizUDEcD9gZYMgqo1pc364y5GnnJHcGpvurK)'\n"), "Submit").
-			DefaultValue("program:ComputeBudget111111111111111111111111111111 || (program:TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA && account:3MQw72oGrizUDEcD9gZYMgqo1pc364y5GnnJHcGpvurK)").
+			TextInput(text.Dedent(`
+				Query to filter the transaction by Program IDs and/or accounts
+
+				Supported fields:
+				- program:<PROGRAM_ID> to filter by Program IDs
+				- account:<ACCOUNT_ADDRESS> to filter by accounts involved in the transaction's instructions
+
+				Supported operators are '||' and '&&' for logical operations and '()' for grouping.
+
+				Examples
+				  # Find any transaction containing instructions from the Compute Budget program
+				  'program:ComputeBudget111111111111111111111111111111
+
+				  # Find any transaction from the Token program involving a specific account
+				  program:TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA && account:3MQw72oGrizUDEcD9gZYMgqo1pc364y5GnnJHcGpvurK
+			`), "Submit").
+			DefaultValue("program:TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA && account:3MQw72oGrizUDEcD9gZYMgqo1pc364y5GnnJHcGpvurK").
 			Cmd()
 
 	case InputFilter:
 		c.State.Filter = msg.Value
 		c.State.FilterContainsAccount = strings.Contains(c.State.Filter, "account:")
 		return c.NextStep()
-
-	case codegen.RunGenerate:
-		return c.CmdGenerate(c.State.Generate)
-
-	case codegen.ReturnGenerate:
-		return c.CmdDownloadFiles(msg)
 	}
 
 	return loop.Quit(fmt.Errorf("invalid loop message: %T", msg))

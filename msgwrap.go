@@ -9,6 +9,7 @@ import (
 
 	"github.com/streamingfast/substreams-codegen/loop"
 	pbconvo "github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1"
+	"go.uber.org/zap/zapcore"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -29,6 +30,24 @@ func (m *IncomingMessage) Humanize(seconds int) string {
 	}
 
 	return fmt.Sprintf("%d | %T %v", seconds, m.Msg, m.Msg)
+}
+
+func (m IncomingMessage) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("type", fmt.Sprintf("%T", m.Msg))
+
+	if m.Msg == nil {
+		enc.AddString("content", "<nil>")
+		return nil
+	}
+
+	switch v := m.Msg.(type) {
+	case zapcore.ObjectMarshaler:
+		enc.AddObject("content", v)
+	default:
+		enc.AddReflected("content", m.Msg)
+	}
+
+	return nil
 }
 
 type MsgWrapFactory struct {
@@ -308,10 +327,11 @@ func (w *MsgWrap) Validation(regexp string, errorMessage string) *MsgWrap {
 }
 
 func tplMe(templateText string, data interface{}) string {
-	tpl, err := template.New("tpl").Parse(templateText)
+	tpl, err := template.New("tpl").Funcs(templateFuncs).Parse(templateText)
 	if err != nil {
 		panic(fmt.Errorf("error parsing template: %w", err))
 	}
+
 	var buf bytes.Buffer
 	if err := tpl.Execute(&buf, data); err != nil {
 		panic(fmt.Errorf("error executing template: %w", err))

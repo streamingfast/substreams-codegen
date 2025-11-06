@@ -2,7 +2,6 @@
   "generator": "near-hello-world",
   "state": {
     "name": "my_project",
-    "chainName": "near",
-    "initialBlockSet": true
+    "chainName": "near"
   }
 }

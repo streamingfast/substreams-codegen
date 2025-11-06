@@ -7,10 +7,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gertd/go-pluralize"
 	"github.com/golang-cz/textcase"
 	"github.com/huandu/xstrings"
-
-	"github.com/gertd/go-pluralize"
 	"github.com/iancoleman/strcase"
 	"github.com/streamingfast/eth-go"
 	codegen "github.com/streamingfast/substreams-codegen"
@@ -27,7 +26,7 @@ type ABI struct {
 func CmdDecodeABI(contract *Contract) loop.Cmd {
 	return func() loop.Msg {
 		abi, err := eth.ParseABIFromBytes([]byte(contract.RawABI))
-		return ReturnRunDecodeContractABI{Abi: &ABI{abi, string(contract.RawABI)}, Err: err}
+		return ReturnRunDecodeContractABI{abi: &ABI{abi, string(contract.RawABI)}, err: err}
 	}
 }
 
@@ -294,7 +293,7 @@ func (e *rustEventModel) populateFields(log *eth.LogEventDef) error {
 		paramNames[i] = log.Parameters[i].Name
 	}
 
-	zlog.Info("Generating ABI Events", zap.String("name", log.Name), zap.String("param_names", strings.Join(paramNames, ",")))
+	zlog.Debug("generating ABI Events", zap.String("name", log.Name), zap.String("param_names", strings.Join(paramNames, ",")))
 
 	for _, parameter := range log.Parameters {
 		name := codegen.SanitizeProtoFieldName(parameter.Name)
@@ -302,7 +301,7 @@ func (e *rustEventModel) populateFields(log *eth.LogEventDef) error {
 
 		// Check if this is an indexed dynamic parameter that needs special handling
 		isIndexedDynamic := parameter.Indexed && isDynamicType(parameter.Type)
-		
+
 		toProtoCode := generateFieldTransformCodeWithIndexed(parameter.Type, "event."+name, false, isIndexedDynamic)
 		if toProtoCode == SKIP_FIELD {
 			continue
@@ -551,7 +550,7 @@ func (e *protoEventModel) populateFields(log *eth.LogEventDef) error {
 
 		// Check if this is an indexed dynamic parameter that needs special handling
 		isIndexedDynamic := parameter.Indexed && isDynamicType(parameter.Type)
-		
+
 		fieldType := getProtoFieldTypeWithIndexed(parameter.Type, isIndexedDynamic)
 		if fieldType == SKIP_FIELD {
 			continue

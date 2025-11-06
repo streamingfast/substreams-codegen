@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -12,10 +11,10 @@ import (
 	"time"
 
 	connect "connectrpc.com/connect"
+	"github.com/streamingfast/logging/zapx"
 	codegen "github.com/streamingfast/substreams-codegen"
 	"github.com/streamingfast/substreams-codegen/loop"
 	pbconvo "github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1"
-	"github.com/tidwall/sjson"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
@@ -73,12 +72,12 @@ func (e *eventLogger) logEvent(event string) {
 
 func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconvo.UserInput, pbconvo.SystemOutput]) (err error) {
 	// Add a 5-minute timeout for the conversation to prevent hanging indefinitely
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	ctx, cancel := context.WithTimeoutCause(ctx, 5*time.Minute, ErrConversationTimeout)
 	defer cancel()
 
 	defer func() {
 		if r := recover(); r != nil {
-			s.logger.Error("internal error first defer", zap.Any("panic", r))
+			s.logger.Error("panic recovered within Converse gRPC handler", zap.Any("recovered", r), zap.Stack("stacktrace"))
 			err = fmt.Errorf("internal error: %v", r)
 		}
 	}()
@@ -100,9 +99,9 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 	go func() {
 		<-ctx.Done()
 		closeOnce.Do(func() {
-			s.logger.Info("conversation context cancelled, closing connection", zap.Error(ctx.Err()))
+			s.logger.Info("conversation context cancelled, closing connection", zap.Error(context.Cause(ctx)))
 			if closer, ok := stream.Conn().(interface{ Close(error) error }); ok {
-				closer.Close(ctx.Err())
+				closer.Close(context.Cause(ctx))
 			}
 		})
 	}()
@@ -229,9 +228,7 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 	var lastMessageIsIncoming bool
 	var lastState string
 	msgWrapFactory.SetupLoop(func(msg loop.Msg) loop.Cmd {
-		asJSON, _ := json.Marshal(msg)
-		asJSON, _ = sjson.DeleteBytes(asJSON, "state")
-		s.logger.Debug("main Loop", zap.Any("loop_msg_type", msg), zap.String("content", string(asJSON)))
+		s.logger.Debug("main loop", zapx.Type("msg_type", msg), zap.Any("msg", msg))
 		switch msg := msg.(type) {
 		case *pbconvo.SystemOutput:
 			ev := msg.Humanize(int(time.Since(begin).Seconds()))
@@ -249,11 +246,7 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 			return loop.Batch(func() loop.Msg { return msg.Msg }, readNextCmd)
 		}
 
-		s.logger.Debug("updating")
-		if os.Getenv("SUBSTREAMS_DEV_DEBUG_CONVERSATION") == "true" {
-			fmt.Printf("convo Update message: %T %#v\n-> state: %#v\n\n", msg, msg, conversation.GetState())
-		}
-
+		s.logger.Debug("updating", zapx.Type("msg_type", msg), zap.Any("msg", msg))
 		cmd := conversation.Update(msg)
 		return cmd
 	})
@@ -287,7 +280,7 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 	})
 
 	if err != nil && errors.Is(err, io.EOF) {
-		return fmt.Errorf("cound not generate substreams: %w", err)
+		return fmt.Errorf("couldn't generate substreams: %w", err)
 	}
 
 	if err := g.Wait(); err != nil {

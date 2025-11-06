@@ -149,7 +149,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.HandleSubstreamsConsumptionChoice(msg.Value)
 
 	case codegen.InputSourceDownloaded:
-		return c.HandleDownloaded(msg.Value)
+		return c.HandleSourceDownloaded(msg.Value)
 
 	case codegen.InputChainName:
 		c.State.ChainName = msg.Value
@@ -356,10 +356,10 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.NextStep()
 
 	case codegen.RunGenerate:
-		return c.CmdGenerate(c.State.Generate)
+		return c.HandleRunGenerate(c.State.Generate)
 
 	case codegen.ReturnGenerate:
-		return c.CmdDownloadFiles(msg)
+		return c.HandleReturnGenerate(msg)
 
 	}
 

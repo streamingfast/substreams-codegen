@@ -1,3 +1,4 @@
 {{- range $i, $contract := .Contracts }}
+#[allow(unused, non_camel_case_types)]
 pub mod {{ $contract.Identifier }}_contract;
 {{- end }}

@@ -1,16 +1,18 @@
 package stellartransactionsoperations
 
 import (
-	"encoding/json"
 	"fmt"
 	"regexp"
 
-	registry "github.com/pinax-network/graph-networks-libs/packages/golang/lib"
-	networks "github.com/streamingfast/firehose-networks"
 	codegen "github.com/streamingfast/substreams-codegen"
+	"github.com/streamingfast/substreams-codegen/chains"
 	"github.com/streamingfast/substreams-codegen/loop"
 	pbconvo "github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1"
 )
+
+var sharedFlowConfig = codegen.SharedFlowConfig{
+	ValidChains: chains.StellarNetworks(),
+}
 
 type Convo struct {
 	*codegen.Conversation[*Project]
@@ -33,18 +35,11 @@ func init() {
 }
 
 func (c *Convo) NextStep() loop.Cmd {
+	if !c.IsPreSharedFlowDone(sharedFlowConfig) {
+		return c.NextPreSharedFlowStep(sharedFlowConfig)
+	}
+
 	p := c.State
-	if p.Name == "" {
-		return codegen.Cmd(codegen.AskProjectName{})
-	}
-
-	if p.ChainName == "" {
-		return codegen.Cmd(codegen.AskChainName{})
-	}
-
-	if !networks.GetSubstreamsRegistry().Has(p.ChainName) {
-		return loop.SeqAnys(codegen.MsgInvalidChainName{}, codegen.AskChainName{})
-	}
 
 	if p.FilterType == "" {
 		return codegen.Cmd(AskFilterType{})
@@ -54,42 +49,19 @@ func (c *Convo) NextStep() loop.Cmd {
 		return codegen.Cmd(AskFilter{})
 	}
 
-	return codegen.Cmd(codegen.RunGenerate{})
+	return c.NextPostSharedFlowStep(sharedFlowConfig)
 }
 
 func (c *Convo) Update(msg loop.Msg) loop.Cmd {
+	if c.IsPreSharedFlowMsg(msg, sharedFlowConfig) {
+		return c.UpdatePreSharedFlowMsg(msg, sharedFlowConfig, c.NextStep)
+	}
+
+	if c.IsPostSharedFlowMsg(msg, sharedFlowConfig) {
+		return c.UpdatePostSharedFlowMsg(msg, sharedFlowConfig)
+	}
+
 	switch msg := msg.(type) {
-	case codegen.MsgStart:
-		c.SetClientVersion(msg.Version)
-		var msgCmd loop.Cmd
-		if msg.Hydrate != nil {
-			if err := json.Unmarshal([]byte(msg.Hydrate.SavedState), &c.State); err != nil {
-				return loop.Quit(fmt.Errorf(`something went wrong, here's an error message to share with our devs (%s); we've notified them already`, err))
-			}
-
-			msgCmd = c.Msg().Message("Ok, I reloaded your state.").Cmd()
-		} else {
-			msgCmd = c.Msg().Message("Ok, let's start a new package.").Cmd()
-		}
-		return loop.Seq(msgCmd, c.NextStep())
-
-	case codegen.AskProjectName:
-		return c.CmdAskProjectName()
-
-	case codegen.InputProjectName:
-		c.State.Name = msg.Value
-		return c.NextStep()
-
-	case codegen.AskChainName:
-		var labels, values []string
-		for _, network := range stellarNetworks() {
-			labels = append(labels, network.FullName)
-			values = append(values, network.ID)
-		}
-		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain", "chain").
-			Labels(labels...).
-			Values(values...).
-			Cmd()
 	case AskFilterType:
 		return c.Action(InputFilterType{}).ListSelect("What kind of data do you want to index?\n\n- Raw transactions: you can filter the transactions based on source account at the transactions and/or operation level.\n- Operations: you can get operatios filtered by operation name\n\n", "data_type").
 			Labels("Raw transactions (filtered by source account(s))", "Operations (filtered by operation name)").
@@ -123,33 +95,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.Msg().
 			Messagef("%s", msg.Err).
 			Cmd()
-
-	case codegen.MsgInvalidChainName:
-		return c.Msg().
-			Messagef(`Hmm, %q seems like an invalid chain name. Maybe it was supported and is not anymore?`, c.State.ChainName).
-			Cmd()
-
-	case codegen.InputSubstreamsConsumptionChoice:
-		return c.HandleSubstreamsConsumptionChoice(msg.Value)
-
-	case codegen.InputSourceDownloaded:
-		return c.HandleDownloaded(msg.Value)
-
-	case codegen.InputChainName:
-		c.State.ChainName = msg.Value
-		if networks.GetSubstreamsRegistry().Has(msg.Value) {
-			return loop.Seq(
-				c.Msg().Messagef("Got it, will be using chain %q", c.State.ChainDisplayName()).Cmd(),
-				c.NextStep(),
-			)
-		}
-		return c.NextStep()
-
-	case codegen.RunGenerate:
-		return c.CmdGenerate(c.State.Generate)
-
-	case codegen.ReturnGenerate:
-		return c.CmdDownloadFiles(msg)
 	}
 
 	return loop.Quit(fmt.Errorf("invalid loop message: %T", msg))
@@ -167,10 +112,4 @@ var filterRegexp = regexp.MustCompile(`^[a-zA-Z0-9_]+(,[a-zA-Z0-9_]+)*$`)
 
 func isFilterCorrect(s string) bool {
 	return filterRegexp.MatchString(s)
-}
-
-var stellarNetworkRegexp = regexp.MustCompile(`^stellar`)
-
-func stellarNetworks() []*registry.Network {
-	return networks.GetSubstreamsRegistry().Search(stellarNetworkRegexp)
 }

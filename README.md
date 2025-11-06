@@ -16,6 +16,18 @@ Install reflex `go install github.com/cespare/reflex@latest` and do
 reflex -c .reflex
 ```
 
+### Integration Tests
+
+Requires Docker, simply do:
+
+```
+RUN_INTEGRATION_TESTS=true INTEGRATION_TESTS_IN_DOCKER=true go test ./tests -v -parallel 6
+```
+
+You can try with higher value for parallel (controls how many tests runs in parallel). I had errors with the default value (`GOMAXPROCS`) and changing it to `-parallel 6` made it work properly.
+
+It's possible to set `INTEGRATION_TESTS_IN_DOCKER=false` to run the tests on your machine directly, less recommended because this is not how the GitHub CI is configured, but should has a faster runtime.
+
 ## Principles
 
 You write a `Conversation` (or `Convo` for short) struct.

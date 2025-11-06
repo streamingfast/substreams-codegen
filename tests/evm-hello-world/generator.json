@@ -3,7 +3,6 @@
   "state": {
     "name": "my_project",
     "chainName": "mainnet",
-    "initialBlock": 0,
     "initialBlockSet": true
   }
 }

@@ -1,54 +1,53 @@
+#[allow(unused)]
 mod pb;
 
-use crate::pb::mydata::v1::{MyData, NearTransaction, NearAction};
+use crate::pb::mydata::v1::{CallAction, MyData, Transaction};
 use pb::mydata::v1 as mydata;
-use substreams_near::pb::sf::near::r#type::v1::Block;
-use prost::Message;
-use prost_types::Timestamp;
 use substreams::Hex;
+use substreams_near::pb::sf::near::r#type::v1::{action::Action, Block};
 
 #[substreams::handlers::map]
 fn map_my_data(block: Block) -> Result<mydata::MyData, substreams::errors::Error> {
-    let header = block.header.as_ref().unwrap();
-    
-    let mut transactions: Vec<NearTransaction> = Vec::new();
-    
+    let mut transactions: Vec<Transaction> = Vec::new();
+
     // Process transactions from all shards
     for shard in block.shards {
         if let Some(chunk) = shard.chunk {
             for tx_with_outcome in chunk.transactions {
+                // Here you can filter out transactions you care about, just use
+                // an if statement and continue to skip unwanted transactions.
+
                 let tx = tx_with_outcome.transaction.unwrap();
-                
-                let mut actions: Vec<NearAction> = Vec::new();
-                for action in tx.actions {
-                    // Convert action to our custom format
-                    // Note: This is a simplified example - you would need to handle
-                    // different action types (CreateAccount, DeployContract, FunctionCall, etc.)
-                    let action_data = NearAction {
-                        action_type: "Unknown".to_string(), // You would determine the actual action type
-                        action_data: None, // You would serialize the actual action data
-                    };
-                    actions.push(action_data);
-                }
-                
-                let near_tx = NearTransaction {
+                let actions: Vec<CallAction> = tx
+                    .actions
+                    .into_iter()
+                    .filter_map(|action| {
+                        let action = action.action?;
+
+                        // Here we only interpreted FunctionCall actions, you can
+                        // extend this to other action types as needed. Explore
+                        // the Action enum in the generated protobuf code to see
+                        // other available action types.
+                        if let Action::FunctionCall(fc) = action {
+                            return Some(CallAction {
+                                name: fc.method_name,
+                                args: fc.args,
+                            });
+                        }
+
+                        None
+                    })
+                    .collect();
+
+                transactions.push(Transaction {
                     signer_id: tx.signer_id,
                     receiver_id: tx.receiver_id,
                     actions,
                     transaction_hash: Hex::encode(&tx.hash.unwrap().bytes),
-                };
-                
-                transactions.push(near_tx);
+                });
             }
         }
     }
 
-    Ok(MyData {
-        block_number: header.height,
-        timestamp: Some(Timestamp {
-            seconds: (header.timestamp / 1_000_000_000) as i64,
-            nanos: (header.timestamp % 1_000_000_000) as i32,
-        }),
-        transactions,
-    })
+    Ok(MyData { transactions })
 }

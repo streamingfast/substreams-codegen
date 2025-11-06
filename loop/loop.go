@@ -2,6 +2,8 @@ package loop
 
 import (
 	"context"
+
+	"go.uber.org/zap"
 )
 
 // loop is the micro framework for the Scheduler's event loop,
@@ -38,6 +40,7 @@ loop:
 		case msg := <-l.msgs:
 			if quit, ok := msg.(QuitMsg); ok {
 				err = quit.err
+				zlog.Info("received QuitMsg, event loop quitting", zap.Error(err))
 				break loop
 			}
 

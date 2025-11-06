@@ -50,7 +50,6 @@ func (a *ABI) ExtractItemsFromABI(data []byte) error {
 		case EventType:
 			items = append(items, &StarknetEvent{})
 		default:
-			fmt.Printf("ATTRIBUTE: %+v\n", attribute)
 			items = append(items, &OtherItem{})
 		}
 	}
@@ -83,9 +82,9 @@ func CmdDecodeABI(contract *Contract) loop.Cmd {
 
 		err := abi.ExtractItemsFromABI(contract.RawABI)
 		if err != nil {
-			panic("decoding contract abi")
+			return ReturnRunDecodeContractABI{Abi: abi, Err: fmt.Errorf("extract items from ABI: %w", err)}
 		}
 
-		return ReturnRunDecodeContractABI{Abi: abi, Err: err}
+		return ReturnRunDecodeContractABI{Abi: abi}
 	}
 }

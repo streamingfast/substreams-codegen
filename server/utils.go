@@ -12,6 +12,10 @@ import (
 	"go.uber.org/zap"
 )
 
+var (
+	ErrConversationTimeout = fmt.Errorf("conversation timed out")
+)
+
 func (s *server) writeErrorWithMsg(w http.ResponseWriter, statusCode int, message string, err error) {
 	if err != nil {
 		s.logger.Error(message, zap.Error(err))

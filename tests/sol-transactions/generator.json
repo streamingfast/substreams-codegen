@@ -2,7 +2,7 @@
   "generator": "sol-transactions",
   "state": {
     "name": "my_project",
-    "chainName": "",
+    "chainName": "sol-mainnet",
     "initialBlockSet": true,
     "filter": "program:TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
   }

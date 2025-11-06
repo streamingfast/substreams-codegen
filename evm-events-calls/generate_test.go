@@ -82,8 +82,8 @@ func Test_Generate(t *testing.T) {
 			assert.Equal(t, RunDecodeContractABI{}, convo.NextStep()(), c.generatorFile)
 			for _, contract := range p.Contracts {
 				res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
-				require.NoError(t, res.Err)
-				contract.abi = res.Abi
+				require.NoError(t, res.err)
+				contract.abi = res.abi
 			}
 
 			for _, dynamicContract := range p.DynamicContracts {
@@ -110,60 +110,6 @@ func Test_Generate(t *testing.T) {
 	}
 }
 
-//func TestGoldenImage(t *testing.T) {
-//	cases := []struct {
-//		name           string
-//		generatorFile  string
-//		expectedOutput string
-//	}{
-//		{
-//			name:           "complex_abi",
-//			generatorFile:  "./testdata/complex_abi.json",
-//			expectedOutput: "./testoutput/complex_abi",
-//		},
-//	}
-//
-//	for _, c := range cases {
-//		t.Run(c.name, func(t *testing.T) {
-//			p := LoadProjectFromState(t, c.generatorFile)
-//
-//			for _, contract := range p.Contracts {
-//				res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
-//				require.NoError(t, res.Err)
-//				contract.Abi = res.Abi
-//			}
-//
-//			for _, dynamicContract := range p.DynamicContracts {
-//				res := cmdDecodeDynamicABI(dynamicContract)().(ReturnRunDecodeDynamicContractABI)
-//				require.NoError(t, res.Err)
-//				dynamicContract.Abi = res.Abi
-//
-//				for _, contract := range p.Contracts {
-//					if contract.Name == dynamicContract.ParentContractName {
-//						dynamicContract.parentContract = contract
-//					}
-//				}
-//			}
-//
-//			p.outputType = outputTypeSubgraph
-//
-//			sourceFiles, projectFiles, Err := p.Generate(outputTypeSubgraph)
-//			require.NoError(t, Err)
-//			assert.NotEmpty(t, len(sourceFiles))
-//			assert.NotEmpty(t, len(projectFiles))
-//
-//			for fileName, fileContent := range projectFiles {
-//				goldenFileName := c.expectedOutput + "/" + strings.TrimPrefix(fileName, "substreams/")
-//				goldenContent, Err := os.ReadFile(goldenFileName)
-//				require.NoError(t, Err)
-//
-//				require.Equal(t, goldenContent, fileContent)
-//			}
-//		})
-//	}
-//
-//}
-
 func TestUniFactory(t *testing.T) {
 	convo := loadProjectFromState(t, "./testdata/uniswap_factory_v3.json")
 	p := convo.State
@@ -173,8 +119,8 @@ func TestUniFactory(t *testing.T) {
 
 	for _, contract := range p.Contracts {
 		res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
-		require.NoError(t, res.Err)
-		contract.abi = res.Abi
+		require.NoError(t, res.err)
+		contract.abi = res.abi
 	}
 
 	res := p.Generate()
@@ -197,8 +143,8 @@ func TestBaycSQL(t *testing.T) {
 
 	for _, contract := range p.Contracts {
 		res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
-		require.NoError(t, res.Err)
-		contract.abi = res.Abi
+		require.NoError(t, res.err)
+		contract.abi = res.abi
 	}
 
 	res := p.Generate()
@@ -215,8 +161,8 @@ func Test_Uniswapv3riggersDynamicDatasources(t *testing.T) {
 
 	for _, contract := range p.Contracts {
 		res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
-		require.NoError(t, res.Err)
-		contract.abi = res.Abi
+		require.NoError(t, res.err)
+		contract.abi = res.abi
 	}
 
 	for _, contract := range p.DynamicContracts {
@@ -243,8 +189,8 @@ func Test_BaycTriggers(t *testing.T) {
 
 	for _, contract := range p.Contracts {
 		res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
-		require.NoError(t, res.Err)
-		contract.abi = res.Abi
+		require.NoError(t, res.err)
+		contract.abi = res.abi
 	}
 
 	res := p.Generate()

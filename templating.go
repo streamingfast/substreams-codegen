@@ -9,22 +9,26 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/huandu/xstrings"
-	"github.com/iancoleman/strcase"
-
 	"github.com/bmatcuk/doublestar/v4"
 	"github.com/golang-cz/textcase"
+	"github.com/huandu/xstrings"
+	"github.com/iancoleman/strcase"
 )
 
 var templateFuncs = template.FuncMap{
 	"add": func(left int, right int) int {
 		return left + right
 	},
+	"upper": strings.ToUpper,
+	"lower": strings.ToLower,
+
 	"toUpper":                strings.ToUpper,
+	"toLower":                strings.ToLower,
 	"toKebabCase":            textcase.KebabCase,
 	"toSnakeCase":            xstrings.ToSnakeCase,
 	"toLowerCamelCase":       strcase.ToLowerCamel,
 	"toPascalCase":           textcase.PascalCase,
+	"toConstantCase":         strcase.ToScreamingSnake,
 	"sanitizeProtoFieldName": SanitizeProtoFieldName,
 }
 

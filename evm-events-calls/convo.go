@@ -19,6 +19,11 @@ const UNISWAP_V3_FACTORY_ADDRESS = "0x1f98431c8ad98523631ae4a59f267346ea31f984"
 var QuitInvalidContext = loop.Quit(fmt.Errorf("invalid state context: no current contract"))
 var AbiFilepathPrefix = "file://"
 
+var sharedFlowConfig = codegen.SharedFlowConfig{
+	// For now, we ask in this specific conversation for the chain's name, to be refactored at some point
+	ValidChains: nil,
+}
+
 func init() {
 	codegen.RegisterConversation(
 		"evm-events-calls",
@@ -35,9 +40,11 @@ type Convo struct {
 }
 
 func New() codegen.Converser {
-	return &Convo{&codegen.Conversation[*Project]{
-		State: &Project{currentContractIdx: -1},
-	}}
+	return &Convo{
+		Conversation: &codegen.Conversation[*Project]{
+			State: &Project{currentContractIdx: -1},
+		},
+	}
 }
 
 func (c *Convo) contextContract() *Contract {
@@ -49,11 +56,11 @@ func (c *Convo) contextContract() *Contract {
 }
 
 func (c *Convo) NextStep() (out loop.Cmd) {
-	p := c.State
-	if p.Name == "" {
-		return cmd(codegen.AskProjectName{})
+	if !c.IsPreSharedFlowDone(sharedFlowConfig) {
+		return c.NextPreSharedFlowStep(sharedFlowConfig)
 	}
 
+	p := c.State
 	if p.ChainName == "" {
 		return cmd(codegen.AskChainName{})
 	}
@@ -162,36 +169,15 @@ func (c *Convo) NextStep() (out loop.Cmd) {
 		return cmd(AskAddContract{})
 	}
 
-	return cmd(codegen.RunGenerate{})
+	return c.NextPostSharedFlowStep(sharedFlowConfig)
 }
 
 func (c *Convo) Update(msg loop.Msg) loop.Cmd {
+	if c.IsPreSharedFlowMsg(msg, sharedFlowConfig) {
+		return c.UpdatePreSharedFlowMsg(msg, sharedFlowConfig, c.NextStep)
+	}
+
 	switch msg := msg.(type) {
-	case codegen.MsgStart:
-		c.SetClientVersion(msg.Version)
-		var msgCmd loop.Cmd
-		if msg.Hydrate != nil {
-			if err := json.Unmarshal([]byte(msg.Hydrate.SavedState), &c.State); err != nil {
-				return loop.Quit(fmt.Errorf(`something went wrong, here's an error message to share with our devs (%s); we've notified them already`, err))
-			}
-
-			if err := validateIncomingState(c.State); err != nil {
-				return loop.Quit(fmt.Errorf(`something went wrong, the initial state has not been validated: %w`, err))
-			}
-
-			msgCmd = c.Msg().Message("Ok, I reloaded your state.").Cmd()
-		} else {
-			msgCmd = c.Msg().Message("Ok, let's start a new package.").Cmd()
-		}
-		return loop.Seq(msgCmd, c.NextStep())
-
-	case codegen.AskProjectName:
-		return c.CmdAskProjectName()
-
-	case codegen.InputProjectName:
-		c.State.Name = msg.Value
-		return c.NextStep()
-
 	case codegen.AskChainName:
 		var labels, values []string
 		for _, conf := range ChainConfigs {
@@ -219,12 +205,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			)
 		}
 		return c.NextStep()
-
-	case codegen.InputSubstreamsConsumptionChoice:
-		return c.HandleSubstreamsConsumptionChoice(msg.Value)
-
-	case codegen.InputSourceDownloaded:
-		return c.HandleDownloaded(msg.Value)
 
 	case StartFirstContract:
 		c.State.Contracts = append(c.State.Contracts, &Contract{})
@@ -357,6 +337,10 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			Cmd()
 
 	case InputContractABIFile:
+		if msg.Error != nil && *msg.Error != "" {
+			return loop.Seq(c.Msg().Messagef("The ABI file couldn't be read correctly: %q", *msg.Error).Cmd(), cmd(AskContractABIFile{}))
+		}
+
 		contract := c.contextContract()
 		if contract == nil {
 			return QuitInvalidContext
@@ -433,12 +417,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 		config := c.State.ChainConfig()
 		if config.ApiEndpoint == "" && config.ApiBaseURL == "" {
-			/*if contract.AbiType == "string" {
-				return cmd(AskContractABIString{})
-			} else if contract.AbiType == "file" {
-				return cmd(AskContractABIFile{})
-			}*/
-
 			return cmd(AskContractABIType{})
 		}
 
@@ -505,10 +483,10 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		if contract == nil {
 			return QuitInvalidContext
 		}
-		if msg.Err != nil {
-			return loop.Quit(fmt.Errorf("decoding ABI for contract %q: %w", contract.Name, msg.Err))
+		if msg.err != nil {
+			return loop.Quit(fmt.Errorf("decoding ABI for contract %q: %w", contract.Name, msg.err))
 		}
-		contract.abi = msg.Abi
+		contract.abi = msg.abi
 		evt := contract.EventModels()
 		calls := contract.CallModels()
 
@@ -516,8 +494,8 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			return c.NextStep()
 		}
 
-		// the 'printf' is a hack because we can't do arithmetics in the template
-		// it means '+1'
+		// the 'printf' usage in the Go template below is a hack because we can't do
+		// arithmetics in the template, it means '+1'
 		peekABI := c.Msg().MessageTpl(`Ok, here's what the ABI would produce:
 
 `+"```"+`protobuf
@@ -621,7 +599,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		}
 		return func() loop.Msg {
 			initialBlock, err := contract.FetchInitialBlock(config)
-			return ReturnFetchContractInitialBlock{InitialBlock: initialBlock, Err: err}
+			return ReturnFetchContractInitialBlock{initialBlock: initialBlock, err: err}
 		}
 
 	case AskContractInitialBlock:
@@ -651,7 +629,7 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		}
 
 		return c.Action(InputContractInitialBlock{}).TextInput("Please enter the contract initial block number", "Submit").
-			DefaultValue(fmt.Sprintf("%d", msg.InitialBlock)).
+			DefaultValue(fmt.Sprintf("%d", msg.initialBlock)).
 			Validation(`^\d+$`, "Please enter a valid block number").
 			Cmd()
 
@@ -915,12 +893,10 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 		}
 		return c.NextStep()
 
-	case codegen.RunGenerate:
-		return c.CmdGenerate(c.State.Generate)
-
-	case codegen.ReturnGenerate:
-		return c.CmdDownloadFiles(msg)
-
+	default:
+		if c.IsPostSharedFlowMsg(msg, sharedFlowConfig) {
+			return c.UpdatePostSharedFlowMsg(msg, sharedFlowConfig)
+		}
 	}
 
 	return loop.Quit(fmt.Errorf("invalid loop message: %T", msg))

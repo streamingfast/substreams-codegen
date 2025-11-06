@@ -6,14 +6,13 @@ import (
 	"regexp"
 
 	codegen "github.com/streamingfast/substreams-codegen"
-	"github.com/streamingfast/substreams-codegen/base"
 )
 
 //go:embed templates/*
 var templatesFS embed.FS
 
 type Project struct {
-	base.ConversationState
+	codegen.BaseConversationState
 	Contracts              []*Contract `json:"contracts"`
 	ConfirmEnoughContracts bool        `json:"confirmEnoughContracts,omitempty"`
 

@@ -7,14 +7,14 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/streamingfast/dstore"
-	"github.com/streamingfast/logging"
 	"github.com/streamingfast/substreams-codegen/server"
 	"github.com/stretchr/testify/require"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 	"go.uber.org/zap"
 )
 
@@ -113,7 +113,6 @@ func TestIntegration(t *testing.T) {
 		},
 	}
 
-	var zlog, _ = logging.RootLogger("test", "test")
 	endpoint := "https://codegen-staging.substreams.dev"
 	if integrationTestsAgainstLocal {
 		fmt.Println("Starting local server... :51012")
@@ -149,7 +148,6 @@ func TestIntegration(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.name, func(t *testing.T) {
 			if parallel {
 				t.Parallel()
@@ -183,74 +181,96 @@ func runTestsInDocker(t *testing.T, cases []struct {
 	explorerApiKeyEnvName string
 	apiKeyNeeded          bool
 }, endpoint string) {
+	ctx := context.Background()
 
-	// Determine the correct build context based on current working directory
-	cwd, err := os.Getwd()
-	require.NoError(t, err)
-	
-	var buildContext string
-	if strings.HasSuffix(cwd, "/tests") {
-		// Running from tests directory, build context is current directory
-		buildContext = "."
-	} else {
-		// Running from root directory, build context is tests subdirectory
-		buildContext = "./tests"
-	}
+	// Build the Docker image once using Docker CLI (more efficient for parallel tests)
+	imageName := "substreams-test-image:latest"
+	fmt.Printf("Building Docker image %s for all tests...\n", imageName)
 
-	buildArgs := []string{
-		"build",
-		"-t",
-		"substreams-test-image",
-		buildContext,
-	}
+	buildCtx, buildCancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer buildCancel()
 
-	// Add timeout for Docker build to prevent hanging
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
-	defer cancel()
-	
-	fmt.Printf("Building Docker image with command: docker %s\n", strings.Join(buildArgs, " "))
-	buildCmd := exec.CommandContext(ctx, "docker", buildArgs...)
-
-	output, err := buildCmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("Failed to build Docker image: %v\nOutput: %s", err, string(output))
-	}
-	fmt.Println("Docker image built successfully")
+	// Tests are always run in the package folder (here "tests"), so "." refers to "tests" here
+	buildCmd := exec.CommandContext(buildCtx, "docker", "build", "-t", imageName, ".")
+	buildOutput, err := buildCmd.CombinedOutput()
+	require.NoError(t, err, "Failed to build Docker image: %v\nOutput: %s", err, string(buildOutput))
+	fmt.Printf("Docker image %s built successfully\n", imageName)
 
 	for _, c := range cases {
 		c := c
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
 
-			runArgs := []string{
-				"run",
-				"--rm",
-				"-t",
-				"--name",
-				c.name,
-				"-v",
-				fmt.Sprintf("%s:/app/generator.json", c.stateFile),
-				"-e",
-				"SUBSTREAMS_CODEGEN_ENDPOINT=" + endpoint,
-				"-e",
-				"BUF_TOKEN=" + os.Getenv("BUF_TOKEN"),
-				"substreams-test-image",
-			}
+			// Resolve absolute path for the state file
+			absStateFile, err := filepath.Abs(c.stateFile)
+			require.NoError(t, err)
 
-			// Add timeout for Docker run to prevent hanging
-			runCtx, runCancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			// Create and start container using the pre-built image
+			runCtx, runCancel := context.WithTimeout(ctx, 10*time.Minute)
 			defer runCancel()
-			
-			fmt.Printf("Running Docker container for test %s\n", c.name)
-			runCmd := exec.CommandContext(runCtx, "docker", runArgs...)
-			output, err = runCmd.CombinedOutput()
-			if err != nil {
-				t.Errorf("Docker run failed for test %s: %v\nOutput: %s", c.name, err, string(output))
+
+			fmt.Printf("Starting container for test %s\n", c.name)
+			container, err := testcontainers.GenericContainer(runCtx, testcontainers.GenericContainerRequest{
+				ContainerRequest: testcontainers.ContainerRequest{
+					Image: imageName,
+					Env: map[string]string{
+						"SUBSTREAMS_CODEGEN_ENDPOINT": endpoint,
+						"BUF_TOKEN":                   os.Getenv("BUF_TOKEN"),
+					},
+					Files: []testcontainers.ContainerFile{
+						{
+							HostFilePath:      absStateFile,
+							ContainerFilePath: "/app/generator.json",
+							FileMode:          0644,
+						},
+					},
+					WaitingFor: wait.ForExit().WithExitTimeout(5 * time.Minute),
+				},
+				Started: true,
+			})
+			require.NoError(t, err, "Failed to start container for test %s", c.name)
+
+			defer func() {
+				printContainerLogs(ctx, container, t.Name())
+				if err := container.Terminate(ctx); err != nil {
+					t.Logf("Failed to terminate container for test %s: %v", c.name, err)
+				}
+			}()
+
+			// The WaitingFor strategy handles waiting for exit, so the container
+			// should already be done when we reach here. Just check the exit code.
+			state, err := container.State(ctx)
+			require.NoError(t, err, "Failed to get container state for test %s", c.name)
+
+			if state.ExitCode != 0 {
+				t.Errorf("Container exited with non-zero code %d for test %s", state.ExitCode, c.name)
 			} else {
 				fmt.Printf("Test %s completed successfully\n", c.name)
 			}
-
 		})
+	}
+}
+
+func printContainerLogs(ctx context.Context, container testcontainers.Container, testName string) {
+	if logs, logErr := container.Logs(ctx); logErr == nil {
+		defer logs.Close()
+		logBytes := make([]byte, 0, 4096)
+		buf := make([]byte, 1024)
+		for {
+			n, readErr := logs.Read(buf)
+			if n > 0 {
+				logBytes = append(logBytes, buf[:n]...)
+			}
+			if readErr == io.EOF {
+				break
+			}
+			if readErr != nil {
+				break
+			}
+		}
+		if len(logBytes) > 0 {
+			fmt.Printf("Container logs for test %s:\n%s\n", testName, string(logBytes))
+		}
 	}
 }
 

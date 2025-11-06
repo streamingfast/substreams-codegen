@@ -1,8 +1,12 @@
 package codegen
 
 import (
+	"maps"
+	"slices"
+
 	"github.com/streamingfast/substreams-codegen/loop"
 	pbconvo "github.com/streamingfast/substreams-codegen/pb/sf/codegen/conversation/v1"
+	"go.uber.org/zap/zapcore"
 )
 
 type AskProjectName struct{}
@@ -43,6 +47,14 @@ type ReturnGenerate struct {
 	ProjectFiles map[string][]byte
 }
 
+func (c ReturnGenerate) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddReflected("files", slices.Collect(maps.Keys(c.ProjectFiles)))
+	if c.Err != nil {
+		enc.AddString("error", c.Err.Error())
+	}
+	return nil
+}
+
 func (c ReturnGenerate) Error(msg *MsgWrap) loop.Cmd {
 	return loop.Seq(
 		msg.Messagef("Code generation failed with error: %s", c.Err).Cmd(),
@@ -56,3 +68,14 @@ type MsgGenerateProgress struct {
 
 	Continue bool
 }
+
+//go:generate go run github.com/abice/go-enum@v0.7.0 -f=$GOFILE --forcelower --names --values --marshal
+
+// SubstreamsSinkChoice represents the type of a Substreams sink choice
+// that are possible for a user to select when generating a Substreams package.
+//
+// Use the lower case versions of the enum when sending it to the user.
+// Remain also backward compatible with the previous naming convention.
+//
+// ENUM(none, postgres, clickhouse, parquet, golang, rust, javascript, python)
+type SubstreamsSinkChoice string

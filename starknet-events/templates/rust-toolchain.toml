@@ -1,3 +1,7 @@
 [toolchain]
-components = [ "rustfmt" ]
-targets = [ "wasm32-unknown-unknown" ]
+# It seems starknet-types-core dependency does not compile with Rust
+# versions >= 1.87.0. So set this here temporarily to 1.86 until
+# we bump the dependencies properly.
+version = "1.86"
+components = ["rustfmt"]
+targets = ["wasm32-unknown-unknown"]

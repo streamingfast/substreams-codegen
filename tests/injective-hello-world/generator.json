@@ -3,6 +3,7 @@
   "state": {
     "name": "my_project",
     "chainName": "injective-mainnet",
+    "substreamsSinkChoice": "postgres",
     "initialBlockSet": true
   }
 }

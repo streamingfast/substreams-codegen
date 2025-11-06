@@ -4,14 +4,13 @@ import (
 	"embed"
 
 	codegen "github.com/streamingfast/substreams-codegen"
-	"github.com/streamingfast/substreams-codegen/base"
 )
 
 //go:embed templates/*
 var templatesFS embed.FS
 
 type Project struct {
-	base.ConversationState
+	codegen.BaseConversationState
 }
 
 func (p *Project) Generate() codegen.ReturnGenerate {
@@ -26,4 +25,3 @@ func (p *Project) Generate() codegen.ReturnGenerate {
 		"common-templates/buf.gen.yaml": "buf.gen.yaml",
 	})
 }
-

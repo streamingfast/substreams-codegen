@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	codegen "github.com/streamingfast/substreams-codegen"
-	"github.com/streamingfast/substreams-codegen/base"
 )
 
 //go:embed templates/*
@@ -24,7 +23,7 @@ type eventDesc struct {
 }
 
 type Project struct {
-	base.ConversationState
+	codegen.BaseConversationState
 	InitialBlock    uint64       `json:"initialBlock,omitempty"`
 	InitialBlockSet bool         `json:"initialBlockSet,omitempty"`
 	DataType        string       `json:"dataType,omitempty"`

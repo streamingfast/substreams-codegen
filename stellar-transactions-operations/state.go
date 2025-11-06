@@ -6,14 +6,13 @@ import (
 	"strings"
 
 	codegen "github.com/streamingfast/substreams-codegen"
-	"github.com/streamingfast/substreams-codegen/base"
 )
 
 //go:embed templates/*
 var templatesFS embed.FS
 
 type Project struct {
-	base.ConversationState
+	codegen.BaseConversationState
 	Compile    bool   `json:"compile,omitempty"` // optional field to write in state and automatically compile with no confirmation.
 	Download   bool   `json:"download,omitempty"`
 	FilterType string `json:"filterType,omitempty"`

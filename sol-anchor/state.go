@@ -4,14 +4,13 @@ import (
 	"embed"
 
 	codegen "github.com/streamingfast/substreams-codegen"
-	"github.com/streamingfast/substreams-codegen/base"
 )
 
 //go:embed templates/*
 var templatesFS embed.FS
 
 type Project struct {
-	base.ConversationState
+	codegen.BaseConversationState
 	InitialBlock    uint64 `json:"initialBlock,omitempty"`
 	InitialBlockSet bool   `json:"initialBlockSet,omitempty"`
 	IdlFormat       string `json:"idlFormat,omitempty"`

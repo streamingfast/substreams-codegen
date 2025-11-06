@@ -47,7 +47,7 @@ type ReturnFetchContractABI struct {
 
 type StartFirstContract struct{} // Start asking for contract inputs
 type AskContractABI struct{}
-type InputContractABI struct{ pbconvo.UserInput_TextInput }
+type InputContractABI struct{ pbconvo.UserInput_LocalFile }
 
 type RunDecodeContractABI struct{}
 type ReturnRunDecodeContractABI struct {
@@ -57,12 +57,6 @@ type ReturnRunDecodeContractABI struct {
 
 type AskConfirmContractABI struct{}
 type InputConfirmContractABI struct{ pbconvo.UserInput_Confirmation }
-
-//type FetchContractInitialBlock struct{}
-//type ReturnFetchContractInitialBlock struct {
-//	InitialBlock uint64
-//	Err          error
-//}
 
 type AskAddContract struct{}
 type InputAddContract struct{ pbconvo.UserInput_Confirmation }

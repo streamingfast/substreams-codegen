@@ -1,49 +1,45 @@
+#[allow(unused)]
 mod pb;
 mod abi;
 
-use pb::starknet::v1::*;
-{{- range $i, $contract := .Contracts }}
-use crate::abi::{{ $contract.Identifier }}_contract::Event as {{ $contract.IdentifierCapitalize }}Event;
-{{- end }}
-
-use substreams::Hex;
-use cainome::cairo_serde::CairoSerde;
-use starknet::core::types::Felt;
-use substreams::log;
 use crate::pb::sf::substreams::starknet::r#type::v1::Transactions;
-use num_traits::cast::ToPrimitive;
+use pb::starknet::v1::*;
 use starknet::core::types::EmittedEvent;
+use starknet::core::types::Felt;
+use substreams::hex;
+
+{{ range $i, $contract := .Contracts }}
+use crate::abi::{{ $contract.Identifier }}_contract::Event as {{ $contract.IdentifierCapitalize }}Event;
+{{ end }}
+
+{{ range $i, $contract := .Contracts }}
+const {{ $contract.Identifier | upper }}_ADDRESS: [u8; 32] = hex!("{{ $contract.AddressWithoutPrefix }}");
+{{ end }}
 
 {{- range $i, $contract := .Contracts }}
 #[substreams::handlers::map]
 fn map_{{ $contract.Identifier }}_events(transactions: Transactions) -> Result<Events, substreams::errors::Error> {
     let mut proto_events = Events::default();
     for transaction in transactions.transactions_with_receipt {
-        let data = transaction.receipt.unwrap();
+        let receipt = transaction.receipt.unwrap();
 
-        let data_events = data.events;
-
-        for event in data_events {
-            let event_from_address = Hex(event.from_address.as_slice()).to_string();
-
-            if event_from_address != "{{ $contract.AddressWithoutPrefix }}" {
+        for event in receipt.events {
+            if event.from_address != {{ $contract.Identifier | upper }}_ADDRESS {
                 continue;
             }
 
-            let mut data_felts = vec![];
             let mut keys_felts = vec![];
             for key in event.keys {
-                let key = Felt::from_bytes_be_slice(key.as_slice());
-                keys_felts.push(key);
+                keys_felts.push(Felt::from_bytes_be_slice(&key));
             }
 
+            let mut data_felts = vec![];
             for bytes in event.data {
-                let felt = Felt::from_bytes_be_slice(bytes.as_slice());
-                data_felts.push(felt);
+                data_felts.push(Felt::from_bytes_be_slice(&bytes));
             }
 
             let emitted_event = EmittedEvent {
-                from_address: Felt::from_bytes_be_slice(event.from_address.as_slice()),
+                from_address: Felt::from_bytes_be_slice(&event.from_address),
                 keys: keys_felts,
                 data: data_felts,
                 block_hash: None,
@@ -51,14 +47,12 @@ fn map_{{ $contract.Identifier }}_events(transactions: Transactions) -> Result<E
                 transaction_hash: Felt::default(),
             };
 
-            if let {{ $contract.Identifier}}_event = {{ $contract.IdentifierCapitalize }}Event::try_from(emitted_event).unwrap() {
-                let event_json = serde_json::to_string(&{{ $contract.Identifier}}_event).unwrap();
-                let event = Event {
-                    json_description: event_json
-                };
+            let decoded_event = {{ $contract.IdentifierCapitalize }}Event::try_from(emitted_event).expect("Could not decode {{ $contract.Identifier}} event");
+            let event_json = serde_json::to_string(&decoded_event).expect("Could not serialize {{ $contract.Identifier}} event to json");
 
-                proto_events.events.push(event);
-            }
+            proto_events.events.push(Event {
+                json_description: event_json
+            });
         }
     }
 

@@ -2,6 +2,8 @@ package loop
 
 import (
 	"time"
+
+	"go.uber.org/zap"
 )
 
 type Cmds []Cmd
@@ -72,6 +74,8 @@ type QuitMsg struct {
 }
 
 func Quit(err error) Cmd {
+	zlog.Info("event loop creating Quit message", zap.Error(err))
+
 	return func() Msg {
 		return QuitMsg{err}
 	}

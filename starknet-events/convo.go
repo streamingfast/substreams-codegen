@@ -3,13 +3,11 @@ package starknet_events
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/dustin/go-humanize"
-	registry "github.com/pinax-network/graph-networks-libs/packages/golang/lib"
 
 	networks "github.com/streamingfast/firehose-networks"
 	codegen "github.com/streamingfast/substreams-codegen"
@@ -20,6 +18,12 @@ var QuitInvalidContext = loop.Quit(fmt.Errorf("invalid state context: no current
 var AbiFilepathPrefix = "file://"
 
 const EKUBO_POSITIONS_CONTRACT = "0x02e0af29598b407c8716b17f6d2795eca1b471413fa03fb145a5e33722184067"
+
+var starknetNetworkRegexp = regexp.MustCompile(`^starknet`)
+
+var sharedFlowConfig = codegen.SharedFlowConfig{
+	ValidChains: networks.GetSubstreamsRegistry().Search(starknetNetworkRegexp),
+}
 
 type Convo struct {
 	*codegen.Conversation[*Project]
@@ -45,18 +49,11 @@ func init() {
 var cmd = codegen.Cmd
 
 func (c *Convo) NextStep() loop.Cmd {
+	if !c.IsPreSharedFlowDone(sharedFlowConfig) {
+		return c.NextPreSharedFlowStep(sharedFlowConfig)
+	}
+
 	p := c.State
-	if p.Name == "" {
-		return cmd(codegen.AskProjectName{})
-	}
-
-	if p.ChainName == "" {
-		return cmd(codegen.AskChainName{})
-	}
-
-	if !c.State.IsValidChainInput(p.ChainName) {
-		return loop.Seq(cmd(codegen.MsgInvalidChainName{}), cmd(codegen.AskChainName{}))
-	}
 
 	if len(p.Contracts) == 0 {
 		return cmd(StartFirstContract{})
@@ -107,28 +104,19 @@ func (c *Convo) NextStep() loop.Cmd {
 		return cmd(AskAddContract{})
 	}
 
-	return cmd(codegen.RunGenerate{})
+	return c.NextPostSharedFlowStep(sharedFlowConfig)
 }
 
 func (c *Convo) Update(msg loop.Msg) loop.Cmd {
+	if c.IsPreSharedFlowMsg(msg, sharedFlowConfig) {
+		return c.UpdatePreSharedFlowMsg(msg, sharedFlowConfig, c.NextStep)
+	}
+
+	if c.IsPostSharedFlowMsg(msg, sharedFlowConfig) {
+		return c.UpdatePostSharedFlowMsg(msg, sharedFlowConfig)
+	}
+
 	switch msg := msg.(type) {
-	case codegen.MsgStart:
-		c.SetClientVersion(msg.Version)
-		var msgCmd loop.Cmd
-		if msg.Hydrate != nil {
-			if err := json.Unmarshal([]byte(msg.Hydrate.SavedState), &c.State); err != nil {
-				return loop.Quit(fmt.Errorf(`something went wrong, here's an error message to share with our devs (%s); we've notified them already`, err))
-			}
-
-			msgCmd = c.Msg().Message("Ok, I reloaded your state.").Cmd()
-		} else {
-			msgCmd = c.Msg().Message("Ok, let's start a new package.").Cmd()
-		}
-		return loop.Seq(msgCmd, c.NextStep())
-
-	case codegen.AskProjectName:
-		return c.CmdAskProjectName()
-
 	case FetchContractABI:
 		contract := c.contextContract()
 		if contract == nil {
@@ -190,10 +178,15 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			Cmd()
 
 	case AskContractABI:
-		return c.Action(InputContractABI{}).TextInput(fmt.Sprintf("Please paste the contract ABI or the full JSON ABI file path starting with %sfullpath/to/Abi.json", AbiFilepathPrefix), "Submit").
+		return c.Action(InputContractABI{}).
+			LocalFile("Path to ABI JSON file or paste directly ABI content\n", "Submit").
 			Cmd()
 
 	case InputContractABI:
+		if msg.Error != nil && *msg.Error != "" {
+			return loop.Seq(c.Msg().Messagef("The ABI file couldn't be read correctly: %q", *msg.Error).Cmd(), cmd(AskContractABI{}))
+		}
+
 		contract := c.contextContract()
 		if contract == nil {
 			return QuitInvalidContext
@@ -201,32 +194,16 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 		// if the user pasted and empty string or hit the enter button by not supplying anything,
 		// we want to go back to the ABI question
-		if msg.Value == "" {
+		if len(msg.Value) == 0 {
 			contract.emptyABI = true
 			return c.NextStep()
 		}
 
-		var rawMessage json.RawMessage
-
-		if strings.HasPrefix(msg.Value, AbiFilepathPrefix) {
-			abiPath := strings.TrimPrefix(msg.Value, AbiFilepathPrefix)
-
-			fileBytes, err := os.ReadFile(abiPath)
-			if err != nil {
-				return loop.Seq(c.Msg().Messagef("Cannot read the ABI file %q: %s", abiPath, err).Cmd(), cmd(AskContractABI{}))
-			}
-
-			rawMessage = json.RawMessage(fileBytes)
-		} else {
-			rawMessage = json.RawMessage(msg.Value)
-		}
-
-		if _, err := json.Marshal(rawMessage); err != nil {
+		if _, err := json.Marshal(msg.Value); err != nil {
 			return loop.Seq(c.Msg().Messagef("ABI %q isn't valid: %q", msg.Value, err).Cmd(), cmd(AskContractABI{}))
 		}
 
-		contract.RawABI = rawMessage
-
+		contract.RawABI = json.RawMessage(msg.Value)
 		return c.NextStep()
 
 	case AskAddContract:
@@ -281,6 +258,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		if contract == nil {
 			return QuitInvalidContext
 		}
+
 		return CmdDecodeABI(contract)
 
 	case ReturnRunDecodeContractABI:
@@ -289,7 +267,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			return QuitInvalidContext
 		}
 		if msg.Err != nil {
-			return loop.Quit(fmt.Errorf("decoding ABI for contract %q: %w", contract.Name, msg.Err))
+			return loop.Seq(c.Msg().Messagef("The ABI file couldn't be processed correctly: %q", msg.Err).Cmd(), cmd(AskContractABI{}))
 		}
 		contract.abi = msg.Abi
 
@@ -382,48 +360,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		contract.RawABI = nil
 		contract.abiFetchedInThisSession = false
 		return cmd(AskContractABI{})
-
-	case codegen.InputProjectName:
-		c.State.Name = msg.Value
-		return c.NextStep()
-
-	case codegen.AskChainName:
-		var labels, values []string
-		for _, conf := range starknetNetworks() {
-			labels = append(labels, conf.FullName)
-			values = append(values, conf.ID)
-		}
-		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain", "chain").
-			Labels(labels...).
-			Values(values...).
-			Cmd()
-
-	case codegen.MsgInvalidChainName:
-		return c.Msg().
-			Messagef(`Hmm, %q seems like an invalid chain name. Maybe it was supported and is not anymore?`, c.State.ChainName).
-			Cmd()
-
-	case codegen.InputSubstreamsConsumptionChoice:
-		return c.HandleSubstreamsConsumptionChoice(msg.Value)
-
-	case codegen.InputSourceDownloaded:
-		return c.HandleDownloaded(msg.Value)
-
-	case codegen.InputChainName:
-		c.State.ChainName = msg.Value
-		if c.State.IsValidChainInput(msg.Value) {
-			return loop.Seq(
-				c.Msg().Messagef("Got it, will be using chain %q", c.State.ChainDisplayName()).Cmd(),
-				c.NextStep(),
-			)
-		}
-		return c.NextStep()
-
-	case codegen.RunGenerate:
-		return c.CmdGenerate(c.State.Generate)
-
-	case codegen.ReturnGenerate:
-		return c.CmdDownloadFiles(msg)
 	}
 
 	return loop.Quit(fmt.Errorf("invalid loop message: %T", msg))
@@ -448,10 +384,4 @@ func (c *Convo) contextContract() *Contract {
 		return nil
 	}
 	return p.Contracts[p.currentContractIdx]
-}
-
-var starknetNetworkRegexp = regexp.MustCompile(`^starknet`)
-
-func starknetNetworks() []*registry.Network {
-	return networks.GetSubstreamsRegistry().Search(starknetNetworkRegexp)
 }

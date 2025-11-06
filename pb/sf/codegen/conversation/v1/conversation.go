@@ -3,6 +3,8 @@ package pbconvo
 import (
 	"fmt"
 	"strings"
+
+	"go.uber.org/zap/zapcore"
 )
 
 var nl = "\n    ┃ "
@@ -69,6 +71,34 @@ func (i UserInput_DownloadedFiles) Humanize(seconds int) string {
 
 func (i UserInput_File) Humanize(seconds int) string {
 	return fmt.Sprintf("< [Uploaded file]: %s", i.File.Filename)
+}
+
+func (i UserInput_Start) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	return nil
+}
+
+func (i UserInput_LocalFile) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("value", fmt.Sprintf("%d bytes", len(i.Value)))
+	if i.Error != nil {
+		enc.AddString("error", *i.Error)
+	}
+	return nil
+}
+
+func (h *UserInput_Hydrate) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("saved_state", fmt.Sprintf("%d bytes", len(h.SavedState)))
+	enc.AddUint32("last_msg_id", h.LastMsgId)
+	enc.AddBool("reset_conversation", h.ResetConversation)
+	return nil
+}
+
+func (h *SystemOutput) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddUint32("msg_id", h.MsgId)
+	enc.AddUint32("from_msg_id", h.FromMsgId)
+	enc.AddString("action_id", h.ActionId)
+	enc.AddString("state", fmt.Sprintf("%d bytes", len(h.State)))
+	enc.AddString("entry", fmt.Sprintf("%T", h.Entry))
+	return nil
 }
 
 // not used

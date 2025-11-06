@@ -11,7 +11,6 @@ import (
 	"github.com/golang-cz/textcase"
 	"github.com/huandu/xstrings"
 	codegen "github.com/streamingfast/substreams-codegen"
-	"github.com/streamingfast/substreams-codegen/base"
 	evm_events_calls "github.com/streamingfast/substreams-codegen/evm-events-calls"
 )
 
@@ -19,7 +18,7 @@ import (
 var templatesFS embed.FS
 
 type Project struct {
-	base.ConversationState
+	codegen.BaseConversationState
 	Contracts              []*Contract        `json:"contracts"`
 	DynamicContracts       []*DynamicContract `json:"dynamic_contracts"`
 	Compile                bool               `json:"compile,omitempty"` // optional field to write in state and automatically compile with no confirmation.

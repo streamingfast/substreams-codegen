@@ -90,8 +90,6 @@ func (c *Contract) setAliasesForEvents() {
 		eventName := event.Name
 		lastPart, newName := eventNameInfo(eventName)
 
-		fmt.Println(lastPart, newName)
-
 		if lastPart == "Event" {
 			// Event which are not enum, we can safely apply alias
 			if event.Kind != "enum" {

@@ -1,4 +1,5 @@
 mod abi;
+#[allow(unused)]
 mod pb;
 use hex_literal::hex;
 use pb::contract::v1 as contract;
@@ -12,10 +13,8 @@ use substreams_ethereum::pb::eth::v2 as eth;
 use substreams_ethereum::Event;
 {{- end }}
 
-#[allow(unused_imports)]
-use num_traits::cast::ToPrimitive;
-use std::str::FromStr;
-use substreams::scalar::BigDecimal;
+#[allow(unused_imports)] // Might not be needed depending on actual ABI, hence the allow
+use {num_traits::cast::ToPrimitive, std::str::FromStr, substreams::scalar::BigDecimal};
 
 substreams_ethereum::init!();
 
@@ -64,7 +63,11 @@ fn map_{{ $contract.Identifier }}_calls(blk: &eth::Block, calls: &mut contract::
                 .filter(|call| call.address == {{ toUpper $contract.IdentifierUpper }}_TRACKED_CONTRACT && abi::{{ $contract.Identifier }}_contract::functions::{{$rust.ABIStructName}}::match_call(call))
                 .filter_map(|call| {
                     match abi::{{ $contract.Identifier }}_contract::functions::{{$rust.ABIStructName}}::decode(call) {
+                        {{- if $rust.ProtoFieldABIConversionMap }}
                         Ok(decoded_call) => {
+                        {{- else }}
+                        Ok(_) => {
+                        {{- end}}
                             {{- if $rust.OutputFieldsString }}
                             let {{ $rust.OutputFieldsString }} = match abi::{{ $contract.Identifier }}_contract::functions::{{$rust.ABIStructName}}::output(&call.return_data) {
                                 Ok({{ $rust.OutputFieldsString }}) => {{`{`}}{{ $rust.OutputFieldsString }}{{`}`}}

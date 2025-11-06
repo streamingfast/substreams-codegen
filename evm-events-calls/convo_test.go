@@ -86,13 +86,13 @@ func TestConvoUpdate(t *testing.T) {
 	next = conv.Update(RunDecodeContractABI{})
 	msg, ok := next().(ReturnRunDecodeContractABI)
 	require.True(t, ok)
-	assert.Nil(t, msg.Err)
+	assert.Nil(t, msg.err)
 
 	next = conv.Update(msg)
 	// TODO: test the output with the given Abi methods in there...
 	assert.Equal(t, FetchContractInitialBlock{}, next())
 
-	next = conv.Update(ReturnFetchContractInitialBlock{Err: fmt.Errorf("failed")})
+	next = conv.Update(ReturnFetchContractInitialBlock{err: fmt.Errorf("failed")})
 	assert.Contains(t, next().(*pbconvo.SystemOutput).Entry.(*pbconvo.SystemOutput_TextInput_).TextInput.String(), "Please enter the contract initial block number")
 
 	next = conv.Update(InputContractInitialBlock{UserInput_TextInput: pbconvo.UserInput_TextInput{Value: "123"}})
@@ -137,6 +137,12 @@ func TestConvoUpdate(t *testing.T) {
 	assert.Equal(t, AskAddContract{}, next())
 
 	next = conv.Update(InputAddContract{UserInput_Confirmation: pbconvo.UserInput_Confirmation{Affirmative: false}})
+	require.Equal(t, codegen.AskSubstreamsConsumptionChoice{}, next())
+
+	next = conv.Update(codegen.InputSubstreamsConsumptionChoice{UserInput_Selection: pbconvo.UserInput_Selection{
+		Value: "postgres",
+		Label: "Postgres",
+	}})
 	assert.Equal(t, codegen.RunGenerate{}, next())
 
 	next = conv.Update(codegen.ReturnGenerate{ProjectFiles: nil})
@@ -144,7 +150,9 @@ func TestConvoUpdate(t *testing.T) {
 
 	// First part of sequence should be the download files command
 	downloadMsg := seq[0]().(*pbconvo.SystemOutput)
-	assert.NotNil(t, downloadMsg.GetDownloadFiles())
+	downloadFiles := downloadMsg.GetDownloadFiles()
+	assert.NotNil(t, downloadFiles)
+	assert.Len(t, downloadFiles.Files, 1)
 
 	// Second part should trigger InputSourceDownloaded which leads to the project ready message
 	next = conv.Update(codegen.InputSourceDownloaded{UserInput_TextInput: pbconvo.UserInput_TextInput{Value: "{project folder}"}})
@@ -152,14 +160,16 @@ func TestConvoUpdate(t *testing.T) {
 
 	// Now the project ready message should be in the first part of this new sequence
 	msg1 := seq[0]().(*pbconvo.SystemOutput)
-	assert.Contains(t, msg1.GetMessage().Markdown, "substreams build\nsubstreams auth\nsubstreams gui")
+	assert.Contains(t, msg1.GetMessage().Markdown, "substreams build")
+	assert.Contains(t, msg1.GetMessage().Markdown, "substreams auth")
+	assert.Contains(t, msg1.GetMessage().Markdown, "substreams gui")
 	assert.Contains(t, msg1.GetMessage().Markdown, "substreams registry login")
 	assert.Contains(t, msg1.GetMessage().Markdown, "substreams registry publish")
 
-	// Second part should be the consumption choice selection
-	consumptionMsg := seq[1]().(*pbconvo.SystemOutput)
-	assert.NotNil(t, consumptionMsg.GetListSelect())
-
+	// Second part should be the quit message
+	msg2 := seq[1]()
+	assert.NotNil(t, msg2)
+	assert.IsType(t, loop.QuitMsg{}, msg2)
 }
 
 func unpackSeq(t *testing.T, m loop.Msg, len int) (out []loop.Msg) {

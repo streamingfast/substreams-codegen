@@ -13,11 +13,11 @@ import (
 	"github.com/golang-cz/textcase"
 	"github.com/huandu/xstrings"
 	"github.com/streamingfast/eth-go"
-	"github.com/streamingfast/substreams-codegen/base"
+	codegen "github.com/streamingfast/substreams-codegen"
 )
 
 type Project struct {
-	base.ConversationState
+	codegen.BaseConversationState
 	Contracts              []*Contract        `json:"contracts"`
 	DynamicContracts       []*DynamicContract `json:"dynamic_contracts"`
 	ConfirmEnoughContracts bool               `json:"confirm_enough_contracts,omitempty"`

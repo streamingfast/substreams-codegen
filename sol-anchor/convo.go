@@ -8,9 +8,14 @@ import (
 
 	"github.com/mr-tron/base58"
 	codegen "github.com/streamingfast/substreams-codegen"
+	"github.com/streamingfast/substreams-codegen/chains"
 	"github.com/streamingfast/substreams-codegen/loop"
 	"github.com/tidwall/sjson"
 )
+
+var sharedFlowConfig = codegen.SharedFlowConfig{
+	ValidChains: chains.SolanaNetworks(),
+}
 
 type Convo struct {
 	*codegen.Conversation[*Project]
@@ -37,10 +42,11 @@ var cmd = codegen.Cmd
 var IdlFilepathPrefix = "file://"
 
 func (c *Convo) NextStep() loop.Cmd {
-	p := c.State
-	if p.Name == "" {
-		return cmd(codegen.AskProjectName{})
+	if !c.IsPreSharedFlowDone(sharedFlowConfig) {
+		return c.NextPreSharedFlowStep(sharedFlowConfig)
 	}
+
+	p := c.State
 
 	if p.IdlFormat == "" {
 		return cmd(AskIDLFormat{})
@@ -55,10 +61,6 @@ func (c *Convo) NextStep() loop.Cmd {
 		}
 	}
 
-	if p.ChainName == "" {
-		return cmd(codegen.AskChainName{})
-	}
-
 	if p.idl.ProgramID() == "" {
 		return cmd(AskProgramID{})
 	}
@@ -67,16 +69,14 @@ func (c *Convo) NextStep() loop.Cmd {
 		return cmd(codegen.AskInitialStartBlockType{})
 	}
 
-	return cmd(codegen.RunGenerate{})
+	return c.NextPostSharedFlowStep(sharedFlowConfig)
 }
 
 func (c *Convo) Update(msg loop.Msg) loop.Cmd {
-	switch msg := msg.(type) {
-	case codegen.MsgStart:
-		c.SetClientVersion(msg.Version)
-		var msgCmd loop.Cmd
-		if msg.Hydrate != nil {
-			if err := json.Unmarshal([]byte(msg.Hydrate.SavedState), &c.State); err != nil {
+	if c.IsPreSharedFlowMsg(msg, sharedFlowConfig) {
+		// Custom hydration logic for IDL
+		if startMsg, ok := msg.(codegen.MsgStart); ok && startMsg.Hydrate != nil {
+			if err := json.Unmarshal([]byte(startMsg.Hydrate.SavedState), &c.State); err != nil {
 				return loop.Quit(fmt.Errorf(`something went wrong, here's an error message to share with our devs (%s); we've notified them already`, err))
 			}
 
@@ -86,38 +86,15 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 				return loop.Quit(fmt.Errorf("could not decode IDL"))
 			}
 			c.State.idl = idl
-
-			msgCmd = c.Msg().Message("Ok, I reloaded your state.").Cmd()
-		} else {
-			msgCmd = c.Msg().Message("Ok, let's start a new package.").Cmd()
 		}
-		return loop.Seq(msgCmd, c.NextStep())
+		return c.UpdatePreSharedFlowMsg(msg, sharedFlowConfig, c.NextStep)
+	}
 
-	case codegen.AskProjectName:
-		return c.CmdAskProjectName()
+	if c.IsPostSharedFlowMsg(msg, sharedFlowConfig) {
+		return c.UpdatePostSharedFlowMsg(msg, sharedFlowConfig)
+	}
 
-	case codegen.InputProjectName:
-		c.State.Name = msg.Value
-		return c.NextStep()
-
-	case codegen.AskChainName:
-		labels := []string{"Solana Mainnet", "Solana Devnet"}
-		values := []string{"solana-mainnet", "solana-devnet"}
-		return c.Action(codegen.InputChainName{}).ListSelect("Please select the chain", "chain").
-			Labels(labels...).
-			Values(values...).
-			Cmd()
-
-	case codegen.InputSubstreamsConsumptionChoice:
-		return c.HandleSubstreamsConsumptionChoice(msg.Value)
-
-	case codegen.InputSourceDownloaded:
-		return c.HandleDownloaded(msg.Value)
-
-	case codegen.InputChainName:
-		c.State.ChainName = msg.Value
-		return c.NextStep()
-
+	switch msg := msg.(type) {
 	case codegen.AskInitialStartBlockType:
 		return c.Action(codegen.InputAskInitialStartBlockType{}).
 			TextInput(codegen.InputAskInitialStartBlockTypeTextInput(), "Submit").
@@ -161,6 +138,10 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			Cmd()
 
 	case InputIDLFile:
+		if msg.Error != nil && *msg.Error != "" {
+			return loop.Seq(c.Msg().Messagef("The IDL file couldn't be read correctly: %q", *msg.Error).Cmd(), cmd(AskIDLFile{}))
+		}
+
 		return inputIDLStep(c, string(msg.Value))
 
 	case AskConfirmIDL:
@@ -205,12 +186,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			)
 		}
 		return c.NextStep()
-
-	case codegen.RunGenerate:
-		return c.CmdGenerate(c.State.Generate)
-
-	case codegen.ReturnGenerate:
-		return c.CmdDownloadFiles(msg)
 	}
 
 	return loop.Quit(fmt.Errorf("invalid loop message: %T", msg))

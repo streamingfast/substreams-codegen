@@ -3,34 +3,43 @@
   "state": {
     "name": "my_project",
     "chainName": "starknet-mainnet",
+    "substreamsSinkChoice": "postgres",
     "contracts": [
       {
         "name": "ekubo",
-        "address": "0x2e0af29598b407c8716b17f6d2795eca1b471413fa03fb145a5e33722184067",
-        "initialBlock": 213,
+        "address": "0x02e0af29598b407c8716b17f6d2795eca1b471413fa03fb145a5e33722184067",
+        "initialBlock": 165388,
         "aliases": [
-          {
-            "OldName": "ekubo::positions::Positions::Event",
-            "NewName": "PositionsEvent"
-          },
           {
             "OldName": "ekubo::components::upgradeable::Upgradeable::Event",
             "NewName": "UpgradeableEvent"
+          },
+          {
+            "OldName": "ekubo::components::owned::Owned::Event",
+            "NewName": "OwnedEvent"
+          },
+          {
+            "OldName": "ekubo::interfaces::extensions::limit_orders::OrderKey",
+            "NewName": "OrderKeyV1"
+          },
+          {
+            "OldName": "core::array::Span::\u003c(core::integer::u64, ekubo::interfaces::extensions::limit_orders::OrderKey)\u003e",
+            "NewName": "OrderKey)\u003eV1"
           }
         ],
         "rawAbi": [
           {
-            "type": "impl",
             "name": "PositionsHasInterface",
+            "type": "impl",
             "interface_name": "ekubo::components::upgradeable::IHasInterface"
           },
           {
-            "type": "interface",
             "name": "ekubo::components::upgradeable::IHasInterface",
+            "type": "interface",
             "items": [
               {
-                "type": "function",
                 "name": "get_primary_interface_id",
+                "type": "function",
                 "inputs": [],
                 "outputs": [
                   {
@@ -42,13 +51,13 @@
             ]
           },
           {
-            "type": "impl",
             "name": "ILockerImpl",
+            "type": "impl",
             "interface_name": "ekubo::interfaces::core::ILocker"
           },
           {
-            "type": "struct",
             "name": "core::array::Span::\u003ccore::felt252\u003e",
+            "type": "struct",
             "members": [
               {
                 "name": "snapshot",
@@ -57,12 +66,12 @@
             ]
           },
           {
-            "type": "interface",
             "name": "ekubo::interfaces::core::ILocker",
+            "type": "interface",
             "items": [
               {
-                "type": "function",
                 "name": "locked",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "id",
@@ -83,13 +92,13 @@
             ]
           },
           {
-            "type": "impl",
             "name": "PositionsImpl",
+            "type": "impl",
             "interface_name": "ekubo::interfaces::positions::IPositions"
           },
           {
-            "type": "struct",
             "name": "ekubo::types::keys::PoolKey",
+            "type": "struct",
             "members": [
               {
                 "name": "token0",
@@ -114,8 +123,8 @@
             ]
           },
           {
-            "type": "enum",
             "name": "core::bool",
+            "type": "enum",
             "variants": [
               {
                 "name": "False",
@@ -128,8 +137,8 @@
             ]
           },
           {
-            "type": "struct",
             "name": "ekubo::types::i129::i129",
+            "type": "struct",
             "members": [
               {
                 "name": "mag",
@@ -142,8 +151,8 @@
             ]
           },
           {
-            "type": "struct",
             "name": "ekubo::types::bounds::Bounds",
+            "type": "struct",
             "members": [
               {
                 "name": "lower",
@@ -156,8 +165,8 @@
             ]
           },
           {
-            "type": "struct",
             "name": "ekubo::interfaces::positions::GetTokenInfoRequest",
+            "type": "struct",
             "members": [
               {
                 "name": "id",
@@ -174,8 +183,8 @@
             ]
           },
           {
-            "type": "struct",
             "name": "core::array::Span::\u003cekubo::interfaces::positions::GetTokenInfoRequest\u003e",
+            "type": "struct",
             "members": [
               {
                 "name": "snapshot",
@@ -184,8 +193,8 @@
             ]
           },
           {
-            "type": "struct",
             "name": "core::integer::u256",
+            "type": "struct",
             "members": [
               {
                 "name": "low",
@@ -198,8 +207,8 @@
             ]
           },
           {
-            "type": "struct",
             "name": "ekubo::types::pool_price::PoolPrice",
+            "type": "struct",
             "members": [
               {
                 "name": "sqrt_ratio",
@@ -212,8 +221,8 @@
             ]
           },
           {
-            "type": "struct",
             "name": "ekubo::interfaces::positions::GetTokenInfoResult",
+            "type": "struct",
             "members": [
               {
                 "name": "pool_price",
@@ -242,8 +251,8 @@
             ]
           },
           {
-            "type": "struct",
             "name": "core::array::Span::\u003cekubo::interfaces::positions::GetTokenInfoResult\u003e",
+            "type": "struct",
             "members": [
               {
                 "name": "snapshot",
@@ -252,8 +261,8 @@
             ]
           },
           {
+            "name": "ekubo::interfaces::extensions::twamm::OrderKey",
             "type": "struct",
-            "name": "ekubo::extensions::interfaces::twamm::OrderKey",
             "members": [
               {
                 "name": "sell_token",
@@ -278,18 +287,18 @@
             ]
           },
           {
+            "name": "core::array::Span::\u003c(core::integer::u64, ekubo::interfaces::extensions::twamm::OrderKey)\u003e",
             "type": "struct",
-            "name": "core::array::Span::\u003c(core::integer::u64, ekubo::extensions::interfaces::twamm::OrderKey)\u003e",
             "members": [
               {
                 "name": "snapshot",
-                "type": "@core::array::Array::\u003c(core::integer::u64, ekubo::extensions::interfaces::twamm::OrderKey)\u003e"
+                "type": "@core::array::Array::\u003c(core::integer::u64, ekubo::interfaces::extensions::twamm::OrderKey)\u003e"
               }
             ]
           },
           {
+            "name": "ekubo::interfaces::extensions::twamm::OrderInfo",
             "type": "struct",
-            "name": "ekubo::extensions::interfaces::twamm::OrderInfo",
             "members": [
               {
                 "name": "sale_rate",
@@ -306,22 +315,110 @@
             ]
           },
           {
+            "name": "core::array::Span::\u003cekubo::interfaces::extensions::twamm::OrderInfo\u003e",
             "type": "struct",
-            "name": "core::array::Span::\u003cekubo::extensions::interfaces::twamm::OrderInfo\u003e",
             "members": [
               {
                 "name": "snapshot",
-                "type": "@core::array::Array::\u003cekubo::extensions::interfaces::twamm::OrderInfo\u003e"
+                "type": "@core::array::Array::\u003cekubo::interfaces::extensions::twamm::OrderInfo\u003e"
               }
             ]
           },
           {
-            "type": "interface",
+            "name": "ekubo::interfaces::extensions::limit_orders::OrderKey",
+            "type": "struct",
+            "members": [
+              {
+                "name": "token0",
+                "type": "core::starknet::contract_address::ContractAddress"
+              },
+              {
+                "name": "token1",
+                "type": "core::starknet::contract_address::ContractAddress"
+              },
+              {
+                "name": "tick",
+                "type": "ekubo::types::i129::i129"
+              }
+            ]
+          },
+          {
+            "name": "core::option::Option::\u003c(core::integer::u64, core::integer::u128)\u003e",
+            "type": "enum",
+            "variants": [
+              {
+                "name": "Some",
+                "type": "(core::integer::u64, core::integer::u128)"
+              },
+              {
+                "name": "None",
+                "type": "()"
+              }
+            ]
+          },
+          {
+            "name": "core::array::Span::\u003c(core::integer::u64, ekubo::interfaces::extensions::limit_orders::OrderKey)\u003e",
+            "type": "struct",
+            "members": [
+              {
+                "name": "snapshot",
+                "type": "@core::array::Array::\u003c(core::integer::u64, ekubo::interfaces::extensions::limit_orders::OrderKey)\u003e"
+              }
+            ]
+          },
+          {
+            "name": "ekubo::interfaces::extensions::limit_orders::OrderState",
+            "type": "struct",
+            "members": [
+              {
+                "name": "initialized_ticks_crossed_snapshot",
+                "type": "core::integer::u64"
+              },
+              {
+                "name": "liquidity",
+                "type": "core::integer::u128"
+              }
+            ]
+          },
+          {
+            "name": "ekubo::interfaces::extensions::limit_orders::GetOrderInfoResult",
+            "type": "struct",
+            "members": [
+              {
+                "name": "state",
+                "type": "ekubo::interfaces::extensions::limit_orders::OrderState"
+              },
+              {
+                "name": "executed",
+                "type": "core::bool"
+              },
+              {
+                "name": "amount0",
+                "type": "core::integer::u128"
+              },
+              {
+                "name": "amount1",
+                "type": "core::integer::u128"
+              }
+            ]
+          },
+          {
+            "name": "core::array::Span::\u003cekubo::interfaces::extensions::limit_orders::GetOrderInfoResult\u003e",
+            "type": "struct",
+            "members": [
+              {
+                "name": "snapshot",
+                "type": "@core::array::Array::\u003cekubo::interfaces::extensions::limit_orders::GetOrderInfoResult\u003e"
+              }
+            ]
+          },
+          {
             "name": "ekubo::interfaces::positions::IPositions",
+            "type": "interface",
             "items": [
               {
-                "type": "function",
                 "name": "get_nft_address",
+                "type": "function",
                 "inputs": [],
                 "outputs": [
                   {
@@ -331,8 +428,8 @@
                 "state_mutability": "view"
               },
               {
-                "type": "function",
                 "name": "upgrade_nft",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "class_hash",
@@ -343,8 +440,8 @@
                 "state_mutability": "external"
               },
               {
-                "type": "function",
                 "name": "set_twamm",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "twamm_address",
@@ -355,8 +452,20 @@
                 "state_mutability": "external"
               },
               {
+                "name": "set_limit_orders",
                 "type": "function",
+                "inputs": [
+                  {
+                    "name": "limit_orders_address",
+                    "type": "core::starknet::contract_address::ContractAddress"
+                  }
+                ],
+                "outputs": [],
+                "state_mutability": "external"
+              },
+              {
                 "name": "get_twamm_address",
+                "type": "function",
                 "inputs": [],
                 "outputs": [
                   {
@@ -366,8 +475,19 @@
                 "state_mutability": "view"
               },
               {
+                "name": "get_limit_orders_address",
                 "type": "function",
+                "inputs": [],
+                "outputs": [
+                  {
+                    "type": "core::starknet::contract_address::ContractAddress"
+                  }
+                ],
+                "state_mutability": "view"
+              },
+              {
                 "name": "get_tokens_info",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "params",
@@ -382,8 +502,8 @@
                 "state_mutability": "view"
               },
               {
-                "type": "function",
                 "name": "get_token_info",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "id",
@@ -406,24 +526,40 @@
                 "state_mutability": "view"
               },
               {
+                "name": "get_orders_info_with_block_timestamp",
                 "type": "function",
-                "name": "get_orders_info",
                 "inputs": [
                   {
                     "name": "params",
-                    "type": "core::array::Span::\u003c(core::integer::u64, ekubo::extensions::interfaces::twamm::OrderKey)\u003e"
+                    "type": "core::array::Span::\u003c(core::integer::u64, ekubo::interfaces::extensions::twamm::OrderKey)\u003e"
                   }
                 ],
                 "outputs": [
                   {
-                    "type": "core::array::Span::\u003cekubo::extensions::interfaces::twamm::OrderInfo\u003e"
+                    "type": "(core::integer::u64, core::array::Span::\u003cekubo::interfaces::extensions::twamm::OrderInfo\u003e)"
                   }
                 ],
                 "state_mutability": "view"
               },
               {
+                "name": "get_orders_info",
                 "type": "function",
+                "inputs": [
+                  {
+                    "name": "params",
+                    "type": "core::array::Span::\u003c(core::integer::u64, ekubo::interfaces::extensions::twamm::OrderKey)\u003e"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "type": "core::array::Span::\u003cekubo::interfaces::extensions::twamm::OrderInfo\u003e"
+                  }
+                ],
+                "state_mutability": "view"
+              },
+              {
                 "name": "get_order_info",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "id",
@@ -431,19 +567,19 @@
                   },
                   {
                     "name": "order_key",
-                    "type": "ekubo::extensions::interfaces::twamm::OrderKey"
+                    "type": "ekubo::interfaces::extensions::twamm::OrderKey"
                   }
                 ],
                 "outputs": [
                   {
-                    "type": "ekubo::extensions::interfaces::twamm::OrderInfo"
+                    "type": "ekubo::interfaces::extensions::twamm::OrderInfo"
                   }
                 ],
                 "state_mutability": "view"
               },
               {
-                "type": "function",
                 "name": "mint",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "pool_key",
@@ -462,8 +598,8 @@
                 "state_mutability": "external"
               },
               {
-                "type": "function",
                 "name": "mint_with_referrer",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "pool_key",
@@ -486,8 +622,8 @@
                 "state_mutability": "external"
               },
               {
-                "type": "function",
                 "name": "mint_v2",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "referrer",
@@ -502,8 +638,8 @@
                 "state_mutability": "external"
               },
               {
-                "type": "function",
                 "name": "check_liquidity_is_zero",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "id",
@@ -522,8 +658,8 @@
                 "state_mutability": "view"
               },
               {
-                "type": "function",
                 "name": "unsafe_burn",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "id",
@@ -534,8 +670,8 @@
                 "state_mutability": "external"
               },
               {
-                "type": "function",
                 "name": "deposit_last",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "pool_key",
@@ -558,8 +694,8 @@
                 "state_mutability": "external"
               },
               {
-                "type": "function",
                 "name": "deposit_amounts_last",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "pool_key",
@@ -590,8 +726,8 @@
                 "state_mutability": "external"
               },
               {
-                "type": "function",
                 "name": "deposit",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "id",
@@ -618,8 +754,8 @@
                 "state_mutability": "external"
               },
               {
-                "type": "function",
                 "name": "deposit_amounts",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "id",
@@ -654,8 +790,8 @@
                 "state_mutability": "external"
               },
               {
-                "type": "function",
                 "name": "mint_and_deposit",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "pool_key",
@@ -678,8 +814,8 @@
                 "state_mutability": "external"
               },
               {
-                "type": "function",
                 "name": "mint_and_deposit_with_referrer",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "pool_key",
@@ -706,8 +842,8 @@
                 "state_mutability": "external"
               },
               {
-                "type": "function",
                 "name": "mint_and_deposit_and_clear_both",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "pool_key",
@@ -730,8 +866,8 @@
                 "state_mutability": "external"
               },
               {
-                "type": "function",
                 "name": "collect_fees",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "id",
@@ -754,8 +890,8 @@
                 "state_mutability": "external"
               },
               {
-                "type": "function",
                 "name": "withdraw",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "id",
@@ -794,8 +930,8 @@
                 "state_mutability": "external"
               },
               {
-                "type": "function",
                 "name": "withdraw_v2",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "id",
@@ -830,8 +966,8 @@
                 "state_mutability": "external"
               },
               {
-                "type": "function",
                 "name": "get_pool_price",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "pool_key",
@@ -846,12 +982,12 @@
                 "state_mutability": "view"
               },
               {
-                "type": "function",
                 "name": "mint_and_increase_sell_amount",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "order_key",
-                    "type": "ekubo::extensions::interfaces::twamm::OrderKey"
+                    "type": "ekubo::interfaces::extensions::twamm::OrderKey"
                   },
                   {
                     "name": "amount",
@@ -866,12 +1002,12 @@
                 "state_mutability": "external"
               },
               {
-                "type": "function",
                 "name": "increase_sell_amount_last",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "order_key",
-                    "type": "ekubo::extensions::interfaces::twamm::OrderKey"
+                    "type": "ekubo::interfaces::extensions::twamm::OrderKey"
                   },
                   {
                     "name": "amount",
@@ -886,8 +1022,8 @@
                 "state_mutability": "external"
               },
               {
-                "type": "function",
                 "name": "increase_sell_amount",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "id",
@@ -895,7 +1031,7 @@
                   },
                   {
                     "name": "order_key",
-                    "type": "ekubo::extensions::interfaces::twamm::OrderKey"
+                    "type": "ekubo::interfaces::extensions::twamm::OrderKey"
                   },
                   {
                     "name": "amount",
@@ -910,28 +1046,8 @@
                 "state_mutability": "external"
               },
               {
-                "type": "function",
-                "name": "decrease_sale_rate",
-                "inputs": [
-                  {
-                    "name": "id",
-                    "type": "core::integer::u64"
-                  },
-                  {
-                    "name": "order_key",
-                    "type": "ekubo::extensions::interfaces::twamm::OrderKey"
-                  },
-                  {
-                    "name": "sale_rate_delta",
-                    "type": "core::integer::u128"
-                  }
-                ],
-                "outputs": [],
-                "state_mutability": "external"
-              },
-              {
-                "type": "function",
                 "name": "decrease_sale_rate_to",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "id",
@@ -939,7 +1055,7 @@
                   },
                   {
                     "name": "order_key",
-                    "type": "ekubo::extensions::interfaces::twamm::OrderKey"
+                    "type": "ekubo::interfaces::extensions::twamm::OrderKey"
                   },
                   {
                     "name": "sale_rate_delta",
@@ -958,8 +1074,8 @@
                 "state_mutability": "external"
               },
               {
-                "type": "function",
                 "name": "decrease_sale_rate_to_self",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "id",
@@ -967,7 +1083,7 @@
                   },
                   {
                     "name": "order_key",
-                    "type": "ekubo::extensions::interfaces::twamm::OrderKey"
+                    "type": "ekubo::interfaces::extensions::twamm::OrderKey"
                   },
                   {
                     "name": "sale_rate_delta",
@@ -982,24 +1098,8 @@
                 "state_mutability": "external"
               },
               {
-                "type": "function",
-                "name": "withdraw_proceeds_from_sale",
-                "inputs": [
-                  {
-                    "name": "id",
-                    "type": "core::integer::u64"
-                  },
-                  {
-                    "name": "order_key",
-                    "type": "ekubo::extensions::interfaces::twamm::OrderKey"
-                  }
-                ],
-                "outputs": [],
-                "state_mutability": "external"
-              },
-              {
-                "type": "function",
                 "name": "withdraw_proceeds_from_sale_to_self",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "id",
@@ -1007,7 +1107,7 @@
                   },
                   {
                     "name": "order_key",
-                    "type": "ekubo::extensions::interfaces::twamm::OrderKey"
+                    "type": "ekubo::interfaces::extensions::twamm::OrderKey"
                   }
                 ],
                 "outputs": [
@@ -1018,8 +1118,8 @@
                 "state_mutability": "external"
               },
               {
-                "type": "function",
                 "name": "withdraw_proceeds_from_sale_to",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "id",
@@ -1027,7 +1127,7 @@
                   },
                   {
                     "name": "order_key",
-                    "type": "ekubo::extensions::interfaces::twamm::OrderKey"
+                    "type": "ekubo::interfaces::extensions::twamm::OrderKey"
                   },
                   {
                     "name": "recipient",
@@ -1040,21 +1140,213 @@
                   }
                 ],
                 "state_mutability": "external"
+              },
+              {
+                "name": "swap_to_limit_order_price",
+                "type": "function",
+                "inputs": [
+                  {
+                    "name": "order_key",
+                    "type": "ekubo::interfaces::extensions::limit_orders::OrderKey"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "core::integer::u128"
+                  },
+                  {
+                    "name": "recipient",
+                    "type": "core::starknet::contract_address::ContractAddress"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "type": "(core::integer::u128, core::integer::u128)"
+                  }
+                ],
+                "state_mutability": "external"
+              },
+              {
+                "name": "swap_to_limit_order_price_and_maybe_mint_and_place_limit_order_to",
+                "type": "function",
+                "inputs": [
+                  {
+                    "name": "order_key",
+                    "type": "ekubo::interfaces::extensions::limit_orders::OrderKey"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "core::integer::u128"
+                  },
+                  {
+                    "name": "recipient",
+                    "type": "core::starknet::contract_address::ContractAddress"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "type": "(core::integer::u128, core::integer::u128, core::option::Option::\u003c(core::integer::u64, core::integer::u128)\u003e)"
+                  }
+                ],
+                "state_mutability": "external"
+              },
+              {
+                "name": "swap_to_limit_order_price_and_maybe_mint_and_place_limit_order",
+                "type": "function",
+                "inputs": [
+                  {
+                    "name": "order_key",
+                    "type": "ekubo::interfaces::extensions::limit_orders::OrderKey"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "core::integer::u128"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "type": "(core::integer::u128, core::integer::u128, core::option::Option::\u003c(core::integer::u64, core::integer::u128)\u003e)"
+                  }
+                ],
+                "state_mutability": "external"
+              },
+              {
+                "name": "place_limit_order",
+                "type": "function",
+                "inputs": [
+                  {
+                    "name": "id",
+                    "type": "core::integer::u64"
+                  },
+                  {
+                    "name": "order_key",
+                    "type": "ekubo::interfaces::extensions::limit_orders::OrderKey"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "core::integer::u128"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "type": "core::integer::u128"
+                  }
+                ],
+                "state_mutability": "external"
+              },
+              {
+                "name": "maybe_mint_and_place_limit_order",
+                "type": "function",
+                "inputs": [
+                  {
+                    "name": "order_key",
+                    "type": "ekubo::interfaces::extensions::limit_orders::OrderKey"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "core::integer::u128"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "type": "core::option::Option::\u003c(core::integer::u64, core::integer::u128)\u003e"
+                  }
+                ],
+                "state_mutability": "external"
+              },
+              {
+                "name": "mint_and_place_limit_order",
+                "type": "function",
+                "inputs": [
+                  {
+                    "name": "order_key",
+                    "type": "ekubo::interfaces::extensions::limit_orders::OrderKey"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "core::integer::u128"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "type": "(core::integer::u64, core::integer::u128)"
+                  }
+                ],
+                "state_mutability": "external"
+              },
+              {
+                "name": "close_limit_order",
+                "type": "function",
+                "inputs": [
+                  {
+                    "name": "id",
+                    "type": "core::integer::u64"
+                  },
+                  {
+                    "name": "order_key",
+                    "type": "ekubo::interfaces::extensions::limit_orders::OrderKey"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "type": "(core::integer::u128, core::integer::u128)"
+                  }
+                ],
+                "state_mutability": "external"
+              },
+              {
+                "name": "close_limit_order_to",
+                "type": "function",
+                "inputs": [
+                  {
+                    "name": "id",
+                    "type": "core::integer::u64"
+                  },
+                  {
+                    "name": "order_key",
+                    "type": "ekubo::interfaces::extensions::limit_orders::OrderKey"
+                  },
+                  {
+                    "name": "recipient",
+                    "type": "core::starknet::contract_address::ContractAddress"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "type": "(core::integer::u128, core::integer::u128)"
+                  }
+                ],
+                "state_mutability": "external"
+              },
+              {
+                "name": "get_limit_orders_info",
+                "type": "function",
+                "inputs": [
+                  {
+                    "name": "params",
+                    "type": "core::array::Span::\u003c(core::integer::u64, ekubo::interfaces::extensions::limit_orders::OrderKey)\u003e"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "type": "core::array::Span::\u003cekubo::interfaces::extensions::limit_orders::GetOrderInfoResult\u003e"
+                  }
+                ],
+                "state_mutability": "view"
               }
             ]
           },
           {
-            "type": "impl",
             "name": "Owned",
+            "type": "impl",
             "interface_name": "ekubo::components::owned::IOwned"
           },
           {
-            "type": "interface",
             "name": "ekubo::components::owned::IOwned",
+            "type": "interface",
             "items": [
               {
-                "type": "function",
                 "name": "get_owner",
+                "type": "function",
                 "inputs": [],
                 "outputs": [
                   {
@@ -1064,8 +1356,8 @@
                 "state_mutability": "view"
               },
               {
-                "type": "function",
                 "name": "transfer_ownership",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "new_owner",
@@ -1078,17 +1370,17 @@
             ]
           },
           {
-            "type": "impl",
             "name": "Upgradeable",
+            "type": "impl",
             "interface_name": "ekubo::interfaces::upgradeable::IUpgradeable"
           },
           {
-            "type": "interface",
             "name": "ekubo::interfaces::upgradeable::IUpgradeable",
+            "type": "interface",
             "items": [
               {
-                "type": "function",
                 "name": "replace_class_hash",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "class_hash",
@@ -1101,13 +1393,13 @@
             ]
           },
           {
-            "type": "impl",
             "name": "Clear",
+            "type": "impl",
             "interface_name": "ekubo::components::clear::IClear"
           },
           {
-            "type": "struct",
             "name": "ekubo::interfaces::erc20::IERC20Dispatcher",
+            "type": "struct",
             "members": [
               {
                 "name": "contract_address",
@@ -1116,12 +1408,12 @@
             ]
           },
           {
-            "type": "interface",
             "name": "ekubo::components::clear::IClear",
+            "type": "interface",
             "items": [
               {
-                "type": "function",
                 "name": "clear",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "token",
@@ -1136,8 +1428,8 @@
                 "state_mutability": "view"
               },
               {
-                "type": "function",
                 "name": "clear_minimum",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "token",
@@ -1156,8 +1448,8 @@
                 "state_mutability": "view"
               },
               {
-                "type": "function",
                 "name": "clear_minimum_to_recipient",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "token",
@@ -1182,17 +1474,17 @@
             ]
           },
           {
-            "type": "impl",
             "name": "Expires",
+            "type": "impl",
             "interface_name": "ekubo::components::expires::IExpires"
           },
           {
-            "type": "interface",
             "name": "ekubo::components::expires::IExpires",
+            "type": "interface",
             "items": [
               {
-                "type": "function",
                 "name": "expires",
+                "type": "function",
                 "inputs": [
                   {
                     "name": "at",
@@ -1205,8 +1497,8 @@
             ]
           },
           {
-            "type": "struct",
             "name": "ekubo::interfaces::core::ICoreDispatcher",
+            "type": "struct",
             "members": [
               {
                 "name": "contract_address",
@@ -1215,8 +1507,8 @@
             ]
           },
           {
-            "type": "constructor",
             "name": "constructor",
+            "type": "constructor",
             "inputs": [
               {
                 "name": "owner",
@@ -1237,100 +1529,98 @@
             ]
           },
           {
-            "type": "event",
+            "kind": "struct",
             "name": "ekubo::components::upgradeable::Upgradeable::ClassHashReplaced",
-            "kind": "struct",
+            "type": "event",
             "members": [
               {
+                "kind": "data",
                 "name": "new_class_hash",
-                "type": "core::starknet::class_hash::ClassHash",
-                "kind": "data"
+                "type": "core::starknet::class_hash::ClassHash"
               }
             ]
           },
           {
-            "type": "event",
+            "kind": "enum",
             "name": "ekubo::components::upgradeable::Upgradeable::Event",
-            "kind": "enum",
+            "type": "event",
             "variants": [
               {
+                "kind": "nested",
                 "name": "ClassHashReplaced",
-                "type": "ekubo::components::upgradeable::Upgradeable::ClassHashReplaced",
-                "kind": "nested"
+                "type": "ekubo::components::upgradeable::Upgradeable::ClassHashReplaced"
               }
             ]
           },
           {
-            "type": "event",
+            "kind": "struct",
             "name": "ekubo::components::owned::Owned::OwnershipTransferred",
-            "kind": "struct",
+            "type": "event",
             "members": [
               {
+                "kind": "data",
                 "name": "old_owner",
-                "type": "core::starknet::contract_address::ContractAddress",
-                "kind": "data"
+                "type": "core::starknet::contract_address::ContractAddress"
               },
               {
+                "kind": "data",
                 "name": "new_owner",
-                "type": "core::starknet::contract_address::ContractAddress",
-                "kind": "data"
+                "type": "core::starknet::contract_address::ContractAddress"
               }
             ]
           },
           {
-            "type": "event",
-            "name": "ekubo::components::owned::Owned::Event",
             "kind": "enum",
+            "name": "ekubo::components::owned::Owned::Event",
+            "type": "event",
             "variants": [
               {
+                "kind": "nested",
                 "name": "OwnershipTransferred",
-                "type": "ekubo::components::owned::Owned::OwnershipTransferred",
-                "kind": "nested"
+                "type": "ekubo::components::owned::Owned::OwnershipTransferred"
               }
             ]
           },
           {
-            "type": "event",
-            "name": "ekubo::positions::Positions::PositionMintedWithReferrer",
             "kind": "struct",
+            "name": "ekubo::positions::Positions::PositionMintedWithReferrer",
+            "type": "event",
             "members": [
               {
+                "kind": "data",
                 "name": "id",
-                "type": "core::integer::u64",
-                "kind": "data"
+                "type": "core::integer::u64"
               },
               {
+                "kind": "data",
                 "name": "referrer",
-                "type": "core::starknet::contract_address::ContractAddress",
-                "kind": "data"
+                "type": "core::starknet::contract_address::ContractAddress"
               }
             ]
           },
           {
-            "type": "event",
-            "name": "ekubo::positions::Positions::Event",
             "kind": "enum",
+            "name": "ekubo::positions::Positions::Event",
+            "type": "event",
             "variants": [
               {
+                "kind": "flat",
                 "name": "UpgradeableEvent",
-                "type": "ekubo::components::upgradeable::Upgradeable::Event",
-                "kind": "flat"
+                "type": "ekubo::components::upgradeable::Upgradeable::Event"
               },
               {
+                "kind": "nested",
                 "name": "OwnedEvent",
-                "type": "ekubo::components::owned::Owned::Event",
-                "kind": "nested"
+                "type": "ekubo::components::owned::Owned::Event"
               },
               {
+                "kind": "nested",
                 "name": "PositionMintedWithReferrer",
-                "type": "ekubo::positions::Positions::PositionMintedWithReferrer",
-                "kind": "nested"
+                "type": "ekubo::positions::Positions::PositionMintedWithReferrer"
               }
             ]
           }
-        ],
-        "Abi": {},
-        "PaddedAddress": "0x02e0af29598b407c8716b17f6d2795eca1b471413fa03fb145a5e33722184067"
+        ]
       }
     ],
     "confirmEnoughContracts": true

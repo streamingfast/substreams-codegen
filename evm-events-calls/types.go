@@ -69,8 +69,8 @@ type InputDynamicContractABI struct{ pbconvo.UserInput_TextInput }
 
 type RunDecodeContractABI struct{}
 type ReturnRunDecodeContractABI struct {
-	Abi *ABI
-	Err error
+	abi *ABI
+	err error
 }
 
 type RunDecodeDynamicContractABI struct{}
@@ -86,8 +86,8 @@ type AskContractInitialBlock struct{}
 type InputContractInitialBlock struct{ pbconvo.UserInput_TextInput }
 type FetchContractInitialBlock struct{}
 type ReturnFetchContractInitialBlock struct {
-	InitialBlock uint64
-	Err          error
+	initialBlock uint64
+	err          error
 }
 
 type SetContractInitialBlock struct{ InitialBlock uint64 }

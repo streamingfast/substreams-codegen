@@ -1,6 +1,9 @@
 FROM ghcr.io/streamingfast/substreams:develop AS substreams
 FROM bufbuild/buf AS buf
-FROM rust:latest
+
+# Forcing 1.86 until we fix starknet-events which requires 1.86 otherwise
+# does not compile properly.
+FROM rust:1.86
 
 WORKDIR /app
 
