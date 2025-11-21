@@ -1,0 +1,41 @@
+#[allow(unused)]
+mod pb;
+
+use crate::pb::mydata::v1::{Log, MyData, Transaction};
+use pb::mydata::v1 as mydata;
+use substreams::Hex;
+use substreams_ethereum::pb::sf::ethereum::r#type::v2::Block;
+
+#[substreams::handlers::map]
+fn map_my_data(block: Block) -> Result<mydata::MyData, substreams::errors::Error> {
+    let mut transactions: Vec<Transaction> = Vec::new();
+
+    // Process all transactions in the block
+    for tx in block.transaction_traces {
+        // Here you can filter out transactions you care about, just use
+        // an if statement and continue to skip unwanted transactions.
+
+        let receipt = tx.receipt.unwrap();
+        let mut logs: Vec<Log> = Vec::new();
+
+        // Extract logs (events) from the transaction receipt
+        for log in receipt.logs {
+            logs.push(Log {
+                contract_address: Hex::encode(&log.address),
+                topics: log.topics.into_iter().map(|topic| Hex::encode(&topic)).collect(),
+                data: log.data,
+            });
+        }
+
+        transactions.push(Transaction {
+            transaction_hash: Hex::encode(&tx.hash),
+            from_address: Hex::encode(&tx.from),
+            to_address: Hex::encode(&tx.to),
+            value: tx.value.to_string(),
+            gas_used: receipt.cumulative_gas_used,
+            logs,
+        });
+    }
+
+    Ok(MyData { transactions })
+}

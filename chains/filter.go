@@ -11,6 +11,7 @@ var solanaNetworkRegexp = regexp.MustCompile(`^solana`)
 var nearNetworkRegexp = regexp.MustCompile(`^near`)
 var tronNetworkRegexp = regexp.MustCompile(`^tron`)
 var stellarNetworkRegexp = regexp.MustCompile(`^stellar`)
+var monadNetworkRegexp = regexp.MustCompile(`^monad`)
 
 func SolanaNetworks() []*registry.Network {
 	return excludeSolanaAccounts(networks.GetSubstreamsRegistry().Search(solanaNetworkRegexp))
@@ -26,6 +27,10 @@ func TronNetworks() []*registry.Network {
 
 func StellarNetworks() []*registry.Network {
 	return networks.GetSubstreamsRegistry().Search(stellarNetworkRegexp)
+}
+
+func MonadNetworks() []*registry.Network {
+	return networks.GetSubstreamsRegistry().Search(monadNetworkRegexp)
 }
 
 func excludeSolanaAccounts(networks []*registry.Network) []*registry.Network {
