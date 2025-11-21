@@ -195,7 +195,9 @@ func runTestsInDocker(t *testing.T, cases []struct {
 	defer buildCancel()
 
 	// Tests are always run in the package folder (here "tests"), so "." refers to "tests" here
-	buildCmd := exec.CommandContext(buildCtx, "docker", "build", "-t", imageName, ".")
+	// Use legacy builder to avoid buildkit mount issues in CI
+	buildCmd := exec.CommandContext(buildCtx, "docker", "build", "--no-cache", "-t", imageName, ".")
+	buildCmd.Env = append(os.Environ(), "DOCKER_BUILDKIT=0")
 	buildOutput, err := buildCmd.CombinedOutput()
 	require.NoError(t, err, "Failed to build Docker image: %v\nOutput: %s", err, string(buildOutput))
 	fmt.Printf("Docker image %s built successfully\n", imageName)
