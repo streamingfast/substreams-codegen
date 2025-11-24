@@ -12,7 +12,7 @@ func init() {
 		"Use this example as a starting point to create your own custom Substreams, which indexes the data you need from the Monad blockchain.",
 		New,
 		85, // Higher weight than EVM (83) since it's a specific chain
-		"Monad",
+		"EVM",
 	)
 }
 
