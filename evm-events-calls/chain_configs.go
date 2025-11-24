@@ -237,6 +237,19 @@ var ChainConfigByID = map[string]*ChainConfig{
 		SupportsCalls:        true,
 		APIKeyEnvVar:         "ETHERSCAN_API_KEY",
 	},
+	"monad-mainnet": {
+		DisplayName:          "Monad Mainnet",
+		ExplorerLink:         "https://monadscan.com",
+		ApiBaseURL:           "https://api.etherscan.io/v2/api",
+		ApiQueryParams:       url.Values{"chainid": {"143"}},
+		ExampleContract:      "0xA485D7409bdaC5A504D487Ce4d0f2aF40E64d80B",
+		FirstStreamableBlock: 0,
+		Network:              "monad-mainnet",
+		abiCache:             make(map[string]*ABI),
+		initialBlockCache:    make(map[string]uint64),
+		SupportsCalls:        false,
+		APIKeyEnvVar:         "ETHERSCAN_API_KEY",
+	},
 }
 
 func init() {

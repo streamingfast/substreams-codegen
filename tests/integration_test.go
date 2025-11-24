@@ -186,15 +186,55 @@ func runTestsInDocker(t *testing.T, cases []struct {
 	// Build the Docker image once using Docker CLI (more efficient for parallel tests)
 	imageName := "substreams-test-image:latest"
 	fmt.Printf("Building Docker image %s for all tests...\n", imageName)
+	
+	// Debug Docker environment
+	fmt.Printf("Docker version info:\n")
+	if versionCmd := exec.Command("docker", "version"); versionCmd != nil {
+		if versionOutput, versionErr := versionCmd.CombinedOutput(); versionErr == nil {
+			fmt.Printf("%s\n", string(versionOutput))
+		} else {
+			fmt.Printf("Failed to get Docker version: %v\n", versionErr)
+		}
+	}
 
-	buildCtx, buildCancel := context.WithTimeout(ctx, 10*time.Minute)
+	buildCtx, buildCancel := context.WithTimeout(ctx, 15*time.Minute)
 	defer buildCancel()
 
-	// Tests are always run in the package folder (here "tests"), so "." refers to "tests" here
-	buildCmd := exec.CommandContext(buildCtx, "docker", "build", "-t", imageName, ".")
-	buildOutput, err := buildCmd.CombinedOutput()
-	require.NoError(t, err, "Failed to build Docker image: %v\nOutput: %s", err, string(buildOutput))
-	fmt.Printf("Docker image %s built successfully\n", imageName)
+	// Retry Docker build to handle transient issues
+	const maxBuildRetries = 3
+	var buildOutput []byte
+	var err error
+	
+	for attempt := 1; attempt <= maxBuildRetries; attempt++ {
+		fmt.Printf("Docker build attempt %d/%d...\n", attempt, maxBuildRetries)
+		
+		// Tests are always run in the package folder (here "tests"), so "." refers to "tests" here
+		// Use legacy builder to avoid buildkit mount issues in CI
+		// Try with cache first, then without cache on retry
+		var buildArgs []string
+		if attempt == 1 {
+			buildArgs = []string{"build", "-t", imageName, "."}
+		} else {
+			buildArgs = []string{"build", "--no-cache", "-t", imageName, "."}
+		}
+		buildCmd := exec.CommandContext(buildCtx, "docker", buildArgs...)
+		buildCmd.Env = append(os.Environ(), "DOCKER_BUILDKIT=0")
+		buildOutput, err = buildCmd.CombinedOutput()
+		
+		if err == nil {
+			fmt.Printf("Docker image %s built successfully on attempt %d\n", imageName, attempt)
+			break
+		}
+		
+		if attempt < maxBuildRetries {
+			fmt.Printf("Docker build attempt %d failed: %v\nOutput: %s\nRetrying in 10 seconds...\n", 
+				attempt, err, string(buildOutput))
+			time.Sleep(10 * time.Second)
+		}
+	}
+	
+	require.NoError(t, err, "Failed to build Docker image after %d attempts: %v\nFinal output: %s", 
+		maxBuildRetries, err, string(buildOutput))
 
 	for _, c := range cases {
 		c := c
