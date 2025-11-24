@@ -159,8 +159,8 @@ var ChainConfigByID = map[string]*ChainConfig{
 		FirstStreamableBlock: 0,
 		Network:              "monad-mainnet",
 		initialBlockCache:    make(map[string]uint64),
-		SupportsCalls:        true,
-		ExampleContract:      "0x0000000000000000000000000000000000000000", // Placeholder - will be updated when Monad launches
+		SupportsCalls:        false,
+		ExampleContract:      "0xA485D7409bdaC5A504D487Ce4d0f2aF40E64d80B",
 	},
 }
 
