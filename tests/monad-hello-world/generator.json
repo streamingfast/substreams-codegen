@@ -1,7 +1,0 @@
-{
-  "generator": "monad-hello-world",
-  "state": {
-    "name": "my_project",
-    "chainName": "monad-mainnet"
-  }
-}

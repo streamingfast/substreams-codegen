@@ -27,7 +27,6 @@ import (
 	_ "github.com/streamingfast/substreams-codegen/injective-hello-world"
 	_ "github.com/streamingfast/substreams-codegen/mantra-events"
 	_ "github.com/streamingfast/substreams-codegen/mantra-hello-world"
-	_ "github.com/streamingfast/substreams-codegen/monad-hello-world"
 	_ "github.com/streamingfast/substreams-codegen/near-hello-world"
 	_ "github.com/streamingfast/substreams-codegen/sol-anchor"
 	_ "github.com/streamingfast/substreams-codegen/sol-hello-world"
