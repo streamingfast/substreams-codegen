@@ -250,6 +250,20 @@ var ChainConfigByID = map[string]*ChainConfig{
 		SupportsCalls:        false,
 		APIKeyEnvVar:         "ETHERSCAN_API_KEY",
 	},
+	"worldchain-mainnet": {
+		DisplayName:  "World Chain Mainnet",
+		ExplorerLink: "https://worldscan.org",
+		//		ApiEndpoint:          "https://api-optimistic.etherscan.io",
+		ApiBaseURL:           "https://api.etherscan.io/v2/api",
+		ApiQueryParams:       url.Values{"chainid": {"480"}},
+		ExampleContract:      "0x79A02482A880bCE3F13e09Da970dC34db4CD24d1",
+		FirstStreamableBlock: 0,
+		Network:              "worldchain-mainnet",
+		abiCache:             make(map[string]*ABI),
+		initialBlockCache:    make(map[string]uint64),
+		SupportsCalls:        false,
+		APIKeyEnvVar:         "ETHERSCAN_API_KEY",
+	},
 }
 
 func init() {
