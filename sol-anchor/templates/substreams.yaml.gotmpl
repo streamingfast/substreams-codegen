@@ -1,6 +1,6 @@
 specVersion: v0.1.0
 package:
-  name: my_project
+  name: {{ .GetModuleName }}
   version: v0.1.0
 
 imports:
@@ -39,4 +39,4 @@ modules:
      query:
        string: program:{{.Idl.ProgramID}}
 
-network: {{ .ChainName }} 
+network: {{ .ChainName }}
