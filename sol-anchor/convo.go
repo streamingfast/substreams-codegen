@@ -203,9 +203,21 @@ func arrayToHex(arr []uint8) (out string) {
 }
 
 func inputIDLStep(c *Convo, msgValue string) loop.Cmd {
+	// Handle empty input - go back to ask for input
+	if strings.TrimSpace(msgValue) == "" {
+		return loop.Seq(
+			c.Msg().Message("The IDL content is empty. Please provide a valid Anchor IDL.").Cmd(),
+			c.askIDLAgain(),
+		)
+	}
+
 	idl, err := createIDLFromJSON(msgValue)
 	if err != nil {
-		return loop.Quit(fmt.Errorf("could not decode IDL"))
+		// Show error message and ask for IDL again instead of quitting
+		return loop.Seq(
+			c.Msg().Messagef("The IDL content is not valid JSON: %s. Please try again.", err).Cmd(),
+			c.askIDLAgain(),
+		)
 	}
 	if idl.Metadata.Name == "" {
 		idl.Metadata.Name = c.State.Name // we need a name so anchor can compile
@@ -220,12 +232,19 @@ func inputIDLStep(c *Convo, msgValue string) loop.Cmd {
 	return loop.Seq(peekIDL, cmd(AskConfirmIDL{}))
 }
 
+// askIDLAgain returns the appropriate Ask command based on the current IdlFormat
+func (c *Convo) askIDLAgain() loop.Cmd {
+	if c.State.IdlFormat == "file" {
+		return cmd(AskIDLFile{})
+	}
+	return cmd(AskIDLJSON{})
+}
+
 func createIDLFromJSON(text string) (*IDL, error) {
 	idl := &IDL{}
 	err := json.Unmarshal([]byte(text), &idl)
 	if err != nil {
-		fmt.Println("Error unmarshaling JSON:", err)
-		return nil, err
+		return nil, fmt.Errorf("JSON parsing error: %w", err)
 	}
 	idl.MoveEventsIfNecessary()
 
