@@ -1,6 +1,7 @@
 package evm_events_calls
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/streamingfast/eth-go"
@@ -180,23 +181,23 @@ func TestIndexedDynamicValueHandling(t *testing.T) {
 	require.Len(t, events, 1)
 
 	event := events[0]
-	
+
 	// Check that the indexed dynamic parameter is handled correctly
 	// The transformation code should handle IndexedDynamicValue<String>
 	transformCode, exists := event.Rust.ProtoFieldABIConversionMap["param0"]
 	require.True(t, exists, "param0 should have transformation code")
-	
+
 	// For indexed dynamic values, we expect the transformation to access the hash field
 	assert.Contains(t, transformCode, ".hash", "Indexed dynamic string should use .hash field")
-	
+
 	// The non-indexed parameter should use normal transformation
 	transformCode2, exists := event.Rust.ProtoFieldABIConversionMap["value"]
 	require.True(t, exists, "value should have transformation code")
 	assert.NotContains(t, transformCode2, ".hash", "Non-indexed parameter should not use .hash field")
-	
+
 	// Check proto field types
 	require.Len(t, event.Proto.Fields, 2, "Should have 2 proto fields")
-	
+
 	// Find the param0 field (indexed dynamic string)
 	var param0Field, valueField *ProtoField
 	for i := range event.Proto.Fields {
@@ -206,13 +207,13 @@ func TestIndexedDynamicValueHandling(t *testing.T) {
 			valueField = &event.Proto.Fields[i]
 		}
 	}
-	
+
 	require.NotNil(t, param0Field, "param0 field should exist")
 	require.NotNil(t, valueField, "value field should exist")
-	
+
 	// Indexed dynamic string should be bytes (hash)
 	assert.Equal(t, "bytes", param0Field.Type, "Indexed dynamic string should be bytes proto field")
-	
+
 	// Non-indexed uint256 should be string
 	assert.Equal(t, "string", valueField.Type, "uint256 should be string proto field")
 }
@@ -265,13 +266,185 @@ func TestIsDynamicType(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			abi, err := eth.ParseABIFromBytes([]byte(tt.abiJSON))
 			require.NoError(t, err)
-			
+
 			events := abi.LogEventsByNameMap["TestEvent"]
 			require.Len(t, events, 1)
-			
+
 			param := events[0].Parameters[0]
 			result := isDynamicType(param.Type)
 			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestExtractABIFromJSON(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       string
+		wantErr     bool
+		errContains string
+		wantABI     string // Expected extracted ABI (for non-error cases)
+	}{
+		{
+			name:    "standard ABI array format",
+			input:   `[{"type": "function", "name": "transfer"}]`,
+			wantErr: false,
+			wantABI: `[{"type": "function", "name": "transfer"}]`,
+		},
+		{
+			name:    "standard ABI array format with whitespace",
+			input:   `  [{"type": "event", "name": "Transfer"}]  `,
+			wantErr: false,
+			wantABI: `[{"type": "event", "name": "Transfer"}]`,
+		},
+		{
+			name: "wrapped format - Hardhat style",
+			input: `{
+				"contractName": "MyContract",
+				"abi": [{"type": "function", "name": "transfer"}],
+				"bytecode": "0x1234"
+			}`,
+			wantErr: false,
+			wantABI: `[{"type": "function", "name": "transfer"}]`,
+		},
+		{
+			name: "wrapped format - Foundry style",
+			input: `{
+				"abi": [{"type": "event", "name": "Transfer"}],
+				"bytecode": {"object": "0x..."},
+				"methodIdentifiers": {}
+			}`,
+			wantErr: false,
+			wantABI: `[{"type": "event", "name": "Transfer"}]`,
+		},
+		{
+			name:    "wrapped format - minimal",
+			input:   `{"abi": []}`,
+			wantErr: false,
+			wantABI: `[]`,
+		},
+		{
+			name:        "empty input",
+			input:       ``,
+			wantErr:     true,
+			errContains: "empty ABI input",
+		},
+		{
+			name:        "whitespace only",
+			input:       `   `,
+			wantErr:     true,
+			errContains: "empty ABI input",
+		},
+		{
+			name:        "invalid JSON",
+			input:       `{invalid json`,
+			wantErr:     true,
+			errContains: "invalid JSON",
+		},
+		{
+			name:        "object without abi field",
+			input:       `{"contractName": "Test", "bytecode": "0x"}`,
+			wantErr:     true,
+			errContains: "does not contain an 'abi' field",
+		},
+		{
+			name:        "object with null abi",
+			input:       `{"abi": null}`,
+			wantErr:     true,
+			errContains: "does not contain an 'abi' field",
+		},
+		{
+			name:        "object with non-array abi",
+			input:       `{"abi": "not an array"}`,
+			wantErr:     true,
+			errContains: "must be a JSON array",
+		},
+		{
+			name:        "object with object abi",
+			input:       `{"abi": {"key": "value"}}`,
+			wantErr:     true,
+			errContains: "must be a JSON array",
+		},
+		{
+			name:        "number input",
+			input:       `123`,
+			wantErr:     true,
+			errContains: "expected JSON array or object",
+		},
+		{
+			name:        "string input",
+			input:       `"hello"`,
+			wantErr:     true,
+			errContains: "expected JSON array or object",
+		},
+		{
+			name: "real Hardhat artifact format",
+			input: `{
+				"_format": "hh-sol-artifact-1",
+				"contractName": "ERC20",
+				"sourceName": "contracts/ERC20.sol",
+				"abi": [
+					{
+						"inputs": [{"name": "to", "type": "address"}, {"name": "amount", "type": "uint256"}],
+						"name": "transfer",
+						"outputs": [{"name": "", "type": "bool"}],
+						"stateMutability": "nonpayable",
+						"type": "function"
+					}
+				],
+				"bytecode": "0x608060...",
+				"deployedBytecode": "0x608060...",
+				"linkReferences": {},
+				"deployedLinkReferences": {}
+			}`,
+			wantErr: false,
+		},
+		{
+			name: "real Foundry artifact format",
+			input: `{
+				"abi": [
+					{
+						"type": "function",
+						"name": "transfer",
+						"inputs": [{"name": "to", "type": "address"}, {"name": "amount", "type": "uint256"}],
+						"outputs": [{"name": "", "type": "bool"}],
+						"stateMutability": "nonpayable"
+					}
+				],
+				"bytecode": {"object": "0x608060...", "sourceMap": "..."},
+				"deployedBytecode": {"object": "0x608060...", "sourceMap": "..."},
+				"methodIdentifiers": {"transfer(address,uint256)": "a9059cbb"}
+			}`,
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := extractABIFromJSON([]byte(tt.input))
+
+			if tt.wantErr {
+				require.Error(t, err, "expected an error but got none")
+				if tt.errContains != "" {
+					assert.Contains(t, err.Error(), tt.errContains, "error message should contain expected text")
+				}
+				return
+			}
+
+			require.NoError(t, err, "unexpected error")
+			assert.NotEmpty(t, result, "result should not be empty")
+
+			// Verify the result is valid JSON
+			assert.True(t, json.Valid(result), "result should be valid JSON")
+
+			// If expected ABI is specified, compare after normalization
+			if tt.wantABI != "" {
+				// Normalize both by unmarshaling and remarshaling
+				var expected, actual interface{}
+				require.NoError(t, json.Unmarshal([]byte(tt.wantABI), &expected))
+				require.NoError(t, json.Unmarshal(result, &actual))
+				assert.Equal(t, expected, actual, "extracted ABI should match expected")
+			}
 		})
 	}
 }

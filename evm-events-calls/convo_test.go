@@ -258,3 +258,115 @@ func TestDynamicContractAddressAlreadyExists(t *testing.T) {
 
 	assert.IsType(t, AskDynamicContractAddress{}, seq[1])
 }
+
+func TestWrappedABIFormat(t *testing.T) {
+	conv := New()
+	conv.SetFactory(&codegen.MsgWrapFactory{})
+	p := conv.(*Convo).State
+
+	// Setup: skip to the point where we need ABI input
+	p.Name = "test-project"
+	p.ChainName = "mainnet"
+	p.Contracts = append(p.Contracts, &Contract{
+		Address: "0x1231231230123123123012312312301231231230",
+	})
+	p.currentContractIdx = 0
+
+	// Test with wrapped ABI format (Hardhat style)
+	wrappedABI := `{
+		"contractName": "TestContract",
+		"abi": [
+			{
+				"anonymous": false,
+				"inputs": [
+					{"indexed": true, "name": "from", "type": "address"},
+					{"indexed": true, "name": "to", "type": "address"},
+					{"indexed": false, "name": "value", "type": "uint256"}
+				],
+				"name": "Transfer",
+				"type": "event"
+			}
+		],
+		"bytecode": "0x608060..."
+	}`
+
+	// Simulate file input with wrapped ABI
+	next := conv.Update(InputContractABIFile{
+		UserInput_LocalFile: pbconvo.UserInput_LocalFile{
+			Value: []byte(wrappedABI),
+		},
+	})
+
+	// Should proceed to RunDecodeContractABI
+	assert.Equal(t, RunDecodeContractABI{}, next())
+
+	// Execute the decode
+	next = conv.Update(RunDecodeContractABI{})
+	msg, ok := next().(ReturnRunDecodeContractABI)
+	require.True(t, ok, "expected ReturnRunDecodeContractABI")
+	require.NoError(t, msg.err, "should successfully decode wrapped ABI")
+	require.NotNil(t, msg.abi, "ABI should not be nil")
+
+	// Set the ABI on the contract for further testing
+	p.Contracts[0].abi = msg.abi
+
+	// Verify the ABI was correctly extracted
+	events := p.Contracts[0].EventModels()
+	require.Len(t, events, 1, "should have one event")
+	assert.Equal(t, "Transfer", events[0].Proto.MessageName, "event name should be Transfer")
+}
+
+func TestWrappedABIFormatWithStringInput(t *testing.T) {
+	conv := New()
+	conv.SetFactory(&codegen.MsgWrapFactory{})
+	p := conv.(*Convo).State
+
+	// Setup
+	p.Name = "test-project"
+	p.ChainName = "mainnet"
+	p.Contracts = append(p.Contracts, &Contract{
+		Address: "0x1231231230123123123012312312301231231230",
+	})
+	p.currentContractIdx = 0
+	p.Contracts[0].abiType = "string"
+
+	// Test with wrapped ABI format via string input
+	wrappedABI := `{"abi": [{"type": "function", "name": "transfer", "inputs": [], "outputs": [], "stateMutability": "nonpayable"}]}`
+
+	next := conv.Update(InputContractABIString{
+		UserInput_TextInput: pbconvo.UserInput_TextInput{
+			Value: wrappedABI,
+		},
+	})
+
+	// Should proceed to next step (not error out)
+	assert.Equal(t, RunDecodeContractABI{}, next())
+}
+
+func TestInvalidWrappedABIFormat(t *testing.T) {
+	conv := New()
+	conv.SetFactory(&codegen.MsgWrapFactory{})
+	p := conv.(*Convo).State
+
+	// Setup
+	p.Name = "test-project"
+	p.ChainName = "mainnet"
+	p.Contracts = append(p.Contracts, &Contract{
+		Address: "0x1231231230123123123012312312301231231230",
+	})
+	p.currentContractIdx = 0
+
+	// Test with object that has no "abi" field
+	invalidWrapped := `{"contractName": "Test", "bytecode": "0x..."}`
+
+	next := conv.Update(InputContractABIFile{
+		UserInput_LocalFile: pbconvo.UserInput_LocalFile{
+			Value: []byte(invalidWrapped),
+		},
+	})
+
+	// Should show error and ask for ABI again
+	seq := next().(loop.SeqMsg)
+	msg := seq[0]().(*pbconvo.SystemOutput)
+	assert.Contains(t, msg.GetMessage().Markdown, "abi")
+}
