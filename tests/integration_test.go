@@ -186,7 +186,7 @@ func runTestsInDocker(t *testing.T, cases []struct {
 	// Build the Docker image once using Docker CLI (more efficient for parallel tests)
 	imageName := "substreams-test-image:latest"
 	fmt.Printf("Building Docker image %s for all tests...\n", imageName)
-	
+
 	// Debug Docker environment
 	fmt.Printf("Docker version info:\n")
 	if versionCmd := exec.Command("docker", "version"); versionCmd != nil {
@@ -204,10 +204,10 @@ func runTestsInDocker(t *testing.T, cases []struct {
 	const maxBuildRetries = 3
 	var buildOutput []byte
 	var err error
-	
+
 	for attempt := 1; attempt <= maxBuildRetries; attempt++ {
 		fmt.Printf("Docker build attempt %d/%d...\n", attempt, maxBuildRetries)
-		
+
 		// Tests are always run in the package folder (here "tests"), so "." refers to "tests" here
 		// Use legacy builder to avoid buildkit mount issues in CI
 		// Try with cache first, then without cache on retry
@@ -220,20 +220,20 @@ func runTestsInDocker(t *testing.T, cases []struct {
 		buildCmd := exec.CommandContext(buildCtx, "docker", buildArgs...)
 		buildCmd.Env = append(os.Environ(), "DOCKER_BUILDKIT=0")
 		buildOutput, err = buildCmd.CombinedOutput()
-		
+
 		if err == nil {
 			fmt.Printf("Docker image %s built successfully on attempt %d\n", imageName, attempt)
 			break
 		}
-		
+
 		if attempt < maxBuildRetries {
-			fmt.Printf("Docker build attempt %d failed: %v\nOutput: %s\nRetrying in 10 seconds...\n", 
+			fmt.Printf("Docker build attempt %d failed: %v\nOutput: %s\nRetrying in 10 seconds...\n",
 				attempt, err, string(buildOutput))
 			time.Sleep(10 * time.Second)
 		}
 	}
-	
-	require.NoError(t, err, "Failed to build Docker image after %d attempts: %v\nFinal output: %s", 
+
+	require.NoError(t, err, "Failed to build Docker image after %d attempts: %v\nFinal output: %s",
 		maxBuildRetries, err, string(buildOutput))
 
 	for _, c := range cases {

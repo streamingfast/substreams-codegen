@@ -1,7 +1,9 @@
 package evm_events_calls
 
 import (
+	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strconv"
@@ -23,17 +25,84 @@ type ABI struct {
 	raw string
 }
 
+// extractABIFromJSON attempts to extract a valid ABI JSON array from the input.
+// It handles two formats:
+// 1. Standard ABI array format: [{"type": "function", ...}, ...]
+// 2. Wrapped format (Hardhat/Foundry): {"abi": [...], "contractName": "...", ...}
+//
+// Returns the raw ABI JSON bytes ready for parsing, or an error if neither format is valid.
+func extractABIFromJSON(input []byte) ([]byte, error) {
+	// Trim whitespace for consistent detection
+	trimmed := bytes.TrimSpace(input)
+	if len(trimmed) == 0 {
+		return nil, fmt.Errorf("empty ABI input")
+	}
+
+	// Check if it starts with '[' - standard ABI array format
+	if trimmed[0] == '[' {
+		// Validate it's proper JSON
+		if !json.Valid(trimmed) {
+			return nil, fmt.Errorf("invalid JSON array format")
+		}
+		return trimmed, nil
+	}
+
+	// Check if it starts with '{' - potentially wrapped format
+	if trimmed[0] == '{' {
+		// Try to extract the "abi" field from the object
+		var wrapper struct {
+			ABI json.RawMessage `json:"abi"`
+		}
+		if err := json.Unmarshal(trimmed, &wrapper); err != nil {
+			return nil, fmt.Errorf("invalid JSON object format: %w", err)
+		}
+
+		// Check if the "abi" field exists and is not empty/null
+		if len(wrapper.ABI) == 0 || string(bytes.TrimSpace(wrapper.ABI)) == "null" {
+			return nil, fmt.Errorf("JSON object does not contain an 'abi' field or it is empty; expected either a JSON array (standard ABI format) or an object with an 'abi' field (Hardhat/Foundry artifact format)")
+		}
+
+		// Validate the extracted ABI is a valid JSON array
+		abiTrimmed := bytes.TrimSpace(wrapper.ABI)
+		if abiTrimmed[0] != '[' {
+			return nil, fmt.Errorf("the 'abi' field must be a JSON array, got: %s", string(abiTrimmed[:min(20, len(abiTrimmed))]))
+		}
+
+		return wrapper.ABI, nil
+	}
+
+	return nil, fmt.Errorf("invalid ABI format: expected JSON array or object, got input starting with %q", string(trimmed[:min(1, len(trimmed))]))
+}
+
 func CmdDecodeABI(contract *Contract) loop.Cmd {
 	return func() loop.Msg {
-		abi, err := eth.ParseABIFromBytes([]byte(contract.RawABI))
-		return ReturnRunDecodeContractABI{abi: &ABI{abi, string(contract.RawABI)}, err: err}
+		abiBytes, err := extractABIFromJSON(contract.RawABI)
+		if err != nil {
+			return ReturnRunDecodeContractABI{abi: nil, err: fmt.Errorf("extracting ABI: %w", err)}
+		}
+
+		abi, err := eth.ParseABIFromBytes(abiBytes)
+		if err != nil {
+			return ReturnRunDecodeContractABI{abi: nil, err: fmt.Errorf("parsing ABI: %w", err)}
+		}
+
+		return ReturnRunDecodeContractABI{abi: &ABI{abi, string(abiBytes)}, err: nil}
 	}
 }
 
 func cmdDecodeDynamicABI(contract *DynamicContract) loop.Cmd {
 	return func() loop.Msg {
-		abi, err := eth.ParseABIFromBytes([]byte(contract.RawABI))
-		return ReturnRunDecodeDynamicContractABI{abi: &ABI{abi, string(contract.RawABI)}, err: err}
+		abiBytes, err := extractABIFromJSON(contract.RawABI)
+		if err != nil {
+			return ReturnRunDecodeDynamicContractABI{abi: nil, err: fmt.Errorf("extracting ABI: %w", err)}
+		}
+
+		abi, err := eth.ParseABIFromBytes(abiBytes)
+		if err != nil {
+			return ReturnRunDecodeDynamicContractABI{abi: nil, err: fmt.Errorf("parsing ABI: %w", err)}
+		}
+
+		return ReturnRunDecodeDynamicContractABI{abi: &ABI{abi, string(abiBytes)}, err: nil}
 	}
 }
 

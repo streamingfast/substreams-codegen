@@ -1,6 +1,7 @@
 package evm_events_calls
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -904,12 +905,40 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 
 var cmd = codegen.Cmd
 
-func abiToJson(abi string) (json.RawMessage, error) {
-	var rawMessage json.RawMessage = json.RawMessage(abi)
+func abiToJson(input string) (json.RawMessage, error) {
+	inputBytes := []byte(input)
 
-	if _, err := json.Marshal(rawMessage); err != nil {
-		return nil, err
+	// Validate it's valid JSON first
+	if !json.Valid(inputBytes) {
+		return nil, fmt.Errorf("invalid JSON")
 	}
 
-	return rawMessage, nil
+	// Try to extract ABI (handles both array and wrapped formats)
+	// This is just validation - the actual extraction happens in CmdDecodeABI
+	trimmed := bytes.TrimSpace(inputBytes)
+	if len(trimmed) == 0 {
+		return nil, fmt.Errorf("empty input")
+	}
+
+	// For array format, accept as-is
+	if trimmed[0] == '[' {
+		return json.RawMessage(inputBytes), nil
+	}
+
+	// For object format, validate it has an "abi" field
+	if trimmed[0] == '{' {
+		var wrapper struct {
+			ABI json.RawMessage `json:"abi"`
+		}
+		if err := json.Unmarshal(trimmed, &wrapper); err != nil {
+			return nil, fmt.Errorf("invalid JSON object: %w", err)
+		}
+		if len(wrapper.ABI) == 0 {
+			return nil, fmt.Errorf("object has no 'abi' field; expected a JSON array or an object with an 'abi' field (Hardhat/Foundry format)")
+		}
+		// Return the full input - extraction happens later in CmdDecodeABI
+		return json.RawMessage(inputBytes), nil
+	}
+
+	return nil, fmt.Errorf("expected JSON array or object")
 }
