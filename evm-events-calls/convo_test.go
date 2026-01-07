@@ -89,7 +89,17 @@ func TestConvoUpdate(t *testing.T) {
 	assert.Nil(t, msg.err)
 
 	next = conv.Update(msg)
-	// TODO: test the output with the given Abi methods in there...
+	// Should show ABI preview before continuing
+	seq = next().(loop.SeqMsg)
+	require.Len(t, seq, 2)
+	// First command is the preview message
+	previewMsg := seq[0]().(*pbconvo.SystemOutput)
+	assert.Contains(t, previewMsg.GetMessage().Markdown, "ABI") // Verify it's showing ABI info
+	// Second command asks for confirmation
+	assert.Equal(t, AskConfirmContractABI{}, seq[1]())
+
+	// Confirm the ABI
+	next = conv.Update(InputConfirmContractABI{UserInput_Confirmation: pbconvo.UserInput_Confirmation{Affirmative: true}})
 	assert.Equal(t, FetchContractInitialBlock{}, next())
 
 	next = conv.Update(ReturnFetchContractInitialBlock{err: fmt.Errorf("failed")})
@@ -134,7 +144,13 @@ func TestConvoUpdate(t *testing.T) {
 		raw: "[]",
 	}, err: nil})
 
-	assert.Equal(t, AskAddContract{}, next())
+	// Dynamic contract ABI preview should now be shown (our fix restored this)
+	// Unlike regular contracts, dynamic contracts show preview then go directly to next step (no confirmation)
+	seq = next().(loop.SeqMsg)
+	require.Len(t, seq, 2)
+	previewMsg = seq[0]().(*pbconvo.SystemOutput)
+	assert.Contains(t, previewMsg.GetMessage().Markdown, "ABI")
+	assert.Equal(t, AskAddContract{}, seq[1]())
 
 	next = conv.Update(InputAddContract{UserInput_Confirmation: pbconvo.UserInput_Confirmation{Affirmative: false}})
 	require.Equal(t, codegen.AskSubstreamsConsumptionChoice{}, next())

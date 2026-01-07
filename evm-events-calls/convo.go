@@ -324,6 +324,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 
 		contract.RawABI = rawAbi
+		contract.abiFetchedInThisSession = true
 
 		return c.NextStep()
 
@@ -358,6 +359,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 
 		contract.RawABI = rawAbi
+		contract.abiFetchedInThisSession = true
 
 		return c.NextStep()
 
@@ -384,6 +386,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 
 		contract.RawABI = rawMessage
+		contract.abiFetchedInThisSession = true
 		return c.NextStep()
 
 	case InputContractAddress:
