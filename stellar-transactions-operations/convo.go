@@ -73,7 +73,7 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.NextStep()
 
 	case AskFilter:
-		message := "Input the source account(s) that you want to use to filter separated by commas (,). For example:\nGADLRTGF4GCU2CNAHYPKAEBGQSBX2M3UYIZZJODZAVC5A5QCAE7AT66C,GADLWELLJ56NXB76MQGXRXSRCFT5YY2ANWXPKWVY7YP6EJIYYDFKL43W\n"
+		message := "Input the source account(s) that you want to use to filter separated by commas (,). For example:\nGADLRTGF4GCU2CNAHYPKAEBGQSBX2M3UYIZZJODZAVC5A5QCAE7AT66C,GADLWELLJ56NXB76MQGXRXSRCFT5YY2ANWXPKWVY7YP6EJIYYDFKL43W,GBWRR4M6WPOV4Y5TGLCXS2NAL76IAT4V4QSCX7CKPH4ILUJEDTQFEZM5\n"
 		if c.State.FilterType == "operations" {
 			message = "Input the operation names that you want to use to filter separated by commas (,) For example:\npayment,create_account\n"
 		}

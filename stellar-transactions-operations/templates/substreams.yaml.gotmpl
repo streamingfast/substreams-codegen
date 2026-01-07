@@ -4,7 +4,7 @@ package:
   version: v0.1.0
 
 imports:
-  stellar: https://github.com/streamingfast/substreams-foundational-modules/releases/download/stellar-foundational-v0.3.0/stellar-foundational-v0.3.0.spkg
+  stellar: stellar-foundational@v0.5.0
 
 protobuf:
   excludePaths:
@@ -23,7 +23,7 @@ modules:
 
  - name: map_my_data
    kind: map
-   initialBlock: {{ if eq .GetChainNetwork "stellar" }}55411000{{ else }}1000{{ end }}
+   initialBlock: {{ if eq .GetChainNetwork "stellar" }}55411000{{ else }}767{{ end }}
    inputs:
    - map: map_my_filtered_transactions
    output:
