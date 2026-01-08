@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/streamingfast/substreams-codegen/loop"
@@ -97,4 +98,87 @@ func PrettifyJSON(rawJSON []byte) []byte {
 	}
 
 	return prettified
+}
+
+// errorPattern defines a pattern for matching and transforming error messages
+type errorPattern struct {
+	pattern *regexp.Regexp
+	// transform takes the matched groups and returns the user-friendly message
+	// The first element of matches is always the full match, subsequent elements are capture groups
+	transform func(matches []string) string
+}
+
+var (
+	// Compiled once at init time for performance
+	wrappedFileErrorPattern = regexp.MustCompile(`^could not read file "([^"]+)":.+:\s*(.+)$`)
+	fileNotFoundPattern     = regexp.MustCompile(`no such file or directory`)
+	permissionDeniedPattern = regexp.MustCompile(`permission denied`)
+	isDirectoryPattern      = regexp.MustCompile(`is a directory`)
+
+	// errorPatterns is the list of error patterns to check, in order
+	errorPatterns = []errorPattern{
+		// Wrapped file errors with filename extraction
+		{
+			pattern: wrappedFileErrorPattern,
+			transform: func(matches []string) string {
+				filename := matches[1]
+				innerErr := matches[2]
+
+				// Check the inner error and provide context-specific message
+				if fileNotFoundPattern.MatchString(innerErr) {
+					return fmt.Sprintf("File not found: %s", filename)
+				}
+				if permissionDeniedPattern.MatchString(innerErr) {
+					return fmt.Sprintf("Permission denied for file: %s", filename)
+				}
+				if isDirectoryPattern.MatchString(innerErr) {
+					return fmt.Sprintf("Path is a directory, not a file: %s", filename)
+				}
+				// Unknown inner error, still show filename
+				return fmt.Sprintf("%s (file: %s)", innerErr, filename)
+			},
+		},
+	}
+
+	// Simple string-based mappings (no regex needed)
+	simpleErrorMappings = map[string]string{
+		"no such file or directory":                             "File not found - please check the path and try again",
+		"permission denied":                                      "Permission denied - please check file permissions",
+		"is a directory":                                         "Path points to a directory, not a file - please provide a file path",
+		"contract source code is not verified":                  "Contract source code is not verified on the block explorer - you'll need to provide the ABI manually",
+		"invalid contract address or contract does not exist":   "Invalid contract address or contract does not exist at this address",
+	}
+)
+
+// MapClientSideErrorToMessage converts technical errors from the CLI client into user-friendly messages.
+//
+// This function handles errors that originate from the CLI client (file reading, HTTP requests, etc.)
+// which are transmitted as strings. It uses regex patterns to extract context (like filenames) and
+// provides clear, actionable error messages.
+//
+// Note: While working with error strings is somewhat brittle (dependent on error message formats),
+// it's acceptable for improving user experience with common error cases from client-side operations.
+func MapClientSideErrorToMessage(err error) string {
+	if err == nil {
+		return ""
+	}
+
+	errStr := err.Error()
+
+	// Try regex patterns first (they may extract additional context like filenames)
+	for _, ep := range errorPatterns {
+		if matches := ep.pattern.FindStringSubmatch(errStr); matches != nil {
+			return ep.transform(matches)
+		}
+	}
+
+	// Try simple substring mappings
+	for errorSubstring, userMessage := range simpleErrorMappings {
+		if strings.Contains(errStr, errorSubstring) {
+			return userMessage
+		}
+	}
+
+	// Return original error if no mapping found
+	return errStr
 }

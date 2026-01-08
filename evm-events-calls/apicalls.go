@@ -210,9 +210,20 @@ func getContractABI(ctx context.Context, address string, chain *ChainConfig, api
 		return nil, "", timer, fmt.Errorf(`invalid response "Result" field type, expected "string" got "%T"`, response.Result)
 	}
 
+	// Check for common API error messages that appear in the Result field
+	if strings.HasPrefix(abiContent, "Contract source code not verified") {
+		return nil, "", timer, fmt.Errorf("contract source code is not verified on the block explorer - you'll need to provide the ABI manually")
+	}
+	if strings.HasPrefix(abiContent, "Invalid Address") || strings.HasPrefix(abiContent, "Invalid address") {
+		return nil, "", timer, fmt.Errorf("invalid contract address or contract does not exist at this address")
+	}
+	if strings.HasPrefix(abiContent, "Max rate limit reached") || strings.Contains(response.Message, "rate limit") {
+		return nil, "", timer, fmt.Errorf("API rate limit reached - please wait a moment or provide an API key via %s environment variable", chain.APIKeyEnvVar)
+	}
+
 	ethABI, err := eth.ParseABIFromBytes([]byte(abiContent))
 	if err != nil {
-		return nil, "", timer, fmt.Errorf("parsing Abi %q: %w", abiContent, err)
+		return nil, "", timer, fmt.Errorf("failed to parse ABI from API response: %w", err)
 	}
 	return ethABI, abiContent, timer, err
 }

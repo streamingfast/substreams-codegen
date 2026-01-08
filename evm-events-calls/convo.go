@@ -348,7 +348,8 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 	case InputContractABIFile:
 		if msg.Error != nil && *msg.Error != "" {
-			return loop.Seq(c.Msg().Messagef("The ABI file couldn't be read correctly: %q", *msg.Error).Cmd(), cmd(AskContractABIFile{}))
+			friendlyErr := codegen.MapClientSideErrorToMessage(fmt.Errorf("%s", *msg.Error))
+			return loop.Seq(c.Msg().Messagef("Unable to read ABI: %s", friendlyErr).Cmd(), cmd(AskContractABIFile{}))
 		}
 
 		contract := c.contextContract()
@@ -443,8 +444,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			return QuitInvalidContext
 		}
 		if msg.err != nil {
+			friendlyErr := codegen.MapClientSideErrorToMessage(msg.err)
 			return loop.Seq(
-				c.Msg().Messagef("Cannot fetch the ABI for contract %q (%s)", contract.Address, msg.err).Cmd(),
+				c.Msg().Messagef("Cannot fetch the ABI for contract %q: %s", contract.Address, friendlyErr).Cmd(),
 				cmd(AskContractABIType{}),
 			)
 		}
@@ -474,8 +476,9 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		}
 		contract := c.State.dynamicContractOf(factory.Name)
 		if msg.err != nil {
+			friendlyErr := codegen.MapClientSideErrorToMessage(msg.err)
 			return loop.Seq(
-				c.Msg().Messagef("Cannot fetch the ABI for dynamic contract %q (%s)", contract.ReferenceContractAddress, msg.err).Cmd(),
+				c.Msg().Messagef("Cannot fetch the ABI for dynamic contract %q: %s", contract.ReferenceContractAddress, friendlyErr).Cmd(),
 				cmd(AskDynamicContractABI{}),
 			)
 		}

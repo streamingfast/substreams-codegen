@@ -387,3 +387,74 @@ func TestInvalidWrappedABIFormat(t *testing.T) {
 	msg := seq[0]().(*pbconvo.SystemOutput)
 	assert.Contains(t, msg.GetMessage().Markdown, "abi")
 }
+
+func TestMapClientSideErrorToMessage(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    error
+		expected string
+	}{
+		{
+			name:     "file not found without filename",
+			input:    fmt.Errorf("no such file or directory"),
+			expected: "File not found - please check the path and try again",
+		},
+		{
+			name:     "wrapped file not found with filename",
+			input:    fmt.Errorf("could not read file \"test.json\": open test.json: no such file or directory"),
+			expected: "File not found: test.json",
+		},
+		{
+			name:     "wrapped file not found with path",
+			input:    fmt.Errorf("could not read file \"path/to/my-abi.json\": open path/to/my-abi.json: no such file or directory"),
+			expected: "File not found: path/to/my-abi.json",
+		},
+		{
+			name:     "permission denied without filename",
+			input:    fmt.Errorf("permission denied"),
+			expected: "Permission denied - please check file permissions",
+		},
+		{
+			name:     "wrapped permission denied with filename",
+			input:    fmt.Errorf("could not read file \"protected.json\": open protected.json: permission denied"),
+			expected: "Permission denied for file: protected.json",
+		},
+		{
+			name:     "is a directory without filename",
+			input:    fmt.Errorf("is a directory"),
+			expected: "Path points to a directory, not a file - please provide a file path",
+		},
+		{
+			name:     "wrapped is a directory with filename",
+			input:    fmt.Errorf("could not read file \"mydir\": read mydir: is a directory"),
+			expected: "Path is a directory, not a file: mydir",
+		},
+		{
+			name:     "contract not verified",
+			input:    fmt.Errorf("contract source code is not verified on the block explorer - you'll need to provide the ABI manually"),
+			expected: "Contract source code is not verified on the block explorer - you'll need to provide the ABI manually",
+		},
+		{
+			name:     "invalid contract address",
+			input:    fmt.Errorf("invalid contract address or contract does not exist at this address"),
+			expected: "Invalid contract address or contract does not exist at this address",
+		},
+		{
+			name:     "unknown error",
+			input:    fmt.Errorf("some random error"),
+			expected: "some random error",
+		},
+		{
+			name:     "nil error",
+			input:    nil,
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := codegen.MapClientSideErrorToMessage(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
