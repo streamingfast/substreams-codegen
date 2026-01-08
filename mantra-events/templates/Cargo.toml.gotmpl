@@ -8,12 +8,12 @@ name = "substreams"
 crate-type = ["cdylib"]
 
 [dependencies]
-prost = "0.13.3"
-prost-types = "0.13.3"
-substreams = "0.6.0"
-cosmrs = { version = "0.16.0", features = ["cosmwasm"] }
+prost = "0.13"
+prost-types = "0.13"
+substreams = "0.7"
+cosmrs = { version = "0.16", features = ["cosmwasm"] }
 
-# Required so that ethabi > ethereum-types build correctly under wasm32-unknown-unknown
+# Required so that cosmrs dependencies build correctly under wasm32-unknown-unknown
 [target.wasm32-unknown-unknown.dependencies]
 getrandom = { version = "0.2", features = ["custom"] }
 
