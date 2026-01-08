@@ -70,9 +70,13 @@ func (e *eventLogger) logEvent(event string) {
 	e.loggedEvents = append(e.loggedEvents, event)
 }
 
+const (
+	conversationTimeout = 5 * time.Minute
+)
+
 func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconvo.UserInput, pbconvo.SystemOutput]) (err error) {
-	// Add a 5-minute timeout for the conversation to prevent hanging indefinitely
-	ctx, cancel := context.WithTimeoutCause(ctx, 5*time.Minute, ErrConversationTimeout)
+	// Add a timeout for the conversation to prevent hanging indefinitely
+	ctx, cancel := context.WithTimeoutCause(ctx, conversationTimeout, NewErrConversationTimeout(conversationTimeout))
 	defer cancel()
 
 	defer func() {
@@ -84,14 +88,18 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 
 	s.logger.Info("new conversation")
 	closeOnce := sync.Once{}
-	sendFunc := func(msg *pbconvo.SystemOutput, err error) {
+	// send message to gRPC stream
+	sendMsgToGrpcStream := func(msg *pbconvo.SystemOutput, err error) {
 		if msg == nil {
+			s.logger.Info("closing conversation stream since message to grpc stream is nil")
 			closeOnce.Do(func() {
 				if closer, ok := stream.Conn().(interface{ Close(error) error }); ok {
 					closer.Close(err)
 				}
 			})
 		}
+
+		s.logger.Debug("sending message to grpc stream", zap.Any("msg", msg), zap.Error(err))
 		stream.Send(msg)
 	}
 
@@ -111,6 +119,7 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 		return err
 	}
 
+	s.logger.Debug("received first client message from gRPC stream", zap.Any("msg", req))
 	start, ok := req.Entry.(*pbconvo.UserInput_Start_)
 	if !ok {
 		return fmt.Errorf("begin with UserInput_Start message")
@@ -130,7 +139,7 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 	s.logger.Info("launching thread")
 	evts.logEvent(fmt.Sprintf("   0┃ [Start, hydrate: %t] %s", start.Start.Hydrate != nil, start.Start.GeneratorId))
 
-	msgWrapFactory := codegen.NewMsgWrapFactory(sendFunc)
+	msgWrapFactory := codegen.NewMsgWrapFactory(sendMsgToGrpcStream)
 	conversation := convo.Factory()
 	conversation.SetFactory(msgWrapFactory)
 
@@ -146,11 +155,13 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 			return loop.NewQuitMsg(err)
 		}
 
+		s.logger.Debug("received client message from gRPC stream", zap.Any("msg", req))
 		reflectType := msgWrapFactory.LastInput()
 		if reflectType == nil {
 			// TODO: make this a "BadRequest" or InvalidRequest error, shown to the user
 			return loop.NewQuitMsg(fmt.Errorf("message type %q was not registered or does not exist", req.FromActionId))
 		}
+
 		newMsg := reflect.New(reflectType)
 		newProtoMsg := newMsg.Interface().(protoreflect.ProtoMessage)
 
@@ -228,7 +239,7 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 	var lastMessageIsIncoming bool
 	var lastState string
 	msgWrapFactory.SetupLoop(func(msg loop.Msg) loop.Cmd {
-		s.logger.Debug("main loop", zapx.Type("msg_type", msg), zap.Any("msg", msg))
+		zapx.Debugf(s.logger, "main loop (%T)", []any{msg}, zap.Any("msg", msg))
 		switch msg := msg.(type) {
 		case *pbconvo.SystemOutput:
 			ev := msg.Humanize(int(time.Since(begin).Seconds()))
@@ -238,7 +249,7 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 			}
 			evts.logEvent(ev)
 			lastState = msg.State
-			sendFunc(msg, nil)
+			sendMsgToGrpcStream(msg, nil)
 			return nil
 		case codegen.IncomingMessage:
 			lastMessageIsIncoming = true
@@ -246,7 +257,7 @@ func (s *server) Converse(ctx context.Context, stream *connect.BidiStream[pbconv
 			return loop.Batch(func() loop.Msg { return msg.Msg }, readNextCmd)
 		}
 
-		s.logger.Debug("updating", zapx.Type("msg_type", msg), zap.Any("msg", msg))
+		zapx.Debugf(s.logger, "calling conversation.Update(%T)", []any{msg}, zap.Any("msg", msg))
 		cmd := conversation.Update(msg)
 		return cmd
 	})

@@ -534,8 +534,8 @@ github.com/streamingfast/firehose-networks v0.2.2 h1:araNCSHVa9C8+7hGrxNJYt8TlbK
 github.com/streamingfast/firehose-networks v0.2.2/go.mod h1:/XyroRcAUOO9DdxdgHktuVI1U6uKgjj6+1r+zgLEb90=
 github.com/streamingfast/logging v0.0.0-20220304183711-ddba33d79e27/go.mod h1:4GdqELhZOXj4xwc4IaBmzofzdErGynnaSzuzxy0ZIBo=
 github.com/streamingfast/logging v0.0.0-20220304214715-bc750a74b424/go.mod h1:VlduQ80JcGJSargkRU4Sg9Xo63wZD/l8A5NC/Uo1/uU=
-github.com/streamingfast/logging v0.0.0-20250918142248-ac5a1e292845 h1:VMA0pZ3MI8BErRA3kh8dKJThP5d0Xh5vZVk5yFIgH/A=
-github.com/streamingfast/logging v0.0.0-20250918142248-ac5a1e292845/go.mod h1:BtDq81Tyc7H8up5aXNi/I95nPmG3C0PLEqGWY/iWQ2E=
+github.com/streamingfast/logging v0.0.0-20260108192805-38f96de0a641 h1:dI+b2TyFS0rJw1xVGzxBBvn/RrSgBpqM/RjwDInxEfo=
+github.com/streamingfast/logging v0.0.0-20260108192805-38f96de0a641/go.mod h1:fJ5nP7ZSMB4MQQ6RM7cF+LiSQ43b5cVletcSUNL8z2M=
 github.com/streamingfast/sf-tracing v0.0.0-20240209202324-9daa52c71a52 h1:D9M3b2mTrvnvjGpFFd/JqZ/GSPoUrWU2zrtRpDOyqao=
 github.com/streamingfast/sf-tracing v0.0.0-20240209202324-9daa52c71a52/go.mod h1:VRhdIrTjQSsc9cryNR18HTS32rgrHxQYwmoUOSEhpFA=
 github.com/streamingfast/shutter v1.5.0 h1:NpzDYzj0HVpSiDJVO/FFSL6QIK/YKOxY0gJAtyaTOgs=

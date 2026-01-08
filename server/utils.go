@@ -5,33 +5,21 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/streamingfast/dstore"
-	"go.uber.org/zap"
 )
 
-var (
-	ErrConversationTimeout = fmt.Errorf("conversation timed out")
-)
-
-func (s *server) writeErrorWithMsg(w http.ResponseWriter, statusCode int, message string, err error) {
-	if err != nil {
-		s.logger.Error(message, zap.Error(err))
-	}
-	w.Header().Set("Content-type", "application/json")
-	w.WriteHeader(statusCode)
-	w.Write([]byte(message))
+func NewErrConversationTimeout(timeout time.Duration) error {
+	return ErrConversationTimeout{Timeout: timeout}
 }
 
-func (s *server) writeError(w http.ResponseWriter, statusCode int, err error) {
-	if err != nil {
-		s.logger.Error("error encountered while serving request", zap.Error(err))
-	}
-	w.Header().Set("Content-type", "application/json")
-	w.WriteHeader(statusCode)
-	w.Write([]byte(err.Error()))
+type ErrConversationTimeout struct {
+	Timeout time.Duration
+}
+
+func (e ErrConversationTimeout) Error() string {
+	return fmt.Sprintf("conversation timed out after %s", e.Timeout)
 }
 
 type SessionLogger interface {
