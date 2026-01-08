@@ -90,12 +90,6 @@ func (c *Convo) NextStep() (out loop.Cmd) {
 		}
 
 		if contract.abi == nil || contract.abi.abi == nil {
-			// if the user pasted an empty ABI, we would restart the process or choosing a contract address
-			if contract.emptyABI {
-				contract.Address = ""     // reset the address
-				contract.emptyABI = false // reset the flag
-				return notifyContext(cmd(AskContractAddress{}))
-			}
 			if contract.RawABI == nil {
 				// If user already chose how to provide ABI (string/file), skip fetching and ask directly
 				if contract.abiType != "" {
@@ -146,12 +140,6 @@ func (c *Convo) NextStep() (out loop.Cmd) {
 				return notifyContext(cmd(AskDynamicContractTrackWhat{}))
 			}
 			if dynContract.abi == nil {
-				// if the user pasted an empty ABI, we would restart the process or choosing a contract address
-				if dynContract.emptyABI {
-					dynContract.ReferenceContractAddress = "" // reset the reference address
-					dynContract.emptyABI = false              // reset the flag
-					return notifyContext(cmd(AskContractAddress{}))
-				}
 				if dynContract.RawABI == nil {
 					if dynContract.ReferenceContractAddress == "" {
 						config := p.ChainConfig()
@@ -321,14 +309,14 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			return QuitInvalidContext
 		}
 
+		// Handle empty string
 		if msg.Value == "" {
-			contract.emptyABI = true
-			return c.NextStep()
+			return c.Msg().Message("The ABI content is empty. Please provide a valid ABI.").Cmd()
 		}
 
 		rawAbi, err := abiToJson(msg.Value)
 		if err != nil {
-			return loop.Seq(c.Msg().Messagef("ABI %q isn't valid: %q", msg.Value, err).Cmd(), cmd(AskContractABIString{}))
+			return c.Msg().Messagef("ABI %q isn't valid: %q", msg.Value, err).Cmd()
 		}
 
 		contract.RawABI = rawAbi
@@ -347,24 +335,25 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			Cmd()
 
 	case InputContractABIFile:
-		if msg.Error != nil && *msg.Error != "" {
-			friendlyErr := codegen.MapClientSideErrorToMessage(fmt.Errorf("%s", *msg.Error))
-			return loop.Seq(c.Msg().Messagef("Unable to read ABI: %s", friendlyErr).Cmd(), cmd(AskContractABIFile{}))
-		}
-
 		contract := c.contextContract()
 		if contract == nil {
 			return QuitInvalidContext
 		}
 
+		// Handle file read error
+		if msg.Error != nil && *msg.Error != "" {
+			friendlyErr := codegen.MapClientSideErrorToMessage(fmt.Errorf("%s", *msg.Error))
+			return c.Msg().Messagef("Unable to read ABI: %s", friendlyErr).Cmd()
+		}
+
+		// Handle empty file
 		if string(msg.Value) == "" {
-			contract.emptyABI = true
-			return c.NextStep()
+			return c.Msg().Message("The ABI content is empty. Please provide a valid ABI file.").Cmd()
 		}
 
 		rawAbi, err := abiToJson(string(msg.Value))
 		if err != nil {
-			return loop.Seq(c.Msg().Messagef("ABI %q isn't valid: %q", msg.Value, err).Cmd(), cmd(AskContractABIFile{}))
+			return c.Msg().Messagef("ABI %q isn't valid: %q", msg.Value, err).Cmd()
 		}
 
 		contract.RawABI = rawAbi

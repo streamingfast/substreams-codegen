@@ -242,7 +242,6 @@ type BaseContract struct {
 
 	abiFetchedInThisSession bool
 	abi                     *ABI
-	emptyABI                bool
 	abiType                 string
 }
 
