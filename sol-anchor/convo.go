@@ -80,12 +80,15 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 				return loop.Quit(fmt.Errorf(`something went wrong, here's an error message to share with our devs (%s); we've notified them already`, err))
 			}
 
-			idl, err := createIDLFromJSON(c.State.IdlString)
-			if err != nil {
-				fmt.Println("Error unmarshaling JSON:", err)
-				return loop.Quit(fmt.Errorf("could not decode IDL"))
+			// Only decode IDL if we have one in the state
+			if c.State.IdlString != "" {
+				idl, err := createIDLFromJSON(c.State.IdlString)
+				if err != nil {
+					fmt.Println("Error unmarshaling JSON:", err)
+					return loop.Quit(fmt.Errorf("could not decode IDL"))
+				}
+				c.State.idl = idl
 			}
-			c.State.idl = idl
 		}
 		return c.UpdatePreSharedFlowMsg(msg, sharedFlowConfig, c.NextStep)
 	}
@@ -151,19 +154,12 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 			Cmd()
 
 	case InputConfirmIDL:
-		returnStep := func() loop.Cmd {
-			if c.State.IdlFormat == "string" {
-				return cmd(AskIDLFile{})
-			}
-			return cmd(AskIDLJSON{})
-		}
-
 		if msg.Affirmative {
 			return c.NextStep()
 		}
 		c.State.idl = nil
 		c.State.IdlString = ""
-		return loop.Seq(c.Msg().Message("Modify your JSON IDL and try again...").Cmd(), returnStep())
+		return loop.Seq(c.Msg().Message("Modify your JSON IDL and try again...").Cmd(), c.askIDLAgain())
 
 	case AskProgramID:
 		return c.Action(InputProgramID{}).
