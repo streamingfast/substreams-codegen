@@ -97,6 +97,10 @@ func (c *Convo) NextStep() (out loop.Cmd) {
 				return notifyContext(cmd(AskContractAddress{}))
 			}
 			if contract.RawABI == nil {
+				// If user already chose how to provide ABI (string/file), skip fetching and ask directly
+				if contract.abiType != "" {
+					return notifyContext(cmd(AskContractABIType{}))
+				}
 				return notifyContext(cmd(FetchContractABI{}))
 			}
 			return notifyContext(cmd(RunDecodeContractABI{}))
@@ -295,7 +299,11 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 
 		contract.abiType = msg.Value
 
-		return c.NextStep()
+		// Directly ask for the ABI based on chosen type (don't go through NextStep to avoid re-showing error)
+		if contract.abiType == "string" {
+			return cmd(AskContractABIString{})
+		}
+		return cmd(AskContractABIFile{})
 
 	case AskContractABIString:
 		contract := c.contextContract()
