@@ -382,9 +382,8 @@ func TestInvalidWrappedABIFormat(t *testing.T) {
 		},
 	})
 
-	// Should show error and ask for ABI again
-	seq := next().(loop.SeqMsg)
-	msg := seq[0]().(*pbconvo.SystemOutput)
+	// Should show error message directly (not wrapped in SeqMsg)
+	msg := next().(*pbconvo.SystemOutput)
 	assert.Contains(t, msg.GetMessage().Markdown, "abi")
 }
 
