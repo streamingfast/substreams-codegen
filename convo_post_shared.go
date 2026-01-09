@@ -13,6 +13,7 @@ import (
 
 var (
 	substreamsSinkChoices = []MapEntry{
+		mapEntry(string(SubstreamsSinkChoiceSourceOnly), "Just generate the source code (no sink setup)"),
 		mapEntry(string(SubstreamsSinkChoicePostgres), "To Postgres"),
 		mapEntry(string(SubstreamsSinkChoiceClickhouse), "To Clickhouse"),
 		mapEntry(string(SubstreamsSinkChoiceParquet), "To Parquet Files"),
@@ -179,8 +180,8 @@ func (c *Conversation[X]) generateFinishInstructions(destDir string) string {
 
 func (c *Conversation[X]) generateSinkInstructions() *string {
 	sinkChoice := c.State.GetSubstreamsSinkChoice()
-	if sinkChoice == nil || *sinkChoice == SubstreamsSinkChoiceNone {
-		zlog.Debug("no sink choice configured, no sink instructions to generate")
+	if sinkChoice == nil || *sinkChoice == SubstreamsSinkChoiceNone || *sinkChoice == SubstreamsSinkChoiceSourceOnly {
+		zlog.Debug("no sink choice configured or source-only selected, no sink instructions to generate")
 		return nil
 	}
 
@@ -260,8 +261,8 @@ func (c *Conversation[X]) generateSinkInstructions() *string {
 
 func (c *Conversation[X]) generateDockerComposeContent() *string {
 	sinkChoice := c.State.GetSubstreamsSinkChoice()
-	if sinkChoice == nil {
-		zlog.Debug("no sink choice configured, no docker compose to generate")
+	if sinkChoice == nil || *sinkChoice == SubstreamsSinkChoiceSourceOnly {
+		zlog.Debug("no sink choice configured or source-only selected, no docker compose to generate")
 		return nil
 	}
 

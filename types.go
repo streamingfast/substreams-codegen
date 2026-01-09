@@ -77,5 +77,5 @@ type MsgGenerateProgress struct {
 // Use the lower case versions of the enum when sending it to the user.
 // Remain also backward compatible with the previous naming convention.
 //
-// ENUM(none, postgres, clickhouse, parquet, golang, rust, javascript, python)
+// ENUM(none, source_only, postgres, clickhouse, parquet, golang, rust, javascript, python)
 type SubstreamsSinkChoice string

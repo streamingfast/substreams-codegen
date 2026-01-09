@@ -14,6 +14,8 @@ import (
 const (
 	// SubstreamsSinkChoiceNone is a SubstreamsSinkChoice of type none.
 	SubstreamsSinkChoiceNone SubstreamsSinkChoice = "none"
+	// SubstreamsSinkChoiceSourceOnly is a SubstreamsSinkChoice of type source_only.
+	SubstreamsSinkChoiceSourceOnly SubstreamsSinkChoice = "source_only"
 	// SubstreamsSinkChoicePostgres is a SubstreamsSinkChoice of type postgres.
 	SubstreamsSinkChoicePostgres SubstreamsSinkChoice = "postgres"
 	// SubstreamsSinkChoiceClickhouse is a SubstreamsSinkChoice of type clickhouse.
@@ -34,6 +36,7 @@ var ErrInvalidSubstreamsSinkChoice = fmt.Errorf("not a valid SubstreamsSinkChoic
 
 var _SubstreamsSinkChoiceNames = []string{
 	string(SubstreamsSinkChoiceNone),
+	string(SubstreamsSinkChoiceSourceOnly),
 	string(SubstreamsSinkChoicePostgres),
 	string(SubstreamsSinkChoiceClickhouse),
 	string(SubstreamsSinkChoiceParquet),
@@ -54,6 +57,7 @@ func SubstreamsSinkChoiceNames() []string {
 func SubstreamsSinkChoiceValues() []SubstreamsSinkChoice {
 	return []SubstreamsSinkChoice{
 		SubstreamsSinkChoiceNone,
+		SubstreamsSinkChoiceSourceOnly,
 		SubstreamsSinkChoicePostgres,
 		SubstreamsSinkChoiceClickhouse,
 		SubstreamsSinkChoiceParquet,
@@ -77,14 +81,15 @@ func (x SubstreamsSinkChoice) IsValid() bool {
 }
 
 var _SubstreamsSinkChoiceValue = map[string]SubstreamsSinkChoice{
-	"none":       SubstreamsSinkChoiceNone,
-	"postgres":   SubstreamsSinkChoicePostgres,
-	"clickhouse": SubstreamsSinkChoiceClickhouse,
-	"parquet":    SubstreamsSinkChoiceParquet,
-	"golang":     SubstreamsSinkChoiceGolang,
-	"rust":       SubstreamsSinkChoiceRust,
-	"javascript": SubstreamsSinkChoiceJavascript,
-	"python":     SubstreamsSinkChoicePython,
+	"none":        SubstreamsSinkChoiceNone,
+	"source_only": SubstreamsSinkChoiceSourceOnly,
+	"postgres":    SubstreamsSinkChoicePostgres,
+	"clickhouse":  SubstreamsSinkChoiceClickhouse,
+	"parquet":     SubstreamsSinkChoiceParquet,
+	"golang":      SubstreamsSinkChoiceGolang,
+	"rust":        SubstreamsSinkChoiceRust,
+	"javascript":  SubstreamsSinkChoiceJavascript,
+	"python":      SubstreamsSinkChoicePython,
 }
 
 // ParseSubstreamsSinkChoice attempts to convert a string to a SubstreamsSinkChoice.
