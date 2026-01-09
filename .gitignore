@@ -18,3 +18,6 @@ sink-data/
 # The spkg packed by the subtreams cli
 *.spkg
 replay.log
+# Compiled binaries
+/substreams-codegen
+/cmd/substreams-codegen/substreams-codegen

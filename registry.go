@@ -43,7 +43,12 @@ func ListConversationHandlers() []*ConversationHandler {
 		handlers = append(handlers, handler)
 	}
 	sort.Slice(handlers, func(i, j int) bool {
-		return handlers[i].Weight > handlers[j].Weight // heighest weight first
+		// First sort by weight (highest first)
+		if handlers[i].Weight != handlers[j].Weight {
+			return handlers[i].Weight > handlers[j].Weight
+		}
+		// For same weight, sort alphabetically by ID for deterministic ordering
+		return handlers[i].ID < handlers[j].ID
 	})
 
 	return handlers
