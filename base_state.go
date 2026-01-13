@@ -114,7 +114,8 @@ func (c *BaseConversationState) IsValidChainInput(input string) bool {
 }
 
 // GetPackageURL generates a probable GitHub URL for the project based on the project name and chain.
-// Returns a URL in the format: https://github.com/username/{project-name}-{chain}
+// Returns a URL in the format: https://github.com/username/{Name}-{ChainName}
+// The 'username' is a placeholder that users should update with their actual GitHub username or organization.
 func (p *BaseConversationState) GetPackageURL() string {
 	if p.Name == "" {
 		return ""
@@ -129,7 +130,8 @@ func (p *BaseConversationState) GetPackageURL() string {
 }
 
 // GetPackageDescription generates a description for the package based on the project name and chain.
-// Returns a description like: "Substreams module for {project-name} on {chain-display-name}"
+// Returns a description using the Name field and ChainDisplayName() method result.
+// Example: "Substreams module for my-project on Ethereum Mainnet"
 func (p *BaseConversationState) GetPackageDescription() string {
 	if p.Name == "" {
 		return "Substreams module"
