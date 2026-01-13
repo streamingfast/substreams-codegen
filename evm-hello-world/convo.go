@@ -1,7 +1,6 @@
 package ethhelloworld
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -9,6 +8,11 @@ import (
 	codegen "github.com/streamingfast/substreams-codegen"
 	"github.com/streamingfast/substreams-codegen/loop"
 )
+
+var sharedFlowConfig = codegen.SharedFlowConfig{
+	// For now, we ask in this specific conversation for the chain's name, to be refactored at some point
+	ValidChains: nil,
+}
 
 func init() {
 	supportedChains := make([]string, 0, len(ChainConfigs))
@@ -40,11 +44,12 @@ func New() codegen.Converser {
 }
 
 func (c *Convo) NextStep() (out loop.Cmd) {
+	if !c.IsPreSharedFlowDone(sharedFlowConfig) {
+		return c.NextPreSharedFlowStep(sharedFlowConfig)
+	}
+
 	p := c.State
 
-	if p.Name == "" {
-		return cmd(codegen.AskProjectName{})
-	}
 	if p.ChainName == "" {
 		return cmd(codegen.AskChainName{})
 	}
@@ -57,7 +62,7 @@ func (c *Convo) NextStep() (out loop.Cmd) {
 		return cmd(codegen.AskInitialStartBlockType{})
 	}
 
-	return cmd(codegen.RunGenerate{})
+	return c.NextPostSharedFlowStep(sharedFlowConfig)
 }
 
 func isValidChainName(input string) bool {
@@ -65,28 +70,15 @@ func isValidChainName(input string) bool {
 }
 
 func (c *Convo) Update(msg loop.Msg) loop.Cmd {
+	if c.IsPreSharedFlowMsg(msg, sharedFlowConfig) {
+		return c.UpdatePreSharedFlowMsg(msg, sharedFlowConfig, c.NextStep)
+	}
+
+	if c.IsPostSharedFlowMsg(msg, sharedFlowConfig) {
+		return c.UpdatePostSharedFlowMsg(msg, sharedFlowConfig)
+	}
+
 	switch msg := msg.(type) {
-	case codegen.MsgStart:
-		c.SetClientVersion(msg.Version)
-		var msgCmd loop.Cmd
-		if msg.Hydrate != nil {
-			if err := json.Unmarshal([]byte(msg.Hydrate.SavedState), &c.State); err != nil {
-				return loop.Quit(fmt.Errorf(`something went wrong, here's an error message to share with our devs (%s); we've notified them already`, err))
-			}
-
-			msgCmd = c.Msg().Message("Ok, I reloaded your state.").Cmd()
-		} else {
-			msgCmd = c.Msg().Message("Ok, let's start a new package.").Cmd()
-		}
-		return loop.Seq(msgCmd, c.NextStep())
-
-	case codegen.AskProjectName:
-		return c.CmdAskProjectName()
-
-	case codegen.InputProjectName:
-		c.State.Name = msg.Value
-		return c.NextStep()
-
 	case codegen.AskChainName:
 		var labels, values []string
 		for _, conf := range ChainConfigs {
@@ -102,12 +94,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		return c.Msg().
 			Messagef(`Hmm, %q seems like an invalid chain name. Maybe it was supported and is not anymore?`, c.State.ChainName).
 			Cmd()
-
-	case codegen.InputSubstreamsConsumptionChoice:
-		return c.HandleSubstreamsConsumptionChoice(msg.Value)
-
-	case codegen.InputSourceDownloaded:
-		return c.HandleSourceDownloaded(msg.Value)
 
 	case codegen.InputChainName:
 		c.State.ChainName = msg.Value
@@ -137,12 +123,6 @@ func (c *Convo) Update(msg loop.Msg) loop.Cmd {
 		c.State.InitialBlock = initialBlock
 		c.State.InitialBlockSet = true
 		return c.NextStep()
-
-	case codegen.RunGenerate:
-		return c.HandleRunGenerate(c.State.Generate)
-
-	case codegen.ReturnGenerate:
-		return c.HandleReturnGenerate(msg)
 	}
 
 	return loop.Quit(fmt.Errorf("invalid loop message: %T", msg))
