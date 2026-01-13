@@ -2,6 +2,8 @@ specVersion: v0.1.0
 package:
   name: my_project
   version: v0.1.0
+  url: {{ .GetPackageURL }}
+  description: {{ .GetPackageDescription }}
 
 imports:
   tron: https://spkg.io/v1/packages/tron_foundational/v0.1.2 # Input the Tron foundational modules (which allow you to filter on trasanctions)
