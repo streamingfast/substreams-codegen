@@ -23,6 +23,16 @@ func TestConvoNextStep(t *testing.T) {
 	assert.Equal(t, codegen.AskChainName{}, next())
 	p.ChainName = "arbitrum"
 
+	assert.Equal(t, codegen.AskInitialStartBlockType{}, next())
+	p.InitialBlock = 0
+	p.InitialBlockSet = true
+
+	assert.Equal(t, codegen.AskSubstreamsConsumptionChoice{}, next())
+	sinkChoice := codegen.SubstreamsSinkChoiceSourceOnly
+	p.SubstreamsSinkChoice = &sinkChoice
+
+	assert.Equal(t, codegen.RunGenerate{}, next())
+
 	res := p.Generate()
 	assert.NoError(t, res.Err)
 	assert.NotEmpty(t, res.ProjectFiles)
