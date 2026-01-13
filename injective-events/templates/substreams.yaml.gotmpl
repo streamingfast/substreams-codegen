@@ -2,6 +2,8 @@ specVersion: v0.1.0
 package:
   name: {{ .Name }}
   version: v0.1.0
+  url: {{ .GetPackageURL }}
+  description: {{ .GetPackageDescription }}
 
 imports:
   injective: https://github.com/streamingfast/substreams-foundational-modules/releases/download/injective-common-v0.2.5/injective-common-v0.2.5.spkg

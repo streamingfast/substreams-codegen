@@ -112,3 +112,37 @@ func (p *BaseConversationState) IsChainTestnet() bool {
 func (c *BaseConversationState) IsValidChainInput(input string) bool {
 	return networks.GetSubstreamsRegistry().Find(input) != nil
 }
+
+// GetPackageURL generates a probable GitHub URL for the project based on the project name and chain.
+// Returns a URL in the format: https://github.com/username/{Name}-{ChainName}
+// The 'username' is a placeholder that users should update with their actual GitHub username or organization.
+func (p *BaseConversationState) GetPackageURL() string {
+	if p.Name == "" {
+		return ""
+	}
+	
+	chainSuffix := ""
+	if p.ChainName != "" {
+		chainSuffix = "-" + p.ChainName
+	}
+	
+	return "https://github.com/username/" + p.Name + chainSuffix
+}
+
+// GetPackageDescription generates a description for the package based on the project name and chain.
+// Returns a description using the Name field and ChainDisplayName() method result.
+// Example: "Substreams module for my-project on Ethereum Mainnet"
+func (p *BaseConversationState) GetPackageDescription() string {
+	if p.Name == "" {
+		return "Substreams module"
+	}
+	
+	desc := "Substreams module for " + p.Name
+	
+	chainDisplay := p.ChainDisplayName()
+	if chainDisplay != "" {
+		desc += " on " + chainDisplay
+	}
+	
+	return desc
+}
