@@ -539,6 +539,8 @@ message {{.Proto.MessageName}} {{.Proto.OutputModuleFieldName}} {
 			return QuitInvalidContext
 		}
 		contract.RawABI = nil
+		contract.abi = nil
+		contract.abiType = ""
 		contract.abiFetchedInThisSession = false
 		return cmd(AskContractABIType{})
 
