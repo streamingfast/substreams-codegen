@@ -21,7 +21,7 @@ reflex -c .reflex
 Requires Docker, simply do:
 
 ```
-RUN_INTEGRATION_TESTS=true INTEGRATION_TESTS_IN_DOCKER=true go test ./tests -v -parallel 6
+RUN_INTEGRATION_TESTS=true INTEGRATION_TESTS_IN_DOCKER=true go test ./tests -v -parallel 8 -timeout 30m
 ```
 
 You can try with higher value for parallel (controls how many tests runs in parallel). I had errors with the default value (`GOMAXPROCS`) and changing it to `-parallel 6` made it work properly.
