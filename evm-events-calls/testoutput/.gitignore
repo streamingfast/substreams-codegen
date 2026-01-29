@@ -1,6 +1,2 @@
-target/
-*.spkg
-Cargo.lock
-*/src/abi/unifactory_contract.rs
-*/src/pb/contract.v1.rs
-**/dev-environment/data
+*
+!.gitignore

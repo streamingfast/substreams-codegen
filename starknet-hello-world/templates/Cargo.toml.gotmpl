@@ -14,6 +14,8 @@ num-traits = "0.2.15"
 prost = "0.13"
 prost-types = "0.13"
 substreams = "0.7"
+# Pin time crate to avoid MSRV issues (time >= 0.3.37 requires Rust 1.88+)
+time = ">=0.3, <0.3.37"
 
 [build-dependencies]
 anyhow = "1"

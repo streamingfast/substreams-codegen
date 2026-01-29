@@ -20,6 +20,8 @@ cainome = { git = "https://github.com/cartridge-gg/cainome", tag = "v0.4.0", fea
 serde_json = "1.0.128"
 log = "0.4.22"
 serde = { version = "1.0.209", features = ["derive"] }
+# Pin time crate to avoid MSRV issues (time >= 0.3.37 requires Rust 1.88+)
+time = ">=0.3, <0.3.37"
 
 [build-dependencies]
 anyhow = "1"
