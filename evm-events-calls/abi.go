@@ -333,6 +333,7 @@ type rustCallModel struct {
 	ProtoOutputModuleFieldSubgraphTriggerName string
 	TableChangeEntityName                     string
 	OutputFieldsString                        string
+	HasInputFields                            bool
 	ProtoFieldABIConversionMap                map[string]string
 	ProtoFieldTableChangesMap                 map[string]tableChangeSetField
 	ProtoFieldSqlmap                          map[string]string
@@ -547,6 +548,8 @@ func (e *rustCallModel) populateFields(call *eth.MethodDef) error {
 	if len(call.Parameters) == 0 && call.ReturnParameters == nil {
 		return nil
 	}
+
+	e.HasInputFields = len(call.Parameters) > 0
 
 	paramNames := make([]string, len(call.Parameters))
 	for i := range call.Parameters {

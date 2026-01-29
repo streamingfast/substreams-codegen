@@ -3,6 +3,7 @@ package evm_events_calls
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"testing"
 
 	codegen "github.com/streamingfast/substreams-codegen"
@@ -200,6 +201,50 @@ func Test_BaycTriggers(t *testing.T) {
 	outDir := "testoutput/uniswap_v3_triggers_dynamic_datasources"
 	os.RemoveAll(outDir)
 	os.MkdirAll(outDir, 0755)
+}
+
+func Test_USDC(t *testing.T) {
+	testGenerateProject(t, "./testdata/usdc.state.json", "testoutput/usdc")
+}
+
+func Test_UniswapFactoryDynamic(t *testing.T) {
+	testGenerateProject(t, "./testdata/uniswap_v3_dynamic_datasources.state.json", "testoutput/uniswap_v3_dynamic")
+}
+
+func testGenerateProject(t *testing.T, stateFile string, outDir string) {
+	t.Helper()
+	convo := loadProjectFromState(t, stateFile)
+	p := convo.State
+
+	assert.Equal(t, RunDecodeContractABI{}, convo.NextStep()())
+
+	for _, contract := range p.Contracts {
+		res := CmdDecodeABI(contract)().(ReturnRunDecodeContractABI)
+		require.NoError(t, res.err)
+		contract.abi = res.abi
+	}
+
+	for _, contract := range p.DynamicContracts {
+		res := cmdDecodeDynamicABI(contract)().(ReturnRunDecodeDynamicContractABI)
+		require.NoError(t, res.err)
+		contract.abi = res.abi
+		contract.parentContract = p.Contracts[0]
+	}
+
+	res := p.Generate()
+	require.NoError(t, res.Err)
+	assert.NotEmpty(t, len(res.ProjectFiles))
+
+	os.RemoveAll(outDir)
+	require.NoError(t, os.MkdirAll(outDir, 0755))
+
+	for filename, content := range res.ProjectFiles {
+		filePath := filepath.Join(outDir, filename)
+		dir := filepath.Dir(filePath)
+		require.NoError(t, os.MkdirAll(dir, 0755))
+		err := os.WriteFile(filePath, content, 0644)
+		require.NoError(t, err, "failed to write %s", filename)
+	}
 }
 
 func TestProtoFieldName(t *testing.T) {
