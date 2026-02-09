@@ -6,7 +6,7 @@ package:
   description: {{ .GetPackageDescription }}
 
 imports:
-  solana: https://spkg.io/streamingfast/solana-common-v0.3.3.spkg
+  solana: https://spkg.io/streamingfast/solana-common-v0.4.0.spkg
 
 protobuf:
   files:
@@ -36,7 +36,7 @@ modules:
     use: solana:transactions_by_programid_without_votes
 {{- end }}
     initialBlock: {{ .InitialBlock }}
-  
+
   - name: map_my_data
     kind: map
     inputs:
