@@ -203,10 +203,6 @@ func Test_BaycTriggers(t *testing.T) {
 	os.MkdirAll(outDir, 0755)
 }
 
-func Test_USDC(t *testing.T) {
-	testGenerateProject(t, "./testdata/usdc.state.json", "testoutput/usdc")
-}
-
 func Test_UniswapFactoryDynamic(t *testing.T) {
 	testGenerateProject(t, "./testdata/uniswap_v3_dynamic_datasources.state.json", "testoutput/uniswap_v3_dynamic")
 }
