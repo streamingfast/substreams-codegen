@@ -1,7 +1,7 @@
 FROM ghcr.io/streamingfast/substreams:develop AS substreams
 FROM bufbuild/buf AS buf
 
-FROM rust:1.88
+FROM rust:1.89
 
 WORKDIR /app
 
