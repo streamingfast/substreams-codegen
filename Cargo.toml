@@ -8,19 +8,19 @@ name = "substreams"
 crate-type = ["cdylib"]
 
 [dependencies]
-hex-literal = "0.3.4"
-num-bigint = "0.4"
+hex-literal = "1.1.0"
+num-bigint = "0.5"
 num-traits = "0.2.15"
-prost = "0.13"
-prost-types = "0.13"
+prost = "0.14"
+prost-types = "0.14"
 substreams = "0.7"
-substreams-solana = "0.14"
+substreams-solana = "0.15"
 substreams-solana-program-instructions = "0.3"
 substreams-database-change = "3"
 substreams-entity-change = "2"
 anchor-lang = ">=0.30.1"
-sologger_log_context = "0.1.2"
-base64 = "0.22.1"
+sologger_log_context = "0.2.4"
+base64 = "0.23.0"
 
 # Required so that ethabi > ethereum-types build correctly under wasm32-unknown-unknown
 [target.wasm32-unknown-unknown.dependencies]
