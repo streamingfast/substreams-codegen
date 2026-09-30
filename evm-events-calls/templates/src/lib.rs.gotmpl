@@ -33,7 +33,7 @@ fn map_{{ $contract.Identifier }}_events(blk: &eth::Block, events: &mut contract
                 events.{{ $contract.IdentifierSnakeCase }}_{{ $rust.ProtoOutputModuleFieldName }}.push(contract::{{ $contract.IdentifierPascalCase }}{{$rust.ProtoMessageName}} {
                     evt_tx_hash: Hex(&rcpt.transaction.hash).to_string(),
                     evt_index: log.block_index,
-                    evt_block_time: Some(blk.timestamp().to_owned()),
+                    evt_block_time: buffa::MessageField::some(blk.timestamp().to_owned()),
                     evt_block_number: blk.number,
                     {{- range $protoField, $abiToProtoConversion := $rust.ProtoFieldABIConversionMap }}
                     {{$protoField}}: {{$abiToProtoConversion}},
@@ -68,7 +68,7 @@ fn map_{{ $contract.Identifier }}_calls(blk: &eth::Block, calls: &mut contract::
                     {{ end }}
                     calls.{{ $contract.IdentifierSnakeCase }}_{{ $rust.ProtoOutputModuleFieldName }}.push(contract::{{ $contract.IdentifierPascalCase }}{{$rust.ProtoMessageName}} {
                         call_tx_hash: Hex(&tx.hash).to_string(),
-                        call_block_time: Some(blk.timestamp().to_owned()),
+                        call_block_time: buffa::MessageField::some(blk.timestamp().to_owned()),
                         call_block_number: blk.number,
                         call_ordinal: call.begin_ordinal,
                         call_success: !call.state_reverted,
@@ -92,8 +92,8 @@ fn map_events_calls(
     calls: contract::Calls,
 ) -> Result<contract::EventsCalls, substreams::errors::Error> {
     Ok(contract::EventsCalls {
-        events: Some(events),
-        calls: Some(calls),
+        events: buffa::MessageField::some(events),
+        calls: buffa::MessageField::some(calls),
     })
 }
 {{- end }}
@@ -122,7 +122,7 @@ fn map_{{ $ddsContract.Identifier }}_events(
                 events.{{ $ddsContract.IdentifierSnakeCase }}_{{ $rust.ProtoOutputModuleFieldName }}.push(contract::{{ $ddsContract.IdentifierPascalCase }}{{$rust.ProtoMessageName}} {
                     evt_tx_hash: Hex(&rcpt.transaction.hash).to_string(),
                     evt_index: log.block_index,
-                    evt_block_time: Some(blk.timestamp().to_owned()),
+                    evt_block_time: buffa::MessageField::some(blk.timestamp().to_owned()),
                     evt_block_number: blk.number,
                     evt_address: Hex(&log.address).to_string(),
                     {{- range $protoField, $abiToProtoConversion := $rust.ProtoFieldABIConversionMap }}
@@ -162,7 +162,7 @@ fn map_{{ $ddsContract.Identifier }}_calls(
                     {{ end }}
                     calls.{{ $ddsContract.IdentifierSnakeCase }}_{{ $rust.ProtoOutputModuleFieldName }}.push(contract::{{ $ddsContract.IdentifierPascalCase }}{{$rust.ProtoMessageName}} {
                         call_tx_hash: Hex(&tx.hash).to_string(),
-                        call_block_time: Some(blk.timestamp().to_owned()),
+                        call_block_time: buffa::MessageField::some(blk.timestamp().to_owned()),
                         call_block_number: blk.number,
                         call_ordinal: call.begin_ordinal,
                         call_success: !call.state_reverted,

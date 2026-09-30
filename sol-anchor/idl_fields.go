@@ -195,7 +195,7 @@ func PrintDefined(typeName string, fieldName string, variableName string, types 
 				var fieldString string
 
 				if isOption {
-					return fmt.Sprintf("%s: map_option_%s(%s.%s),", toSnakeCase(fieldName, true), toSnakeCase(typeName, true), toSnakeCase(variableName, true), toSnakeCase(fieldName, true))
+					return fmt.Sprintf("%s: map_option_%s(%s.%s).into(),", toSnakeCase(fieldName, true), toSnakeCase(typeName, true), toSnakeCase(variableName, true), toSnakeCase(fieldName, true))
 				}
 
 				for _, structField := range t.Type.Struct.Fields {
@@ -213,7 +213,7 @@ func PrintDefined(typeName string, fieldName string, variableName string, types 
 					}`, t.Name, fieldsInString.String())
 				}
 
-				return fmt.Sprintf(`%s: Some(%s {
+				return fmt.Sprintf(`%s: buffa::MessageField::some(%s {
 						%s
 					}),`, toSnakeCase(fieldName, false), t.Name, fieldsInString.String())
 			}

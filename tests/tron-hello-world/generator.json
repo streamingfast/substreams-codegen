@@ -1,0 +1,8 @@
+{
+  "generator": "tron-hello-world",
+  "state": {
+    "name": "my_project",
+    "chainName": "tron",
+    "substreamsSinkChoice": "postgres"
+  }
+}

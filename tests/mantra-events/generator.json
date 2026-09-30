@@ -1,0 +1,16 @@
+{
+  "generator": "mantra-events",
+  "state": {
+    "name": "my_project",
+    "substreamsSinkChoice": "postgres",
+    "initialBlockSet": true,
+    "dataType": "events",
+    "messageTypes": [
+      {
+        "eventType": "wasm",
+        "attributes": null
+      }
+    ],
+    "eventsComplete": true
+  }
+}

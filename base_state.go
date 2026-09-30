@@ -120,12 +120,12 @@ func (p *BaseConversationState) GetPackageURL() string {
 	if p.Name == "" {
 		return ""
 	}
-	
+
 	chainSuffix := ""
 	if p.ChainName != "" {
 		chainSuffix = "-" + p.ChainName
 	}
-	
+
 	return "https://github.com/username/" + p.Name + chainSuffix
 }
 
@@ -136,13 +136,13 @@ func (p *BaseConversationState) GetPackageDescription() string {
 	if p.Name == "" {
 		return "Substreams module"
 	}
-	
+
 	desc := "Substreams module for " + p.Name
-	
+
 	chainDisplay := p.ChainDisplayName()
 	if chainDisplay != "" {
 		desc += " on " + chainDisplay
 	}
-	
+
 	return desc
 }

@@ -47,7 +47,7 @@ fn map_program_data(blk: Block) -> Data {
         {{ if .Idl.Events -}}
         // ------------- EVENTS -------------
         let meta_wrapped = &transaction.meta;
-        let meta = meta_wrapped.as_ref().unwrap();
+        let meta = meta_wrapped.as_option().unwrap();
         let programs_selector: ProgramsSelector = ProgramsSelector::new(&["*".to_string()]);
         let log_contexts = LogContext::parse_logs_basic(&meta.log_messages, &programs_selector);
 
@@ -154,14 +154,14 @@ fn map_program_data(blk: Block) -> Data {
 }
 
 {{ range $i, $type := .Idl.Types }}
-{{- if $type.Type.IsEnum -}}
-fn map_enum_{{$type.SnakeCaseName}}(value: idl::idl::program::types::{{ $type.Name }}) -> i32 {
-    match value {
+{{- if and $type.Type.IsEnum ($.Idl.IsTypeUsed $type.Name) -}}
+fn map_enum_{{$type.SnakeCaseName}}(value: idl::idl::program::types::{{ $type.Name }}) -> buffa::EnumValue<pb::substreams::v1::program::{{ $type.Name }}Enum> {
+    let discriminant: i32 = match value {
         {{- range $j, $variant := $type.Type.Enum.Variants }}
-        idl::idl::program::types::{{ $type.Name }}::{{ $variant.Name }} => return {{ $j }},
+        idl::idl::program::types::{{ $type.Name }}::{{ $variant.Name }} => {{ $j }},
         {{- end}}
-        _ => 0,
-    }
+    };
+    discriminant.into()
 }
 {{ else if $type.Type.IsStruct }}
 {{ if $.Idl.IsTypeUsed $type.Name }}
@@ -184,16 +184,16 @@ fn map_option_{{$type.SnakeCaseName}}(value: Option<idl::idl::program::types::{{
 {{- end }}
 
 {{ range $i, $type := .Idl.Accounts }}
-{{- if $type.Type.IsEnum -}}
-fn map_enum_{{$type.SnakeCaseName}}(value: idl::idl::program::accounts::{{ $type.Name }}) -> i32 {
-    match value {
+{{- if and $type.Type.IsEnum ($.Idl.IsTypeUsed $type.Name) -}}
+fn map_enum_{{$type.SnakeCaseName}}(value: idl::idl::program::accounts::{{ $type.Name }}) -> buffa::EnumValue<pb::substreams::v1::program::{{ $type.Name }}Enum> {
+    let discriminant: i32 = match value {
         {{- range $j, $variant := $type.Type.Enum.Variants }}
-        idl::idl::program::types::{{ $type.Name }}::{{ $variant.Name }} => return {{ $j }},
+        idl::idl::program::types::{{ $type.Name }}::{{ $variant.Name }} => {{ $j }},
         {{- end}}
-        _ => 0,
-    }
+    };
+    discriminant.into()
 }
-{{ else }}
+{{ else if not $type.Type.IsEnum }}
 {{ if $.Idl.IsTypeUsed $type.Name }}
 fn map_option_{{$type.SnakeCaseName}}(value: Option<idl::idl::program::accounts::{{ $type.Name }}>) -> Option<{{ $type.Name }}> {
     match value {
