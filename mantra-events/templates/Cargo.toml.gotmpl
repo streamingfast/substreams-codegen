@@ -8,9 +8,9 @@ name = "substreams"
 crate-type = ["cdylib"]
 
 [dependencies]
-prost = "0.13"
-prost-types = "0.13"
-substreams = "0.7"
+buffa = "0.9.2"
+buffa-types = "0.9.2"
+substreams = "0.8.0"
 cosmrs = { version = "0.16", features = ["cosmwasm"] }
 
 # Required so that cosmrs dependencies build correctly under wasm32-unknown-unknown

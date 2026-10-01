@@ -142,11 +142,11 @@ var (
 
 	// Simple string-based mappings (no regex needed)
 	simpleErrorMappings = map[string]string{
-		"no such file or directory":                             "File not found - please check the path and try again",
-		"permission denied":                                      "Permission denied - please check file permissions",
-		"is a directory":                                         "Path points to a directory, not a file - please provide a file path",
-		"contract source code is not verified":                  "Contract source code is not verified on the block explorer - you'll need to provide the ABI manually",
-		"invalid contract address or contract does not exist":   "Invalid contract address or contract does not exist at this address",
+		"no such file or directory":                           "File not found - please check the path and try again",
+		"permission denied":                                   "Permission denied - please check file permissions",
+		"is a directory":                                      "Path points to a directory, not a file - please provide a file path",
+		"contract source code is not verified":                "Contract source code is not verified on the block explorer - you'll need to provide the ABI manually",
+		"invalid contract address or contract does not exist": "Invalid contract address or contract does not exist at this address",
 	}
 )
 

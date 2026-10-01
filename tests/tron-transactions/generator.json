@@ -1,0 +1,9 @@
+{
+  "generator": "tron-transactions",
+  "state": {
+    "name": "my_project",
+    "chainName": "tron",
+    "substreamsSinkChoice": "postgres",
+    "filter": "(contract_type:TransferContract && to:TPFduiaYgyYKPfrtGh3gN8rgbYU5XgfPP2)"
+  }
+}

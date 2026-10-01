@@ -44,6 +44,10 @@ func TestIntegration(t *testing.T) {
 			stateFile: "./evm-hello-world/generator.json",
 		},
 		{
+			name:      "evm-events-calls-raw",
+			stateFile: "./evm-events-calls-raw/generator.json",
+		},
+		{
 			name:      "injective-hello-world",
 			stateFile: "./injective-hello-world/generator.json",
 		},
@@ -70,6 +74,30 @@ func TestIntegration(t *testing.T) {
 		{
 			name:      "starknet-events",
 			stateFile: "./starknet-events/generator.json",
+		},
+		{
+			name:      "mantra-hello-world",
+			stateFile: "./mantra-hello-world/generator.json",
+		},
+		{
+			name:      "mantra-events",
+			stateFile: "./mantra-events/generator.json",
+		},
+		{
+			name:      "tron-hello-world",
+			stateFile: "./tron-hello-world/generator.json",
+		},
+		{
+			name:      "tron-transactions",
+			stateFile: "./tron-transactions/generator.json",
+		},
+		{
+			name:      "stellar-minimal",
+			stateFile: "./stellar-minimal/generator.json",
+		},
+		{
+			name:      "stellar-transactions-operations",
+			stateFile: "./stellar-transactions-operations/generator.json",
 		},
 		{
 			name:      "sol-anchor-meteora",

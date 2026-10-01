@@ -183,7 +183,7 @@ func (a *ABI) BuildEventModels() (out []codegenEvent, err error) {
 			// Sanitize Abi struct name base on rust proto-gen sanitizer
 			rustABIStructName = sanitizeABIStructName(rustABIStructName)
 
-			// prost will do a to_lower_camel_case() on any struct name
+			// Normalised so the generated Rust ident matches the proto message name.
 			rustGeneratedStructName := textcase.PascalCase(xstrings.ToSnakeCase(rustABIStructName))
 
 			eventID := hex.EncodeToString(event.LogID())
@@ -261,7 +261,7 @@ func (a *ABI) BuildCallModels() (out []codegenCall, err error) {
 			// Sanitize Abi struct name base on rust proto-gen sanitizer
 			rustABIStructName = sanitizeABIStructName(rustABIStructName)
 
-			// prost will do a to_lower_camel_case() on any struct name
+			// Normalised so the generated Rust ident matches the proto message name.
 			rustGeneratedStructName := textcase.PascalCase(xstrings.ToSnakeCase(rustABIStructName))
 			protoMessageName := textcase.PascalCase(xstrings.ToSnakeCase(rustABIStructName) + "Call")
 

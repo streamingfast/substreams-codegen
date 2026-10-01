@@ -12,7 +12,7 @@ fn map_my_data(block: Block) -> Result<mydata::MyData, substreams::errors::Error
 
     // Process transactions from all shards
     for shard in block.shards {
-        if let Some(chunk) = shard.chunk {
+        if let Some(chunk) = shard.chunk.into_option() {
             for tx_with_outcome in chunk.transactions {
                 // Here you can filter out transactions you care about, just use
                 // an if statement and continue to skip unwanted transactions.

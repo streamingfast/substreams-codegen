@@ -23,8 +23,8 @@ fn map_events_calls(
     calls: contract::Calls,
 ) -> Result<contract::EventsCalls, substreams::errors::Error> {
     Ok(contract::EventsCalls {
-        events: Some(events),
-        calls: Some(calls),
+        events: buffa::MessageField::some(events),
+        calls: buffa::MessageField::some(calls),
     })
 }
 {{ end }}
@@ -36,7 +36,7 @@ fn map_events(blk: Block) -> Result<Events, substreams::errors::Error> {
     let logs = blk
         .transaction_traces
         .iter()
-        .filter_map(|transaction| transaction.receipt.as_ref())
+        .filter_map(|transaction| transaction.receipt.as_option())
         .flat_map(|view| {
             view.logs
                 .iter()

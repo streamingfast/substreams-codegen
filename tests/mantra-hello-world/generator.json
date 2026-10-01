@@ -1,0 +1,8 @@
+{
+  "generator": "mantra-hello-world",
+  "state": {
+    "name": "my_project",
+    "substreamsSinkChoice": "postgres",
+    "initialBlockSet": true
+  }
+}
