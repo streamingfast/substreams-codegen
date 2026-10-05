@@ -292,7 +292,11 @@ func runTestsInDocker(t *testing.T, cases []struct {
 					},
 					// The entrypoint will run the test automatically, so this is essentially
 					// how long we allow the container to take to complete.
-					WaitingFor: wait.ForExit().WithExitTimeout(5 * time.Minute),
+					// Each container runs `substreams init` then a full cargo wasm32 build.
+					// On a CI runner the sol-anchor cases take around four minutes, and
+					// `starknet-events` builds four git dependencies, so a five-minute
+					// ceiling leaves the slowest cases failing on timing alone.
+					WaitingFor: wait.ForExit().WithExitTimeout(20 * time.Minute),
 				},
 				Started: true,
 			}, c.name)

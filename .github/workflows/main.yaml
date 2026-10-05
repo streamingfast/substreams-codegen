@@ -63,4 +63,4 @@ jobs:
         run: go build ./...
 
       - name: Run Tests
-        run: go test -v -count=1 -parallel 4 ./... -timeout 1800s
+        run: go test -v -count=1 ./... -timeout 1800s
