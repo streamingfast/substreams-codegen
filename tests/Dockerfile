@@ -1,5 +1,7 @@
 FROM ghcr.io/streamingfast/substreams:develop AS substreams
-FROM bufbuild/buf AS buf
+# Pinned: an untagged image floats to :latest, so a buf release changes this test with no
+# commit here. Keep in step with the version developers run.
+FROM bufbuild/buf:1.67.0 AS buf
 
 FROM rust:1.89
 

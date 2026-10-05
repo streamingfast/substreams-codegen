@@ -13,10 +13,15 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     if: "${{ !startsWith(github.event.head_commit.message, 'GitBook: [#') }}"
 
     env:
       INTEGRATION_TESTS_IN_DOCKER: "true"
+      # Each package that starts containers runs its own test binary, so several are
+      # attached to the shared Ryuk reaper at once and containers have gone unreachable
+      # mid-suite. The runner is destroyed when the job ends, so the reaper buys nothing.
+      TESTCONTAINERS_RYUK_DISABLED: "true"
       RUN_INTEGRATION_TESTS: "true"
       CI: "true"
       CODEGEN_MAINNET_API_KEY: ${{ secrets.CODEGEN_MAINNET_API_KEY }}
@@ -58,4 +63,4 @@ jobs:
         run: go build ./...
 
       - name: Run Tests
-        run: go test -v ./... -timeout 1800s
+        run: go test -v -count=1 -parallel 4 ./... -timeout 1800s
