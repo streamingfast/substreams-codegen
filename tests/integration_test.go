@@ -292,10 +292,6 @@ func runTestsInDocker(t *testing.T, cases []struct {
 					},
 					// The entrypoint will run the test automatically, so this is essentially
 					// how long we allow the container to take to complete.
-					// Each container runs `substreams init` then a full cargo wasm32 build.
-					// On a CI runner the sol-anchor cases take around four minutes, and
-					// `starknet-events` builds four git dependencies, so a five-minute
-					// ceiling leaves the slowest cases failing on timing alone.
 					WaitingFor: wait.ForExit().WithExitTimeout(20 * time.Minute),
 				},
 				Started: true,
@@ -352,22 +348,12 @@ func runContainerWithRetry(ctx context.Context, req testcontainers.GenericContai
 func printContainerLogs(ctx context.Context, container testcontainers.Container, testName string) {
 	if logs, logErr := container.Logs(ctx); logErr == nil {
 		defer logs.Close()
-		logBytes := make([]byte, 0, 4096)
-		buf := make([]byte, 1024)
-		for {
-			n, readErr := logs.Read(buf)
-			if n > 0 {
-				logBytes = append(logBytes, buf[:n]...)
-			}
-			if readErr == io.EOF {
-				break
-			}
-			if readErr != nil {
-				break
-			}
-		}
+		logBytes, readErr := io.ReadAll(logs)
 		if len(logBytes) > 0 {
 			fmt.Printf("Container logs for test %s:\n%s\n", testName, string(logBytes))
+		}
+		if readErr != nil {
+			fmt.Printf("Container logs for test %s were truncated: %v\n", testName, readErr)
 		}
 	}
 }
