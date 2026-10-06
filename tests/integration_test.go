@@ -32,6 +32,7 @@ func TestIntegration(t *testing.T) {
 		stateFile             string
 		explorerApiKeyEnvName string
 		apiKeyNeeded          bool
+		skip                  string
 	}{
 		{
 			name:                  "evm-events-calls",
@@ -114,6 +115,7 @@ func TestIntegration(t *testing.T) {
 		{
 			name:      "sol-anchor-jupiter-governance",
 			stateFile: "./sol-anchor/jupiter-governance.json",
+			skip:      "anchor-lang's declare_program! does not expand this IDL: `error[E0412]: cannot find type usize in module __defined`",
 		},
 		{
 			name:      "sol-anchor-jupiter-staking",
@@ -177,6 +179,10 @@ func TestIntegration(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
+			if c.skip != "" {
+				t.Skip(c.skip)
+			}
+
 			if parallel {
 				t.Parallel()
 			}
@@ -208,6 +214,7 @@ func runTestsInDocker(t *testing.T, cases []struct {
 	stateFile             string
 	explorerApiKeyEnvName string
 	apiKeyNeeded          bool
+	skip                  string
 }, endpoint string) {
 	ctx := context.Background()
 
@@ -267,6 +274,10 @@ func runTestsInDocker(t *testing.T, cases []struct {
 	for _, c := range cases {
 		c := c
 		t.Run(c.name, func(t *testing.T) {
+			if c.skip != "" {
+				t.Skip(c.skip)
+			}
+
 			t.Parallel()
 
 			// Resolve absolute path for the state file
