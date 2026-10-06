@@ -7,8 +7,7 @@ use crate::pb::{
     sf::tron::r#type::v1::Block,
 };
 use pb::mydata::v1 as mydata;
-use prost::Message;
-use prost_types::Timestamp;
+use buffa_types::Timestamp;
 use sha2::{Digest, Sha256};
 
 #[substreams::handlers::map]
@@ -23,23 +22,23 @@ fn map_my_data(block: Block) -> Result<mydata::MyData, substreams::errors::Error
                 // If you only want the Transactions, you should use the foundational module
                 // as your input instead of the full block. This allows the use of an index
                 // to go through the chain faster, try it using the tron-transactions codegen.
-                .filter(|contract| contract.r#type == ContractType::TransferContract as i32)
+                .filter(|contract| contract.r#type == buffa::EnumValue::Known(ContractType::TransferContract))
                 .filter(|contract| {
-                    if let Some(parameter) = contract.parameter.as_ref() {
-                        if let Ok(decoded) =
-                            // Decode the `parameter` field, which is a protobuf.Any object
-                            TransferContractProto::decode(parameter.value.as_slice())
-                        {
+                    if let Some(parameter) = contract.parameter.as_option() {
+                        // Decode the `parameter` field, which is a protobuf.Any object
+                        if let Ok(decoded) = parameter.unpack_unchecked::<TransferContractProto>() {
                             return decoded.amount > 100_000_000;
                         }
                     }
                     return false;
                 })
                 .map(|contract| {
-                    let decoded = TransferContractProto::decode(
-                        contract.parameter.as_ref().unwrap().value.as_slice(),
-                    )
-                    .unwrap();
+                    let decoded = contract
+                        .parameter
+                        .as_option()
+                        .unwrap()
+                        .unpack_unchecked::<TransferContractProto>()
+                        .unwrap();
                     return TransferContract {
                         owner: tron_address_to_base58(&decoded.owner_address),
                         to: tron_address_to_base58(&decoded.to_address),
@@ -50,14 +49,15 @@ fn map_my_data(block: Block) -> Result<mydata::MyData, substreams::errors::Error
         })
         .collect();
 
-    let header = block.header.as_ref().unwrap();
+    let header = block.header.as_option().unwrap();
     let timestamp_millis = header.timestamp;
 
     Ok(MyData {
         block_number: header.number as u64,
-        timestamp: Some(Timestamp {
+        timestamp: buffa::MessageField::some(Timestamp {
             seconds: timestamp_millis / 1000,
             nanos: ((timestamp_millis % 1000) * 1_000_000) as i32,
+            ..Default::default()
         }),
         transfer_contracts: contracts,
     })

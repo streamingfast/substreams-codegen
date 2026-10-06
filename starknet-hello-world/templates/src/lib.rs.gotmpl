@@ -24,7 +24,7 @@ fn map_my_data(blk: Block) -> mydata::MyData {
     let events = blk
         .transactions
         .into_iter()
-        .filter_map(|transaction| transaction.receipt)
+        .filter_map(|transaction| transaction.receipt.into_option())
         .flat_map(|receipt| {
             receipt
                 .events

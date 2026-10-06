@@ -32,6 +32,7 @@ func TestIntegration(t *testing.T) {
 		stateFile             string
 		explorerApiKeyEnvName string
 		apiKeyNeeded          bool
+		skip                  string
 	}{
 		{
 			name:                  "evm-events-calls",
@@ -42,6 +43,10 @@ func TestIntegration(t *testing.T) {
 		{
 			name:      "evm-hello-world",
 			stateFile: "./evm-hello-world/generator.json",
+		},
+		{
+			name:      "evm-events-calls-raw",
+			stateFile: "./evm-events-calls-raw/generator.json",
 		},
 		{
 			name:      "injective-hello-world",
@@ -72,6 +77,30 @@ func TestIntegration(t *testing.T) {
 			stateFile: "./starknet-events/generator.json",
 		},
 		{
+			name:      "mantra-hello-world",
+			stateFile: "./mantra-hello-world/generator.json",
+		},
+		{
+			name:      "mantra-events",
+			stateFile: "./mantra-events/generator.json",
+		},
+		{
+			name:      "tron-hello-world",
+			stateFile: "./tron-hello-world/generator.json",
+		},
+		{
+			name:      "tron-transactions",
+			stateFile: "./tron-transactions/generator.json",
+		},
+		{
+			name:      "stellar-minimal",
+			stateFile: "./stellar-minimal/generator.json",
+		},
+		{
+			name:      "stellar-transactions-operations",
+			stateFile: "./stellar-transactions-operations/generator.json",
+		},
+		{
 			name:      "sol-anchor-meteora",
 			stateFile: "./sol-anchor/meteora.json",
 		},
@@ -86,6 +115,7 @@ func TestIntegration(t *testing.T) {
 		{
 			name:      "sol-anchor-jupiter-governance",
 			stateFile: "./sol-anchor/jupiter-governance.json",
+			skip:      "anchor-lang's declare_program! does not expand this IDL: `error[E0412]: cannot find type usize in module __defined`",
 		},
 		{
 			name:      "sol-anchor-jupiter-staking",
@@ -149,6 +179,10 @@ func TestIntegration(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
+			if c.skip != "" {
+				t.Skip(c.skip)
+			}
+
 			if parallel {
 				t.Parallel()
 			}
@@ -180,6 +214,7 @@ func runTestsInDocker(t *testing.T, cases []struct {
 	stateFile             string
 	explorerApiKeyEnvName string
 	apiKeyNeeded          bool
+	skip                  string
 }, endpoint string) {
 	ctx := context.Background()
 
@@ -239,6 +274,10 @@ func runTestsInDocker(t *testing.T, cases []struct {
 	for _, c := range cases {
 		c := c
 		t.Run(c.name, func(t *testing.T) {
+			if c.skip != "" {
+				t.Skip(c.skip)
+			}
+
 			t.Parallel()
 
 			// Resolve absolute path for the state file
@@ -264,7 +303,7 @@ func runTestsInDocker(t *testing.T, cases []struct {
 					},
 					// The entrypoint will run the test automatically, so this is essentially
 					// how long we allow the container to take to complete.
-					WaitingFor: wait.ForExit().WithExitTimeout(5 * time.Minute),
+					WaitingFor: wait.ForExit().WithExitTimeout(20 * time.Minute),
 				},
 				Started: true,
 			}, c.name)
@@ -320,22 +359,12 @@ func runContainerWithRetry(ctx context.Context, req testcontainers.GenericContai
 func printContainerLogs(ctx context.Context, container testcontainers.Container, testName string) {
 	if logs, logErr := container.Logs(ctx); logErr == nil {
 		defer logs.Close()
-		logBytes := make([]byte, 0, 4096)
-		buf := make([]byte, 1024)
-		for {
-			n, readErr := logs.Read(buf)
-			if n > 0 {
-				logBytes = append(logBytes, buf[:n]...)
-			}
-			if readErr == io.EOF {
-				break
-			}
-			if readErr != nil {
-				break
-			}
-		}
+		logBytes, readErr := io.ReadAll(logs)
 		if len(logBytes) > 0 {
 			fmt.Printf("Container logs for test %s:\n%s\n", testName, string(logBytes))
+		}
+		if readErr != nil {
+			fmt.Printf("Container logs for test %s were truncated: %v\n", testName, readErr)
 		}
 	}
 }

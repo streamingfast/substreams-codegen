@@ -1,0 +1,8 @@
+{
+  "generator": "stellar-minimal",
+  "state": {
+    "name": "my_project",
+    "chainName": "stellar",
+    "substreamsSinkChoice": "postgres"
+  }
+}

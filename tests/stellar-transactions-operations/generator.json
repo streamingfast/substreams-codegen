@@ -1,0 +1,10 @@
+{
+  "generator": "stellar-transactions-operations",
+  "state": {
+    "name": "my_project",
+    "chainName": "stellar",
+    "substreamsSinkChoice": "postgres",
+    "filterType": "operations",
+    "filter": "payment,create_account"
+  }
+}

@@ -31,7 +31,6 @@ type Project struct {
 func (p *Project) Generate() codegen.ReturnGenerate {
 	res := codegen.GenerateTemplateTree(p, templatesFS, map[string]string{
 		"proto/contract.proto.gotmpl":   "proto/contract.proto",
-		"src/pb/mod.rs.gotmpl":          "src/pb/mod.rs",
 		"src/lib.rs.gotmpl":             "src/lib.rs",
 		"Cargo.toml.gotmpl":             "Cargo.toml",
 		"rust-toolchain.toml":           "rust-toolchain.toml",

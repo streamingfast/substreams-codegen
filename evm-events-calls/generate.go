@@ -16,7 +16,6 @@ func (p *Project) Generate() codegen.ReturnGenerate {
 	res := codegen.GenerateTemplateTree(p, templatesFS, map[string]string{
 		"proto/contract.proto.gotmpl":   "proto/contract.proto",
 		"src/abi/mod.rs.gotmpl":         "src/abi/mod.rs",
-		"src/pb/mod.rs.gotmpl":          "src/pb/mod.rs",
 		"src/lib.rs.gotmpl":             "src/lib.rs",
 		"build.rs.gotmpl":               "build.rs",
 		"Cargo.toml.gotmpl":             "Cargo.toml",

@@ -1,5 +1,5 @@
 FROM ghcr.io/streamingfast/substreams:develop AS substreams
-FROM bufbuild/buf AS buf
+FROM bufbuild/buf:1.67.0 AS buf
 
 FROM rust:1.89
 
